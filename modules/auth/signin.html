@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en" x-data="signinFlow()" x-init="init()">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in to Umi Health</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ocean: {
+              50: '#eff9ff',
+              100: '#d6f0ff',
+              200: '#b5e0ff',
+              300: '#86c8ff',
+              400: '#55a7f5',
+              500: '#2f88db',
+              600: '#1c6db8',
+              700: '#165697',
+              800: '#183f6f',
+              900: '#142f55'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-white via-ocean-50 to-white text-slate-800">
+  <div class="mx-auto flex w-full max-w-5xl flex-col items-center justify-center px-4 py-10">
+    <a href="../../index.html" class="mb-10 inline-flex items-center gap-2 text-sm font-semibold text-ocean-600">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12l7.5-7.5M3 12h18" />
+      </svg>
+      Back to site
+    </a>
+    <div class="w-full rounded-3xl bg-white/90 p-8 shadow-[0_35px_80px_-45px_rgba(28,109,184,0.6)] backdrop-blur md:p-12">
+      <div class="grid gap-10 md:grid-cols-2">
+        <div class="space-y-6">
+          <div class="inline-flex items-center gap-2 rounded-full bg-ocean-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-ocean-500">Umi Health POS</div>
+          <h1 class="text-3xl font-bold text-slate-900">Welcome back</h1>
+          <p class="text-sm text-slate-600">Sign in to manage inventory, prescriptions, reports, and wellness journeys across every branch. Need help? Contact <a href="mailto:support@umihealth.com" class="font-semibold text-ocean-600">support@umihealth.com</a>.</p>
+          <ul class="space-y-3 text-sm text-slate-600">
+            <li class="flex items-start gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-ocean-100 text-ocean-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+              </span>
+              <span>Offline-ready POS, synced once you reconnect.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-ocean-100 text-ocean-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+              </span>
+              <span>Role-based access control and multi-tenant support.</span>
+            </li>
+            <li class="flex items-start gap-3">
+              <span class="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-ocean-100 text-ocean-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+              </span>
+              <span>Analytics and subscription management all in one dashboard.</span>
+            </li>
+          </ul>
+          <p class="text-xs text-slate-400">By signing in you accept Umi Health's
+            <button type="button" data-modal-target="authTermsModal"
+              class="font-semibold text-ocean-500 underline-offset-2 transition hover:text-ocean-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-500">
+              Terms & Privacy Policy
+            </button>.
+          </p>
+        </div>
+        <div>
+          <form class="space-y-6" @submit.prevent="submit">
+            <div>
+              <label class="text-sm font-semibold text-slate-700">Email or username</label>
+              <input type="text" x-model="form.email" @input="handleEmailInput" required class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="you@pharmacy.com or username">
+            </div>
+            <div>
+              <label class="flex items-center justify-between text-sm font-semibold text-slate-700">
+                <span>Password</span>
+              </label>
+              <input type="password" x-model="form.password" required class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="********">
+            </div>
+            <div class="flex items-center gap-3 text-sm text-slate-600">
+              <input type="checkbox" id="remember" x-model="remember" class="h-4 w-4 rounded border-slate-300 text-ocean-500 focus:ring-ocean-400">
+              <label for="remember">Keep me signed in on this device</label>
+            </div>
+            <div x-show="error" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600" x-text="error"></div>
+            <div x-show="success" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600" x-text="success"></div>
+            <button type="submit" class="w-full rounded-full bg-ocean-500 py-3 text-sm font-semibold text-white hover:bg-ocean-600 disabled:cursor-not-allowed disabled:bg-slate-300" :disabled="loading">
+              <span x-show="!loading">Sign in</span>
+              <span x-show="loading" class="flex items-center justify-center gap-2">
+                <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Checking credentials...
+              </span>
+            </button>
+          </form>
+          <p class="mt-6 text-center text-sm text-slate-600">New to Umi Health? <a href="./signup.html" class="font-semibold text-ocean-600">Create an account</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Terms modal -->
+  <div id="authTermsModal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 px-4 py-6 backdrop-blur">
+    <div class="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-slate-900">Umi Health Terms & Privacy</h2>
+          <p class="mt-2 text-sm text-slate-600">Review the key points governing operator access to Umi Health POS.</p>
+        </div>
+        <button type="button" data-modal-close="authTermsModal" aria-label="Close"
+          class="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-500">
+          <span class="material-symbols-rounded" aria-hidden="true">close</span>
+        </button>
+      </div>
+      <div class="mt-4 space-y-4 text-sm text-slate-600">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700">Responsible Use</h3>
+          <p>User accounts must remain individual. Shared passwords or generic logins are prohibited and may trigger
+            automatic suspension.</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700">Data Security</h3>
+          <p>Transactions, prescriptions, and customer data are encrypted. Exported reports must remain within authorised
+            storage managed by Sepio Corp.</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700">Privacy</h3>
+          <p>Umi Health complies with regional healthcare privacy mandates. Audit logs retain access history for 24 months.</p>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" data-modal-close="authTermsModal"
+          class="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-ocean-500 hover:text-ocean-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-500">
+          Close
+        </button>
+        <a href="https://www.sepiocorp.com/trust" target="_blank" rel="noopener"
+          class="rounded-full bg-ocean-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-ocean-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-500">
+          View full policy
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function signinFlow() {
+      const roleDefaults = {
+        admin: [
+          'view_dashboard', 'view_customers', 'view_inventory',
+          'view_payments', 'view_pos', 'view_prescriptions',
+          'view_reports', 'view_settings', 'manage_users',
+          'manage_inventory', 'manage_customers', 'generate_reports',
+          'process_sales', 'manage_settings'
+        ],
+        pharmacist: [
+          'view_dashboard', 'view_inventory', 'view_prescriptions',
+          'manage_inventory', 'manage_prescriptions', 'view_reports'
+        ],
+        cashier: [
+          'view_pos', 'view_customers', 'view_inventory',
+          'process_sales', 'manage_customers'
+        ],
+        superadmin: [
+          'view_dashboard', 'manage_users', 'manage_settings',
+          'view_reports', 'view_inventory', 'view_pos'
+        ]
+      };
+
+      const demoAccounts = [
+        {
+          email: 'admin@demo.umihealth',
+          username: 'admin',
+          password: 'Admin123!',
+          role: 'admin',
+          permissions: [...roleDefaults.admin],
+          firstName: 'Amina',
+          lastName: 'Mwila',
+          tenantName: 'Demo Pharmacy Group',
+          tenantId: 'demo-tenant-1',
+          userId: 'demo-admin-1',
+          plan: 'enterprise'
+        },
+        {
+          email: 'pharmacist@demo.umihealth',
+          username: 'pharma',
+          password: 'Pharma123!',
+          role: 'pharmacist',
+          permissions: [...roleDefaults.pharmacist],
+          firstName: 'Chileshe',
+          lastName: 'Zimba',
+          tenantName: 'Demo Wellness Hub',
+          tenantId: 'demo-tenant-2',
+          userId: 'demo-pharma-1',
+          plan: 'professional'
+        },
+        {
+          email: 'cashier@demo.umihealth',
+          username: 'cashier',
+          password: 'Cashier123!',
+          role: 'cashier',
+          permissions: [...roleDefaults.cashier],
+          firstName: 'Grace',
+          lastName: 'Tembo',
+          tenantName: 'Point of Sale Demo',
+          tenantId: 'demo-tenant-3',
+          userId: 'demo-cashier-1',
+          plan: 'starter'
+        }
+      ];
+
+      return {
+        apiBase: '',
+        devMode: true,
+        devUsersKey: 'umihealthUsers',
+        roleDefaults,
+        demoAccounts,
+        matchedAccount: null,
+        form: {
+          email: '',
+          password: ''
+        },
+        remember: true,
+        loading: false,
+        error: '',
+        success: '',
+        init() {
+          this.apiBase = window.location.origin;
+          this.devMode = this.determineDevMode();
+          this.ensureDemoAccounts();
+          this.handleEmailInput();
+        },
+        handleEmailInput() {
+          this.matchedAccount = this.findAccount(this.form.email);
+          if (this.matchedAccount && !this.form.password && this.matchedAccount.password) {
+            this.form.password = this.matchedAccount.password;
+          }
+        },
+        formatRole(role) {
+          if (!role) return 'Unknown';
+          return role.charAt(0).toUpperCase() + role.slice(1);
+        },
+        useDemoAccount(account) {
+          if (!account) return;
+          this.form.email = account.email;
+          this.form.password = account.password;
+          this.remember = true;
+          this.matchedAccount = { ...account };
+        },
+        async submit() {
+          this.error = '';
+          this.success = '';
+
+          if (!this.form.email) {
+            this.error = 'Please enter your email address or username.';
+            return;
+          }
+
+          if (!this.form.password) {
+            this.error = 'Please enter your password.';
+            return;
+          }
+
+          this.loading = true;
+          try {
+            if (this.devMode) {
+              const account = this.findAccount(this.form.email);
+              if (!account) {
+                this.error = 'No demo account matches that email or username. Try one of the accounts below or create a new one via sign up.';
+                return;
+              }
+
+              if (!this.verifyAccountCredentials(account, this.form.password)) {
+                this.error = 'Incorrect password for the selected account.';
+                return;
+              }
+
+              this.persistSession(account, {
+                role: account.role,
+                permissions: account.permissions,
+                remember: this.remember
+              });
+
+              this.success = `Welcome back, ${account.firstName || account.username}! Redirecting...`;
+            } else {
+              const response = await fetch(`${this.apiBase}/api/auth/signin`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: this.form.email,
+                  password: this.form.password
+                })
+              });
+
+              const result = await response.json();
+              if (!response.ok) {
+                this.error = result.message ?? 'Invalid email or password.';
+                return;
+              }
+
+              const fallback = this.findAccount(this.form.email);
+              const role = result.role || result.userRole || fallback?.role || 'admin';
+              const permissions = result.permissions || fallback?.permissions || this.roleDefaults[role] || [];
+
+              this.persistSession({
+                tenantId: result.tenantId,
+                userId: result.userId,
+                email: this.form.email,
+                plan: result.plan ?? localStorage.getItem('umihealthPlan'),
+                name: result.name,
+                tenantName: result.tenantName,
+                accessToken: result.accessToken,
+                refreshToken: result.refreshToken
+              }, { role, permissions, remember: this.remember });
+
+              this.success = 'Welcome back! Redirecting...';
+            }
+
+            setTimeout(() => {
+              this.redirectToDashboard(role);
+            }, 1200);
+          } catch (err) {
+            console.error(err);
+            if (this.devMode) {
+              this.error = 'Unable to sign in right now. Please verify your demo credentials and try again.';
+            } else {
+              this.error = 'Unable to reach Umi Health servers. Please try again.';
+            }
+          } finally {
+            this.loading = false;
+          }
+        },
+        determineDevMode() {
+          const override = localStorage.getItem('umihealthDevMode');
+          if (override === 'true') return true;
+          if (override === 'false') return false;
+          if (window.location.protocol === 'file:') return true;
+          return ['localhost', '127.0.0.1'].includes(window.location.hostname) || !window.location.hostname;
+        },
+        findAccount(identifier) {
+          if (!identifier) return null;
+          const value = identifier.trim().toLowerCase();
+          if (!value) return null;
+
+          const demoMatch = this.demoAccounts.find(acc =>
+            acc.email.toLowerCase() === value || acc.username.toLowerCase() === value
+          );
+          if (demoMatch) {
+            return { ...demoMatch };
+          }
+
+          const users = JSON.parse(localStorage.getItem(this.devUsersKey) ?? '[]');
+          const userMatch = users.find(user =>
+            user.email?.toLowerCase() === value || user.username?.toLowerCase() === value
+          );
+
+          if (!userMatch) return null;
+          const role = userMatch.role || 'admin';
+          return {
+            email: userMatch.email,
+            username: userMatch.username || userMatch.email?.split('@')[0],
+            passwordHash: userMatch.password,
+            role,
+            permissions: userMatch.permissions || this.roleDefaults[role] || [],
+            firstName: userMatch.firstName,
+            lastName: userMatch.lastName,
+            tenantName: userMatch.tenantName,
+            tenantId: userMatch.tenantId,
+            userId: userMatch.userId,
+            plan: userMatch.plan,
+            password: ''
+          };
+        },
+        verifyAccountCredentials(account, password) {
+          if (!account || !password) return false;
+          if (account.password) {
+            return account.password === password;
+          }
+          if (account.passwordHash) {
+            return account.passwordHash === this.hashPassword(password);
+          }
+          return false;
+        },
+        ensureDemoAccounts() {
+          const users = JSON.parse(localStorage.getItem(this.devUsersKey) ?? '[]');
+          let changed = false;
+          this.demoAccounts.forEach(account => {
+            const exists = users.find(u => u.email?.toLowerCase() === account.email.toLowerCase());
+            if (!exists) {
+              users.push({
+                tenantId: account.tenantId,
+                userId: account.userId,
+                email: account.email,
+                username: account.username,
+                firstName: account.firstName,
+                lastName: account.lastName,
+                plan: account.plan,
+                password: this.hashPassword(account.password),
+                tenantName: account.tenantName,
+                role: account.role,
+                permissions: account.permissions
+              });
+              changed = true;
+            }
+          });
+          if (changed) {
+            localStorage.setItem(this.devUsersKey, JSON.stringify(users));
+          }
+        },
+        hashPassword(value) {
+          try {
+            return btoa(value);
+          } catch {
+            return value;
+          }
+        },
+        persistSession(session, options = {}) {
+          const {
+            tenantId,
+            userId,
+            plan,
+            email,
+            name,
+            tenantName,
+            accessToken,
+            refreshToken
+          } = session;
+          const { role = 'admin', permissions = [], remember = true } = options;
+          const safePermissions = permissions?.length ? permissions : (this.roleDefaults[role] || []);
+          const combinedSession = {
+            tenantId,
+            userId,
+            plan,
+            email,
+            name,
+            tenantName,
+            role,
+            permissions: safePermissions
+          };
+
+          sessionStorage.setItem('userRole', role);
+          sessionStorage.setItem('userPermissions', JSON.stringify(safePermissions));
+          if (email) sessionStorage.setItem('userEmail', email);
+          if (name) sessionStorage.setItem('userName', name);
+          if (tenantName) sessionStorage.setItem('umihealthTenantName', tenantName);
+          if (tenantId) sessionStorage.setItem('umihealthTenantId', tenantId);
+          if (userId) sessionStorage.setItem('umihealthUserId', userId);
+          sessionStorage.setItem('umihealth_user_session', JSON.stringify(combinedSession));
+
+          if (remember) {
+            if (tenantId) localStorage.setItem('umihealthTenantId', tenantId);
+            if (userId) localStorage.setItem('umihealthUserId', userId);
+            if (plan) localStorage.setItem('umihealthPlan', plan);
+            if (email) localStorage.setItem('umihealthEmail', email);
+            if (name) localStorage.setItem('umihealthUserName', name);
+            if (tenantName) localStorage.setItem('umihealthTenantName', tenantName);
+            localStorage.setItem('umihealth_user_session', JSON.stringify(combinedSession));
+            if (accessToken) localStorage.setItem('umihealth_auth_token', accessToken);
+            if (refreshToken) localStorage.setItem('umihealth_refresh_token', refreshToken);
+          } else {
+            if (accessToken) sessionStorage.setItem('umihealth_auth_token', accessToken);
+            if (refreshToken) sessionStorage.setItem('umihealth_refresh_token', refreshToken);
+          }
+        },
+        redirectToDashboard(role) {
+          const rolePaths = {
+            'admin': '../Tenant-Admin/home.html',
+            'pharmacist': '../Pharmacist/home.html',
+            'cashier': '../Cashier/home.html',
+            'operations': '../Operations/home.html',
+            'superadmin': '../Super-Admin/home.html'
+          };
+          
+          // Store user role for dashboard verification
+          if (role) {
+            localStorage.setItem('umihealthUserRole', role);
+            sessionStorage.setItem('umihealthUserRole', role);
+          }
+          
+          if (rolePaths[role]) {
+            window.location.href = rolePaths[role];
+          } else {
+            // Fallback to tenant admin if role not recognized
+            window.location.href = '../Tenant-Admin/home.html';
+          }
+        }
+      }
+    }
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const triggers = document.querySelectorAll('[data-modal-target]');
+      const closeButtons = document.querySelectorAll('[data-modal-close]');
+
+      const openModal = (id) => {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      };
+
+      const closeModal = (id) => {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+      };
+
+      triggers.forEach((trigger) => {
+        trigger.addEventListener('click', () => {
+          openModal(trigger.getAttribute('data-modal-target'));
+        });
+      });
+
+      closeButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          closeModal(button.getAttribute('data-modal-close'));
+        });
+      });
+
+      document.querySelectorAll('[id$="Modal"]').forEach((modal) => {
+        modal.addEventListener('click', (event) => {
+          if (event.target === modal) {
+            closeModal(modal.id);
+          }
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>
