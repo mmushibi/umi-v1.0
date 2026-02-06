@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" x-data="superAdminDashboard()" x-init="init()">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Super Admin Dashboard - Umi Health</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ocean: {
+              50: '#eff9ff',
+              100: '#d6f0ff',
+              200: '#b5e0ff',
+              300: '#86c8ff',
+              400: '#55a7f5',
+              500: '#2f88db',
+              600: '#1c6db8',
+              700: '#165697',
+              800: '#183f6f',
+              900: '#142f55'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50 text-slate-800">
+  <div class="flex h-screen">
+    <!-- Mobile Menu Overlay -->
+    <div x-show="mobileMenuOpen" x-transition.opacity
+         @click="mobileMenuOpen = false"
+         class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"></div>
+    
+    <!-- Sidebar -->
+    <aside x-show="mobileMenuOpen" x-transition:enter="transition ease-in-out duration-300"
+           x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
+           x-transition:leave="transition ease-in-out duration-300"
+           x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full"
+           class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform lg:hidden lg:transform-none lg:static lg:inset-0">
+      <div class="p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col items-center space-y-2">
+            <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
+            <span class="text-xl font-semibold text-ocean-800">Super Admin</span>
+          </div>
+          <button @click="mobileMenuOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700" title="Close menu">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Navigation -->
+        <nav class="mt-8 space-y-2">
+          <a href="#" class="flex items-center space-x-3 rounded-lg bg-ocean-50 px-4 py-2 text-ocean-700">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+            <span>Dashboard</span>
+          </a>
+          <a href="#" class="flex items-center space-x-3 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-100">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+            <span>User Management</span>
+          </a>
+          <a href="#" class="flex items-center space-x-3 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-100">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+            </svg>
+            <span>Tenant Management</span>
+          </a>
+          <a href="#" class="flex items-center space-x-3 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-100">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            </svg>
+            <span>System Analytics</span>
+          </a>
+          <a href="#" class="flex items-center space-x-3 rounded-lg px-4 py-2 text-gray-700 hover:bg-gray-100">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+            </svg>
+            <span>System Settings</span>
+          </a>
+        </nav>
+        
+        <!-- User Info -->
+        <div class="absolute bottom-4 left-4 right-4">
+          <div class="rounded-lg border border-gray-200 bg-white p-3">
+            <div class="flex items-center space-x-3">
+              <div class="h-8 w-8 rounded-full bg-ocean-500 flex items-center justify-center text-white text-sm font-semibold">
+                <span x-text="userInitials"></span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium text-gray-900 truncate" x-text="userName"></p>
+                <p class="text-xs text-gray-500 truncate">Super Admin</p>
+              </div>
+            </div>
+            <button @click="logout()" class="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50">
+              Sign Out
+            </button>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header -->
+      <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="flex items-center justify-between px-4 py-4">
+          <button @click="mobileMenuOpen = true" class="lg:hidden text-gray-500 hover:text-gray-700" title="Open mobile menu">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <h1 class="text-xl font-semibold text-gray-900">Super Admin Dashboard</h1>
+          <div class="flex items-center space-x-4">
+            <span class="text-sm text-gray-500" x-text="currentTime"></span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dashboard Content -->
+      <main class="flex-1 overflow-y-auto p-6">
+        <!-- Stats Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-blue-100">
+                <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Total Users</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="stats.totalUsers"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-green-100">
+                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Active Tenants</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="stats.activeTenants"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-yellow-100">
+                <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">System Health</p>
+                <p class="text-2xl font-semibold text-gray-900">98%</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-purple-100">
+                <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">API Calls</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="stats.apiCalls"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="bg-white rounded-lg shadow">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-900">Recent System Activity</h2>
+          </div>
+          <div class="p-6">
+            <div class="space-y-4">
+              <template x-for="activity in recentActivity" :key="activity.id">
+                <div class="flex items-center space-x-4">
+                  <div class="flex-shrink-0">
+                    <div class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
+                      <svg class="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm text-gray-900" x-text="activity.message"></p>
+                    <p class="text-xs text-gray-500" x-text="activity.timestamp"></p>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    function superAdminDashboard() {
+      return {
+        mobileMenuOpen: false,
+        userName: 'Super Admin',
+        userInitials: 'SA',
+        currentTime: '',
+        stats: {
+          totalUsers: 0,
+          activeTenants: 0,
+          apiCalls: 0
+        },
+        recentActivity: [],
+        init() {
+          this.updateTime();
+          setInterval(() => this.updateTime(), 1000);
+          this.loadDashboardData();
+          this.checkAuth();
+        },
+        updateTime() {
+          this.currentTime = new Date().toLocaleString();
+        },
+        loadDashboardData() {
+          // Load dashboard statistics
+          this.stats = {
+            totalUsers: 1247,
+            activeTenants: 89,
+            apiCalls: 45231
+          };
+
+          // Load recent activity
+          this.recentActivity = [
+            { id: 1, message: 'New tenant registered: MedCare Pharmacy', timestamp: '2 minutes ago' },
+            { id: 2, message: 'System backup completed successfully', timestamp: '15 minutes ago' },
+            { id: 3, message: 'User admin@demo.umihealth password reset', timestamp: '1 hour ago' },
+            { id: 4, message: 'Database optimization completed', timestamp: '2 hours ago' },
+            { id: 5, message: 'Security patch applied to all instances', timestamp: '4 hours ago' }
+          ];
+        },
+        checkAuth() {
+          const userRole = sessionStorage.getItem('umihealthUserRole') || localStorage.getItem('umihealthUserRole');
+          if (userRole !== 'superadmin') {
+            window.location.href = '../auth/signin.html';
+          }
+        },
+        logout() {
+          sessionStorage.clear();
+          localStorage.removeItem('umihealthUserRole');
+          window.location.href = '../auth/signin.html';
+        }
+      }
+    }
+  </script>
+</body>
+</html>
