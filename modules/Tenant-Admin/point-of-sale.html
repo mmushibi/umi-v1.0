@@ -524,28 +524,38 @@
         showAddCustomer: false,
 
         init() {
-          this.loadSampleData();
+          this.loadProducts();
+          this.loadCustomers();
         },
 
-        loadSampleData() {
-          // Sample products
-          this.products = [
-            { id: 1, name: 'Paracetamol 500mg', category: 'Medications', price: 5.99, stock: 50, barcode: '1234567890' },
-            { id: 2, name: 'Ibuprofen 400mg', category: 'Medications', price: 7.49, stock: 30, barcode: '1234567891' },
-            { id: 3, name: 'Face Masks', category: 'Medical Supplies', price: 12.99, stock: 100, barcode: '1234567892' },
-            { id: 4, name: 'Hand Sanitizer', category: 'Personal Care', price: 4.99, stock: 75, barcode: '1234567893' },
-            { id: 5, name: 'Vitamin C 1000mg', category: 'Vitamins', price: 9.99, stock: 60, barcode: '1234567894' },
-            { id: 6, name: 'Bandage Strips', category: 'First Aid', price: 3.99, stock: 80, barcode: '1234567895' },
-            { id: 7, name: 'Thermometer', category: 'Medical Supplies', price: 15.99, stock: 25, barcode: '1234567896' },
-            { id: 8, name: 'Aspirin 100mg', category: 'Medications', price: 6.49, stock: 40, barcode: '1234567897' }
-          ];
+        async loadProducts() {
+          try {
+            const response = await fetch('/api/tenantadmin/inventory/products');
+            if (response.ok) {
+              this.products = await response.json();
+            } else {
+              console.error('Failed to load products');
+              this.products = [];
+            }
+          } catch (error) {
+            console.error('Error loading products:', error);
+            this.products = [];
+          }
+        },
 
-          // Sample customers
-          this.customers = [
-            { id: 1, name: 'John Doe', email: 'john@example.com', phone: '123-456-7890' },
-            { id: 2, name: 'Jane Smith', email: 'jane@example.com', phone: '098-765-4321' },
-            { id: 3, name: 'Bob Johnson', email: 'bob@example.com', phone: '555-123-4567' }
-          ];
+        async loadCustomers() {
+          try {
+            const response = await fetch('/api/tenantadmin/customers');
+            if (response.ok) {
+              this.customers = await response.json();
+            } else {
+              console.error('Failed to load customers');
+              this.customers = [];
+            }
+          } catch (error) {
+            console.error('Error loading customers:', error);
+            this.customers = [];
+          }
         },
 
         get filteredProducts() {
@@ -617,7 +627,7 @@
           // Search functionality is handled by the computed property
         },
 
-        processSale() {
+        async processSale() {
           if (this.cart.length === 0) {
             alert('Cart is empty!');
             return;
@@ -628,27 +638,55 @@
             return;
           }
 
-          // Here you would typically send the sale data to your backend
-          const saleData = {
-            items: this.cart,
-            subtotal: this.subtotal,
-            tax: this.tax,
-            total: this.total,
-            paymentMethod: this.paymentMethod,
-            cashReceived: this.cashReceived,
-            customerId: this.selectedCustomer,
-            timestamp: new Date().toISOString()
-          };
+          try {
+            // Prepare sale data for API
+            const saleData = {
+              items: this.cart.map(item => ({
+                productId: item.id,
+                productName: item.name,
+                price: item.price,
+                quantity: item.quantity
+              })),
+              subtotal: this.subtotal,
+              tax: this.tax,
+              total: this.total,
+              paymentMethod: this.paymentMethod,
+              cashReceived: this.cashReceived,
+              customerId: this.selectedCustomer || null,
+              timestamp: new Date().toISOString()
+            };
 
-          console.log('Processing sale:', saleData);
-          
-          // Show success message
-          alert('Sale completed successfully!');
-          
-          // Clear cart and reset
-          this.clearCart();
-          this.selectedCustomer = '';
-          this.paymentMethod = 'cash';
+            const response = await fetch('/api/tenantadmin/sales/process', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(saleData)
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              console.log('Sale processed successfully:', result);
+              
+              // Show success message
+              alert('Sale completed successfully!');
+              
+              // Refresh products to get updated stock levels
+              await this.loadProducts();
+              
+              // Clear cart and reset
+              this.clearCart();
+              this.selectedCustomer = '';
+              this.paymentMethod = 'cash';
+            } else {
+              const error = await response.json();
+              console.error('Sale processing failed:', error);
+              alert('Failed to process sale: ' + (error.error || 'Unknown error'));
+            }
+          } catch (error) {
+            console.error('Error processing sale:', error);
+            alert('Error processing sale. Please try again.');
+          }
         },
 
         logout() {
