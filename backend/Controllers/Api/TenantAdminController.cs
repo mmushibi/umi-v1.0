@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using UmiHealthPOS.Models.Dashboard;
 using UmiHealthPOS.Services;
+using UmiHealthPOS.Models;
 
 namespace UmiHealthPOS.Controllers.Api
 {
@@ -14,13 +15,16 @@ namespace UmiHealthPOS.Controllers.Api
     {
         private readonly IDashboardService _dashboardService;
         private readonly ILogger<TenantAdminController> _logger;
+        private readonly IInventoryService _inventoryService;
 
         public TenantAdminController(
             IDashboardService dashboardService,
-            ILogger<TenantAdminController> logger)
+            ILogger<TenantAdminController> logger,
+            IInventoryService inventoryService)
         {
             _dashboardService = dashboardService;
             _logger = logger;
+            _inventoryService = inventoryService;
         }
 
         [HttpGet("dashboard/stats")]
@@ -78,24 +82,6 @@ namespace UmiHealthPOS.Controllers.Api
             }
         }
 
-        [HttpGet("inventory/low-stock")]
-        public async Task<ActionResult<List<LowStockItem>>> GetLowStockItems()
-        {
-            try
-            {
-                // Return empty list - no mock data
-                // When database is implemented, this will query real inventory data
-                var lowStockItems = new List<LowStockItem>();
-                
-                return Ok(lowStockItems);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error retrieving low stock items");
-                return StatusCode(500, new { error = "Internal server error" });
-            }
-        }
-
         [HttpGet("reports/summary")]
         public async Task<ActionResult<ReportSummary>> GetReportSummary([FromQuery] string period = "monthly")
         {
@@ -119,6 +105,118 @@ namespace UmiHealthPOS.Controllers.Api
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
+
+        [HttpGet("inventory/products")]
+        public async Task<ActionResult<List<Product>>> GetProducts()
+        {
+            try
+            {
+                var products = await _inventoryService.GetProductsAsync();
+                return Ok(products);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving products");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("sales/process")]
+        public async Task<ActionResult> ProcessSale([FromBody] Services.SaleRequest request)
+        {
+            try
+            {
+                var result = await _inventoryService.ProcessSaleAsync(request);
+                
+                if (result.Success)
+                {
+                    return Ok(new { 
+                        success = true, 
+                        message = result.Message, 
+                        saleId = result.SaleId 
+                    });
+                }
+                else
+                {
+                    return BadRequest(new { 
+                        success = false, 
+                        error = result.ErrorMessage 
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing sale");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPut("inventory/update-stock")]
+        public async Task<ActionResult> UpdateStock([FromBody] StockUpdateRequest request)
+        {
+            try
+            {
+                if (request.Items == null || request.Items.Count == 0)
+                {
+                    return BadRequest(new { error = "No items to update" });
+                }
+
+                var success = true;
+                foreach (var item in request.Items)
+                {
+                    var result = await _inventoryService.UpdateStockAsync(item.ProductId, item.NewStock, item.Reason);
+                    if (!result)
+                    {
+                        success = false;
+                        _logger.LogWarning("Failed to update stock for product {ProductId}", item.ProductId);
+                    }
+                }
+
+                if (success)
+                {
+                    return Ok(new { success = true, message = "Stock updated successfully" });
+                }
+                else
+                {
+                    return BadRequest(new { success = false, error = "Some stock updates failed" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating stock");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("customers")]
+        public async Task<ActionResult<List<Customer>>> GetCustomers()
+        {
+            try
+            {
+                var customers = await _inventoryService.GetCustomersAsync();
+                return Ok(customers);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving customers");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("inventory/low-stock")]
+        public async Task<ActionResult<List<Product>>> GetLowStockItems()
+        {
+            try
+            {
+                var lowStockItems = await _inventoryService.GetLowStockProductsAsync();
+                return Ok(lowStockItems);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving low stock items");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
     }
 
     // Request/Response Models
@@ -131,6 +229,20 @@ namespace UmiHealthPOS.Controllers.Api
         public string PhoneNumber { get; set; }
     }
 
+    public class StockUpdateRequest
+    {
+        public List<StockUpdateItem> Items { get; set; }
+    }
+
+    public class StockUpdateItem
+    {
+        public int ProductId { get; set; }
+        public int OldStock { get; set; }
+        public int NewStock { get; set; }
+        public string Reason { get; set; }
+    }
+
+    // Additional model classes for dashboard functionality
     public class LowStockItem
     {
         public int Id { get; set; }
