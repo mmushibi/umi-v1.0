@@ -18,14 +18,14 @@ namespace UmiHealthPOS.Services
             // Return empty stats - no mock data
             // When database is implemented, this will query real data
             
-            await Task.Delay(50); // Minimal delay for async operation
-            
             return new DashboardStats
             {
-                TotalStaff = 0,
-                ActivePrescriptions = 0,
+                TotalPrescriptions = 0,
+                PendingPrescriptions = 0,
+                FilledPrescriptions = 0,
+                TotalPatients = 0,
                 LowStockItems = 0,
-                MonthlyRevenue = "ZMK 0"
+                RecentActivity = new List<RecentActivity>()
             };
         }
 
@@ -33,8 +33,6 @@ namespace UmiHealthPOS.Services
         {
             // Return empty list - no mock data
             // When database is implemented, this will query real activities
-            
-            await Task.Delay(50); // Minimal delay for async operation
             
             return new List<RecentActivity>();
         }

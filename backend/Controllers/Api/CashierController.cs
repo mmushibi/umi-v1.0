@@ -41,14 +41,12 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Return empty stats - no mock data
                 // When database is implemented, this will query real data filtered by user/tenant
-                await Task.Delay(50);
-
                 var stats = new CashierStats
                 {
                     SalesToday = 0,
-                    TransactionsToday = 0,
+                    RevenueToday = 0,
                     CustomersToday = 0,
-                    AverageTransaction = 0.00m
+                    PendingOrders = 0
                 };
 
                 return Ok(stats);
@@ -75,8 +73,6 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Return empty list - no mock data
                 // When database is implemented, this will query real sales filtered by cashier
-                await Task.Delay(50);
-
                 return Ok(new List<RecentSale>());
             }
             catch (Exception ex)
@@ -125,7 +121,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpGet("products/search")]
-        public async Task<ActionResult<List<ProductSearchResult>>> SearchProducts([FromQuery] string query, [FromQuery] int limit = 20)
+        public async Task<ActionResult<List<ProductSearchResult>>> SearchProducts([FromQuery] string query)
         {
             try
             {
@@ -144,8 +140,6 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Return empty list - no mock data
                 // When database is implemented, this will search products filtered by tenant
-                await Task.Delay(50);
-
                 return Ok(new List<ProductSearchResult>());
             }
             catch (Exception ex)

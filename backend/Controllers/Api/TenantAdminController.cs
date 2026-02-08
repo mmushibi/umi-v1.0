@@ -512,15 +512,9 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                // For now, return mock doctors data. In a real implementation, this would fetch from user management
-                var doctors = new List<Doctor>
-                {
-                    new Doctor { Id = 1, Name = "Dr. Sarah Mwamba", RegistrationNumber = "ZMC/2023/001", Specialization = "General Practitioner" },
-                    new Doctor { Id = 2, Name = "Dr. James Banda", RegistrationNumber = "ZMC/2022/045", Specialization = "Pediatrics" },
-                    new Doctor { Id = 3, Name = "Dr. Elizabeth Chanda", RegistrationNumber = "ZMC/2021/089", Specialization = "Internal Medicine" },
-                    new Doctor { Id = 4, Name = "Dr. Michael Phiri", RegistrationNumber = "ZMC/2023/012", Specialization = "Cardiology" },
-                    new Doctor { Id = 5, Name = "Dr. Mary Mulenga", RegistrationNumber = "ZMC/2020/156", Specialization = "Obstetrics & Gynecology" }
-                };
+                // In a real implementation, this would fetch from user management system
+                // For now, return empty list as we don't have user management implemented
+                var doctors = new List<Doctor>();
                 
                 return Ok(doctors);
             }

@@ -367,12 +367,15 @@
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                <template x-for="prescription in paginatedPrescriptions" :key="prescription.id">
-                  <tr class="hover:bg-gray-50">
+                <template x-for="(prescription, index) in paginatedPrescriptions" :key="prescription.id">
+                  <!-- Main prescription row -->
+                  <tr class="hover:bg-gray-50 cursor-pointer" @click="togglePatientDetails(index)">
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="prescription.rxNumber"></td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-medium text-gray-900" x-text="prescription.patientName"></div>
-                      <div class="text-sm text-gray-500" x-text="prescription.patientId || 'N/A'"></div>
+                      <div class="flex items-center">
+                        <div class="text-sm font-medium text-gray-900" x-text="prescription.patientName"></div>
+                        <div class="text-sm text-gray-500" x-text="prescription.patientId || 'N/A'"></div>
+                      </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="prescription.doctorName"></td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -398,27 +401,128 @@
                       </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button @click="viewPrescription(prescription)" class="text-ocean-600 hover:text-ocean-900 mr-3" title="View details">
+                      <button @click.stop="viewPrescription(prescription)" class="text-ocean-600 hover:text-ocean-900 mr-3" title="View details">
                         <i class="fas fa-eye"></i>
                       </button>
                       
                       <!-- Actions based on status -->
                       <template x-if="prescription.status === 'pending'">
                         <div class="inline-flex space-x-2">
-                          <button @click="approvePrescription(prescription)" class="text-green-600 hover:text-green-900" title="Approve">
+                          <button @click.stop="approvePrescription(prescription)" class="text-green-600 hover:text-green-900" title="Approve">
                             <i class="fas fa-check"></i>
                           </button>
-                          <button @click="rejectPrescription(prescription)" class="text-red-600 hover:text-red-900" title="Reject">
+                          <button @click.stop="rejectPrescription(prescription)" class="text-red-600 hover:text-red-900" title="Reject">
                             <i class="fas fa-times"></i>
                           </button>
                         </div>
                       </template>
                       
                       <template x-if="prescription.status === 'ready' || prescription.status === 'approved'">
-                        <button @click="fillPrescription(prescription)" class="text-blue-600 hover:text-blue-900" title="Fill prescription">
+                        <button @click.stop="fillPrescription(prescription)" class="text-blue-600 hover:text-blue-900" title="Fill prescription">
                           <i class="fas fa-prescription-bottle"></i>
                         </button>
                       </template>
+                    </td>
+                  </tr>
+                  
+                  <!-- Expandable patient details row -->
+                  <tr x-show="expandedRows && expandedRows[index]" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100">
+                    <td colspan="7" class="px-6 py-4 bg-gray-50 border-l-4 border-ocean-500">
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Patient Information -->
+                        <div class="space-y-3">
+                          <h4 class="text-sm font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-user mr-2 text-ocean-600"></i>Patient Information
+                          </h4>
+                          <div class="space-y-1">
+                            <div class="flex justify-between">
+                              <span class="text-sm text-gray-600">Name:</span>
+                              <span class="text-sm font-medium text-gray-900" x-text="prescription.patientName"></span>
+                            </div>
+                            <div class="flex justify-between">
+                              <span class="text-sm text-gray-600">ID:</span>
+                              <span class="text-sm font-medium text-gray-900" x-text="prescription.patientId || 'N/A'"></span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <!-- Prescription Details -->
+                        <div class="space-y-3">
+                          <h4 class="text-sm font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-prescription-bottle mr-2 text-ocean-600"></i>Prescription Details
+                          </h4>
+                          <div class="space-y-1">
+                            <div class="flex justify-between">
+                              <span class="text-sm text-gray-600">Medication:</span>
+                              <span class="text-sm font-medium text-gray-900" x-text="prescription.medication"></span>
+                            </div>
+                            <div class="flex justify-between">
+                              <span class="text-sm text-gray-600">Dosage:</span>
+                              <span class="text-sm font-medium text-gray-900" x-text="prescription.dosage"></span>
+                            </div>
+                            <div class="flex justify-between">
+                              <span class="text-sm text-gray-600">Cost:</span>
+                              <span class="text-sm font-medium text-gray-900">ZMW<span x-text="prescription.totalCost ? prescription.totalCost.toFixed(2) : '0.00'"></span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <!-- Status Actions -->
+                        <div class="space-y-3">
+                          <h4 class="text-sm font-semibold text-gray-900 flex items-center">
+                            <i class="fas fa-tasks mr-2 text-ocean-600"></i>Status Actions
+                          </h4>
+                          <div class="space-y-2">
+                            <!-- Pending Review Actions -->
+                            <div x-show="prescription.status === 'pending'" class="flex space-x-2">
+                              <button @click="approvePrescription(prescription)" class="flex-1 px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors">
+                                <i class="fas fa-check mr-1"></i>Approve
+                              </button>
+                              <button @click="rejectPrescription(prescription)" class="flex-1 px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors">
+                                <i class="fas fa-times mr-1"></i>Reject
+                              </button>
+                            </div>
+                            
+                            <!-- Ready for Dispensing Actions -->
+                            <div x-show="prescription.status === 'ready' || prescription.status === 'approved'" class="flex space-x-2">
+                              <button @click="fillPrescription(prescription)" class="flex-1 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-prescription-bottle mr-1"></i>Fill Prescription
+                              </button>
+                              <button @click="viewPrescription(prescription)" class="flex-1 px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors">
+                                <i class="fas fa-eye mr-1"></i>View Details
+                              </button>
+                            </div>
+                            
+                            <!-- Completed Status -->
+                            <div x-show="prescription.status === 'filled' || prescription.status === 'completed'" class="text-center">
+                              <span class="px-3 py-2 bg-green-100 text-green-800 text-sm rounded-full">
+                                <i class="fas fa-check-circle mr-1"></i>Completed
+                              </span>
+                            </div>
+                            
+                            <!-- Cancelled Status -->
+                            <div x-show="prescription.status === 'cancelled' || prescription.status === 'expired'" class="text-center">
+                              <span class="px-3 py-2 bg-red-100 text-red-800 text-sm rounded-full">
+                                <i class="fas fa-times-circle mr-1"></i>Cancelled
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- Additional Details -->
+                      <div x-show="prescription.instructions || prescription.notes" class="mt-4 pt-4 border-t border-gray-200">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div x-show="prescription.instructions">
+                            <h5 class="text-sm font-semibold text-gray-900 mb-2">Instructions</h5>
+                            <p class="text-sm text-gray-600" x-text="prescription.instructions"></p>
+                          </div>
+                          <div x-show="prescription.notes">
+                            <h5 class="text-sm font-semibold text-gray-900 mb-2">Notes</h5>
+                            <p class="text-sm text-gray-600" x-text="prescription.notes"></p>
+                          </div>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 </template>
@@ -492,6 +596,7 @@
         itemsPerPage: 10,
         prescriptions: [],
         isLoading: false,
+        expandedRows: {},
         
         init() {
           this.loadPrescriptionsData();
@@ -581,6 +686,11 @@
           if (this.currentPage < this.totalPages) {
             this.currentPage++;
           }
+        },
+        
+        togglePatientDetails(index) {
+          // Toggle the expanded state for this specific row
+          this.$set(this.expandedRows, index, !this.expandedRows[index]);
         },
         
         async approvePrescription(prescription) {
