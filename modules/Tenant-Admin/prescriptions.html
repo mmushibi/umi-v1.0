@@ -3,8 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Prescriptions - Tenant Admin Portal - Umi Health</title>
-  <link rel="stylesheet" href="../../wwwroot/css/styles.css">
+  <title>Prescriptions Management - Umi Health</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ocean: {
+              50: '#eff9ff',
+              100: '#d6f0ff',
+              200: '#b5e0ff',
+              300: '#86c8ff',
+              400: '#55a7f5',
+              500: '#2f88db',
+              600: '#1c6db8',
+              700: '#165697',
+              800: '#183f6f',
+              900: '#142f55'
+            }
+          }
+        }
+      }
+    }
+  </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -484,40 +506,19 @@
           
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Doctor Name *</label>
-            <div x-show="doctors.length > 0">
-              <select x-model="newPrescription.doctorId" 
-                      @change="onDoctorChange()"
-                      required
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
-                <option value="">Select a doctor...</option>
-                <template x-for="doctor in doctors" :key="doctor.id">
-                  <option :value="doctor.id" x-text="`${doctor.name} - ${doctor.specialization}`"></option>
-                </template>
-              </select>
-            </div>
-            <div x-show="doctors.length === 0">
-              <input type="text" 
-                     x-model="newPrescription.doctorName"
-                     required
-                     placeholder="Enter doctor name"
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
-              <p class="text-xs text-gray-500 mt-1">No doctors configured in system. Please enter doctor name manually.</p>
-            </div>
+            <input type="text" 
+                   x-model="newPrescription.doctorName"
+                   required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="Enter doctor's name">
           </div>
           
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Doctor Registration Number</label>
             <input type="text" 
                    x-model="newPrescription.doctorRegistrationNumber"
-                   x-show="doctors.length === 0"
-                   placeholder="Enter registration number"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
-            <input type="text" 
-                   x-model="newPrescription.doctorRegistrationNumber"
-                   x-show="doctors.length > 0"
-                   readonly
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-                   placeholder="Auto-filled when doctor is selected">
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="Enter doctor's registration number">
           </div>
 
           <!-- Prescription Details -->
@@ -527,25 +528,11 @@
           
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Medication *</label>
-            <div x-show="inventoryItems.length > 0">
-              <select x-model="newPrescription.medicationId" 
-                      @change="onMedicationChange()"
-                      required
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
-                <option value="">Select medication...</option>
-                <template x-for="item in inventoryItems" :key="item.id">
-                  <option :value="item.id" x-text="`${item.inventoryItemName} (${item.brandName}) - ZMW${item.sellingPrice}`"></option>
-                </template>
-              </select>
-            </div>
-            <div x-show="inventoryItems.length === 0">
-              <input type="text" 
-                     x-model="newPrescription.medication"
-                     required
-                     placeholder="Enter medication name"
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
-              <p class="text-xs text-gray-500 mt-1">No medications found in inventory. Please enter medication name manually.</p>
-            </div>
+            <input type="text" 
+                   x-model="newPrescription.medication"
+                   required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="Enter medication name">
           </div>
           
           <div>
@@ -571,11 +558,11 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">Total Cost (ZMW) *</label>
             <input type="number" 
                    x-model="newPrescription.totalCost"
-                   readonly
+                   required
                    step="0.01"
                    min="0"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-                   placeholder="Auto-calculated from medication">
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="Enter total cost">
           </div>
           
           <div>
@@ -635,8 +622,6 @@
         currentPage: 1,
         itemsPerPage: 10,
         prescriptions: [],
-        doctors: [],
-        inventoryItems: [],
         newPrescription: {
           patientId: 0,
           patientName: '',
@@ -656,8 +641,6 @@
         
         init() {
           this.loadPrescriptionsData();
-          this.loadDoctors();
-          this.loadInventoryItems();
         },
         
         loadPrescriptionsData() {
@@ -682,86 +665,6 @@
             console.error('Error fetching prescriptions:', error);
             this.showNotification('Error loading prescriptions', 'error');
           }
-        },
-
-        async loadDoctors() {
-          try {
-            const response = await fetch('/api/tenantadmin/doctors');
-            if (response.ok) {
-              this.doctors = await response.json();
-            } else {
-              console.error('Error fetching doctors:', response.statusText);
-            }
-          } catch (error) {
-            console.error('Error fetching doctors:', error);
-          }
-        },
-
-        async loadInventoryItems() {
-          try {
-            const response = await fetch('/api/tenantadmin/inventory/items');
-            if (response.ok) {
-              this.inventoryItems = await response.json();
-            } else {
-              console.error('Error fetching inventory items:', response.statusText);
-            }
-          } catch (error) {
-            console.error('Error fetching inventory items:', error);
-          }
-        },
-
-        onDoctorChange() {
-          if (this.doctors.length > 0) {
-            const doctor = this.doctors.find(d => d.id == this.newPrescription.doctorId);
-            if (doctor) {
-              this.newPrescription.doctorName = doctor.name;
-              this.newPrescription.doctorRegistrationNumber = doctor.registrationNumber;
-            }
-          }
-        },
-
-        onMedicationChange() {
-          if (this.inventoryItems.length > 0) {
-            const medication = this.inventoryItems.find(item => item.id == this.newPrescription.medicationId);
-            if (medication) {
-              this.newPrescription.medication = medication.inventoryItemName;
-              this.newPrescription.totalCost = medication.sellingPrice;
-              
-              // Auto-generate instructions based on medication type
-              this.generateInstructions(medication);
-              
-              // Auto-calculate expiry date (2 years from manufacture date for most medications)
-              this.calculateExpiryDate(medication);
-            }
-          }
-        },
-
-        generateInstructions(medication) {
-          const baseInstructions = {
-            'Tablet': 'Take with water after meals',
-            'Capsule': 'Swallow whole, do not crush',
-            'Syrup': 'Shake well before use',
-            'Injection': 'Administer by healthcare professional',
-            'Ointment': 'Apply thinly to affected area',
-            'Drops': 'Use as directed by physician'
-          };
-
-          const packingType = medication.packingType || 'Tablet';
-          const defaultInstruction = baseInstructions[packingType] || 'Use as prescribed by physician';
-          
-          // Set default instruction if no custom instruction exists
-          if (!this.newPrescription.instructions || this.newPrescription.instructions === '') {
-            this.newPrescription.instructions = defaultInstruction;
-          }
-        },
-
-        calculateExpiryDate(medication) {
-          const manufactureDate = new Date(medication.manufactureDate);
-          // Default expiry: 2 years from manufacture date
-          const expiryDate = new Date(manufactureDate);
-          expiryDate.setFullYear(expiryDate.getFullYear() + 2);
-          
-          this.newPrescription.expiryDate = expiryDate.toISOString().split('T')[0];
         },
         
         get totalPrescriptions() {
@@ -890,10 +793,8 @@
             patientId: 0,
             patientName: '',
             patientIdNumber: '',
-            doctorId: '',
             doctorName: '',
             doctorRegistrationNumber: '',
-            medicationId: '',
             medication: '',
             dosage: '',
             instructions: '',
