@@ -8,30 +8,47 @@ using UmiHealthPOS.Hubs;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Repositories;
 using UmiHealthPOS.Services;
+using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// Add Authentication and Authorization
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = "Bearer";
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+    };
+});
+
+builder.Services.AddAuthorization();
 
 // Add database context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection") ?? 
-                       "Host=localhost;Database=umihealth;Username=postgres;Password=password"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "http://localhost:8080", "file://") // Add your frontend URLs
+        policy.WithOrigins(builder.Configuration["Frontend:AllowedOrigins"]?.Split(',') ?? new[] { "http://localhost:3000" })
               .AllowAnyMethod()
               .AllowAnyHeader()
-              .AllowCredentials(); // Allow credentials for SignalR
+              .AllowCredentials();
     });
 });
 
@@ -49,27 +66,14 @@ builder.Services.AddScoped<IInventoryService, InventoryService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Map SignalR hubs
 app.MapHub<DashboardHub>("/dashboardHub");
 
 app.MapControllers();
-
-// Ensure database is created
-using (var scope = app.Services.CreateScope())
-{
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    context.Database.EnsureCreated();
-}
 
 app.Run();

@@ -20,6 +20,10 @@ namespace UmiHealthPOS.Data
         public DbSet<Sale> Sales { get; set; }
         public DbSet<SaleItem> SaleItems { get; set; }
         public DbSet<StockTransaction> StockTransactions { get; set; }
+        public DbSet<InventoryItem> InventoryItems { get; set; }
+        public DbSet<Prescription> Prescriptions { get; set; }
+        public DbSet<Patient> Patients { get; set; }
+        public DbSet<PrescriptionItem> PrescriptionItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -100,114 +104,94 @@ namespace UmiHealthPOS.Data
                 entity.HasIndex(e => new { e.ProductId, e.CreatedAt });
             });
 
-            // Seed initial data
-            SeedData(modelBuilder);
-        }
+            // InventoryItem configuration
+            modelBuilder.Entity<InventoryItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.InventoryItemName).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.GenericName).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.BrandName).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.BatchNumber).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.LicenseNumber).HasMaxLength(100);
+                entity.Property(e => e.ZambiaRegNumber).HasMaxLength(100);
+                entity.Property(e => e.PackingType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.UnitPrice).HasPrecision(10, 2);
+                entity.Property(e => e.SellingPrice).HasPrecision(10, 2);
+                entity.Property(e => e.ManufactureDate).HasColumnType("date");
+                
+                entity.HasIndex(e => e.BatchNumber).IsUnique();
+                entity.HasIndex(e => e.ZambiaRegNumber);
+                entity.HasIndex(e => e.InventoryItemName);
+            });
 
-        private void SeedData(ModelBuilder modelBuilder)
-        {
-            // Seed initial products
-            modelBuilder.Entity<Product>().HasData(
-                new Product 
-                { 
-                    Id = 1, 
-                    Name = "Paracetamol 500mg", 
-                    Category = "Medications", 
-                    Price = 5.99m, 
-                    Stock = 50, 
-                    Barcode = "1234567890", 
-                    Description = "Pain relief medication",
-                    MinStock = 10,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new Product 
-                { 
-                    Id = 2, 
-                    Name = "Ibuprofen 400mg", 
-                    Category = "Medications", 
-                    Price = 7.49m, 
-                    Stock = 30, 
-                    Barcode = "1234567891", 
-                    Description = "Anti-inflammatory medication",
-                    MinStock = 10,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new Product 
-                { 
-                    Id = 3, 
-                    Name = "Face Masks", 
-                    Category = "Medical Supplies", 
-                    Price = 12.99m, 
-                    Stock = 100, 
-                    Barcode = "1234567892", 
-                    Description = "Disposable face masks",
-                    MinStock = 20,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new Product 
-                { 
-                    Id = 4, 
-                    Name = "Hand Sanitizer", 
-                    Category = "Personal Care", 
-                    Price = 4.99m, 
-                    Stock = 75, 
-                    Barcode = "1234567893", 
-                    Description = "Alcohol-based hand sanitizer",
-                    MinStock = 15,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new Product 
-                { 
-                    Id = 5, 
-                    Name = "Vitamin C 1000mg", 
-                    Category = "Vitamins", 
-                    Price = 9.99m, 
-                    Stock = 60, 
-                    Barcode = "1234567894", 
-                    Description = "Vitamin C supplement",
-                    MinStock = 15,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                }
-            );
+            // Prescription configuration
+            modelBuilder.Entity<Prescription>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.RxNumber).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.PatientName).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.PatientIdNumber).HasMaxLength(20);
+                entity.Property(e => e.DoctorName).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.DoctorRegistrationNumber).HasMaxLength(100);
+                entity.Property(e => e.Medication).IsRequired().HasMaxLength(300);
+                entity.Property(e => e.Dosage).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Instructions).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.TotalCost).HasPrecision(10, 2);
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.PrescriptionDate).HasColumnType("date");
+                entity.Property(e => e.ExpiryDate).HasColumnType("date");
+                entity.Property(e => e.FilledDate).HasColumnType("date");
+                entity.Property(e => e.Notes).HasMaxLength(500);
+                
+                entity.HasIndex(e => e.RxNumber).IsUnique();
+                entity.HasIndex(e => e.PatientId);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.PrescriptionDate);
+                
+                entity.HasOne(e => e.Patient)
+                      .WithMany(p => p.Prescriptions)
+                      .HasForeignKey(e => e.PatientId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
 
-            // Seed initial customers
-            modelBuilder.Entity<Customer>().HasData(
-                new Customer 
-                { 
-                    Id = 1, 
-                    Name = "Walk-in Customer", 
-                    Email = "walkin@umihealth.com", 
-                    Phone = "000-000-0000", 
-                    Address = "Pharmacy Counter",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new Customer 
-                { 
-                    Id = 2, 
-                    Name = "John Doe", 
-                    Email = "john.doe@example.com", 
-                    Phone = "123-456-7890", 
-                    Address = "123 Main St, Lusaka",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                },
-                new Customer 
-                { 
-                    Id = 3, 
-                    Name = "Jane Smith", 
-                    Email = "jane.smith@example.com", 
-                    Phone = "098-765-4321", 
-                    Address = "456 Oak Ave, Lusaka",
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                }
-            );
+            // Patient configuration
+            modelBuilder.Entity<Patient>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.IdNumber).HasMaxLength(20);
+                entity.Property(e => e.PhoneNumber).HasMaxLength(100);
+                entity.Property(e => e.Email).HasMaxLength(100);
+                entity.Property(e => e.DateOfBirth).HasColumnType("date");
+                entity.Property(e => e.Gender).HasMaxLength(10);
+                entity.Property(e => e.Address).HasMaxLength(200);
+                entity.Property(e => e.Allergies).HasMaxLength(100);
+                entity.Property(e => e.MedicalHistory).HasMaxLength(500);
+                
+                entity.HasIndex(e => e.IdNumber).IsUnique();
+                entity.HasIndex(e => e.Name);
+            });
+
+            // PrescriptionItem configuration
+            modelBuilder.Entity<PrescriptionItem>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.MedicationName).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Dosage).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Instructions).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.UnitPrice).HasPrecision(10, 2);
+                entity.Property(e => e.TotalPrice).HasPrecision(10, 2);
+                
+                entity.HasOne(e => e.Prescription)
+                      .WithMany(p => p.PrescriptionItems)
+                      .HasForeignKey(e => e.PrescriptionId)
+                      .OnDelete(DeleteBehavior.Cascade);
+                
+                entity.HasOne(e => e.InventoryItem)
+                      .WithMany()
+                      .HasForeignKey(e => e.InventoryItemId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
         }
     }
 }

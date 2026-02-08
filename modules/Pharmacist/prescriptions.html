@@ -281,21 +281,25 @@
                       :class="activeTab === 'pending' ? 'border-ocean-500 text-ocean-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                       class="py-2 px-6 border-b-2 font-medium text-sm">
                 Pending Review
+                <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800" x-text="statusCounts.pending"></span>
               </button>
               <button @click="activeTab = 'ready'" 
                       :class="activeTab === 'ready' ? 'border-ocean-500 text-ocean-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                       class="py-2 px-6 border-b-2 font-medium text-sm">
                 Ready for Dispensing
+                <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800" x-text="statusCounts.ready"></span>
               </button>
               <button @click="activeTab = 'completed'" 
                       :class="activeTab === 'completed' ? 'border-ocean-500 text-ocean-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                       class="py-2 px-6 border-b-2 font-medium text-sm">
                 Completed
+                <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800" x-text="statusCounts.completed"></span>
               </button>
               <button @click="activeTab = 'all'" 
                       :class="activeTab === 'all' ? 'border-ocean-500 text-ocean-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                       class="py-2 px-6 border-b-2 font-medium text-sm">
                 All Prescriptions
+                <span class="ml-2 px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800" x-text="statusCounts.all"></span>
               </button>
             </nav>
           </div>
@@ -330,16 +334,147 @@
 
         <!-- Prescriptions List -->
         <div class="bg-white rounded-lg shadow">
-          <div class="px-6 py-4 border-b border-gray-200">
+          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
             <h2 class="text-lg font-semibold text-gray-900">Prescription List</h2>
+            <div class="text-sm text-gray-600">
+              Showing <span x-text="filteredPrescriptions.length"></span> prescriptions
+            </div>
           </div>
-          <div class="p-6">
-            <div class="text-center py-12">
-              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          
+          <!-- Loading State -->
+          <div x-show="isLoading" class="p-6 text-center">
+            <div class="inline-flex items-center">
+              <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-ocean-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <h3 class="mt-2 text-sm font-medium text-gray-900">No prescriptions found</h3>
-              <p class="mt-1 text-sm text-gray-500">No prescriptions match your current search criteria.</p>
+              Loading prescriptions...
+            </div>
+          </div>
+          
+          <!-- Prescription Table -->
+          <div x-show="!isLoading && filteredPrescriptions.length > 0" class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">RX #</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Doctor</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Medication</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <template x-for="prescription in paginatedPrescriptions" :key="prescription.id">
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="prescription.rxNumber"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm font-medium text-gray-900" x-text="prescription.patientName"></div>
+                      <div class="text-sm text-gray-500" x-text="prescription.patientId || 'N/A'"></div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="prescription.doctorName"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900" x-text="prescription.medication"></div>
+                      <div class="text-xs text-gray-500" x-text="prescription.dosage"></div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="prescription.date"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span 
+                        :class="{
+                          'bg-yellow-100 text-yellow-800': prescription.status === 'pending',
+                          'bg-blue-100 text-blue-800': prescription.status === 'ready' || prescription.status === 'approved',
+                          'bg-green-100 text-green-800': prescription.status === 'filled' || prescription.status === 'completed',
+                          'bg-red-100 text-red-800': prescription.status === 'cancelled' || prescription.status === 'expired'
+                        }"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize"
+                        x-text="prescription.status">
+                      </span>
+                      <div x-show="prescription.isUrgent" class="mt-1">
+                        <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                          <i class="fas fa-exclamation-triangle mr-1"></i>Urgent
+                        </span>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button @click="viewPrescription(prescription)" class="text-ocean-600 hover:text-ocean-900 mr-3" title="View details">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      
+                      <!-- Actions based on status -->
+                      <template x-if="prescription.status === 'pending'">
+                        <div class="inline-flex space-x-2">
+                          <button @click="approvePrescription(prescription)" class="text-green-600 hover:text-green-900" title="Approve">
+                            <i class="fas fa-check"></i>
+                          </button>
+                          <button @click="rejectPrescription(prescription)" class="text-red-600 hover:text-red-900" title="Reject">
+                            <i class="fas fa-times"></i>
+                          </button>
+                        </div>
+                      </template>
+                      
+                      <template x-if="prescription.status === 'ready' || prescription.status === 'approved'">
+                        <button @click="fillPrescription(prescription)" class="text-blue-600 hover:text-blue-900" title="Fill prescription">
+                          <i class="fas fa-prescription-bottle"></i>
+                        </button>
+                      </template>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Empty State -->
+          <div x-show="!isLoading && filteredPrescriptions.length === 0" class="p-6 text-center">
+            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <h3 class="mt-2 text-sm font-medium text-gray-900">No prescriptions found</h3>
+            <p class="mt-1 text-sm text-gray-500">No prescriptions match your current search criteria.</p>
+          </div>
+          
+          <!-- Pagination -->
+          <div x-show="!isLoading && filteredPrescriptions.length > itemsPerPage" class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+              <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Previous
+              </button>
+              <button @click="nextPage()" :disabled="currentPage === totalPages" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Next
+              </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-gray-700">
+                  Showing
+                  <span class="font-medium" x-text="(currentPage - 1) * itemsPerPage + 1"></span>
+                  to
+                  <span class="font-medium" x-text="Math.min(currentPage * itemsPerPage, filteredPrescriptions.length)"></span>
+                  of
+                  <span class="font-medium" x-text="filteredPrescriptions.length"></span>
+                  results
+                </p>
+              </div>
+              <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <template x-for="page in totalPages" :key="page">
+                    <button 
+                      @click="currentPage = page"
+                      :class="currentPage === page ? 'bg-ocean-50 border-ocean-500 text-ocean-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'"
+                      class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                      x-text="page">
+                    </button>
+                  </template>
+                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </nav>
+              </div>
             </div>
           </div>
         </div>
@@ -353,13 +488,273 @@
         mobileMenuOpen: false,
         activeTab: 'pending',
         searchQuery: '',
+        currentPage: 1,
+        itemsPerPage: 10,
+        prescriptions: [],
+        isLoading: false,
         
         init() {
-          // Initialize page
+          this.loadPrescriptionsData();
+        },
+        
+        loadPrescriptionsData() {
+          this.fetchPrescriptions();
+        },
+        
+        async fetchPrescriptions() {
+          this.isLoading = true;
+          try {
+            const response = await fetch('/api/pharmacist/prescriptions');
+            if (response.ok) {
+              const data = await response.json();
+              this.prescriptions = data.map(p => ({
+                ...p,
+                date: p.prescriptionDate ? p.prescriptionDate.split('T')[0] : '',
+                patientId: p.patientIdNumber || ''
+              }));
+            } else {
+              console.error('Error fetching prescriptions:', response.statusText);
+              this.showNotification('Error loading prescriptions', 'error');
+            }
+          } catch (error) {
+            console.error('Error fetching prescriptions:', error);
+            this.showNotification('Error loading prescriptions', 'error');
+          } finally {
+            this.isLoading = false;
+          }
+        },
+        
+        get filteredPrescriptions() {
+          let filtered = this.prescriptions;
+          
+          // Filter by active tab
+          if (this.activeTab !== 'all') {
+            filtered = filtered.filter(p => {
+              switch(this.activeTab) {
+                case 'pending': return p.status === 'pending';
+                case 'ready': return p.status === 'approved' || p.status === 'ready';
+                case 'completed': return p.status === 'filled' || p.status === 'completed';
+                default: return true;
+              }
+            });
+          }
+          
+          // Filter by search query
+          if (this.searchQuery) {
+            filtered = filtered.filter(p => 
+              p.patientName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              p.rxNumber.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              p.medication.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              (p.patientIdNumber && p.patientIdNumber.toLowerCase().includes(this.searchQuery.toLowerCase()))
+            );
+          }
+          
+          return filtered;
+        },
+        
+        get paginatedPrescriptions() {
+          const start = (this.currentPage - 1) * this.itemsPerPage;
+          const end = start + this.itemsPerPage;
+          return this.filteredPrescriptions.slice(start, end);
+        },
+        
+        get totalPages() {
+          return Math.ceil(this.filteredPrescriptions.length / this.itemsPerPage);
+        },
+        
+        get statusCounts() {
+          return {
+            pending: this.prescriptions.filter(p => p.status === 'pending').length,
+            ready: this.prescriptions.filter(p => p.status === 'approved' || p.status === 'ready').length,
+            completed: this.prescriptions.filter(p => p.status === 'filled' || p.status === 'completed').length,
+            all: this.prescriptions.length
+          };
+        },
+        
+        previousPage() {
+          if (this.currentPage > 1) {
+            this.currentPage--;
+          }
+        },
+        
+        nextPage() {
+          if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+          }
+        },
+        
+        async approvePrescription(prescription) {
+          try {
+            const response = await fetch(`/api/pharmacist/prescriptions/${prescription.id}/approve`, {
+              method: 'POST'
+            });
+
+            if (response.ok) {
+              const index = this.prescriptions.findIndex(p => p.id === prescription.id);
+              if (index !== -1) {
+                this.prescriptions[index].status = 'ready';
+              }
+              this.showNotification('Prescription approved and ready for dispensing', 'success');
+            } else {
+              const error = await response.json();
+              this.showNotification(error.error || 'Error approving prescription', 'error');
+            }
+          } catch (error) {
+            console.error('Error approving prescription:', error);
+            this.showNotification('Error approving prescription', 'error');
+          }
+        },
+        
+        async fillPrescription(prescription) {
+          try {
+            const response = await fetch(`/api/pharmacist/prescriptions/${prescription.id}/fill`, {
+              method: 'POST'
+            });
+
+            if (response.ok) {
+              const index = this.prescriptions.findIndex(p => p.id === prescription.id);
+              if (index !== -1) {
+                this.prescriptions[index].status = 'filled';
+                this.prescriptions[index].filledDate = new Date().toISOString().split('T')[0];
+              }
+              this.showNotification('Prescription filled successfully', 'success');
+            } else {
+              const error = await response.json();
+              this.showNotification(error.error || 'Error filling prescription', 'error');
+            }
+          } catch (error) {
+            console.error('Error filling prescription:', error);
+            this.showNotification('Error filling prescription', 'error');
+          }
+        },
+        
+        async rejectPrescription(prescription) {
+          if (!confirm('Are you sure you want to reject this prescription?')) {
+            return;
+          }
+
+          try {
+            const response = await fetch(`/api/pharmacist/prescriptions/${prescription.id}/reject`, {
+              method: 'POST'
+            });
+
+            if (response.ok) {
+              const index = this.prescriptions.findIndex(p => p.id === prescription.id);
+              if (index !== -1) {
+                this.prescriptions[index].status = 'cancelled';
+              }
+              this.showNotification('Prescription rejected', 'success');
+            } else {
+              const error = await response.json();
+              this.showNotification(error.error || 'Error rejecting prescription', 'error');
+            }
+          } catch (error) {
+            console.error('Error rejecting prescription:', error);
+            this.showNotification('Error rejecting prescription', 'error');
+          }
+        },
+        
+        viewPrescription(prescription) {
+          // Show prescription details modal
+          this.showPrescriptionDetails(prescription);
+        },
+        
+        showPrescriptionDetails(prescription) {
+          // Create a simple modal for viewing prescription details
+          const modal = document.createElement('div');
+          modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4';
+          modal.innerHTML = `
+            <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <div class="bg-ocean-600 text-white px-6 py-4 rounded-t-lg">
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xl font-semibold">Prescription Details</h3>
+                  <button onclick="this.closest('.fixed').remove()" class="text-white hover:text-gray-200">
+                    <i class="fas fa-times h-5 w-5"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h4 class="font-medium text-gray-900 mb-2">RX Number</h4>
+                    <p class="text-gray-600">${prescription.rxNumber}</p>
+                  </div>
+                  <div>
+                    <h4 class="font-medium text-gray-900 mb-2">Date</h4>
+                    <p class="text-gray-600">${prescription.date}</p>
+                  </div>
+                  <div>
+                    <h4 class="font-medium text-gray-900 mb-2">Patient Name</h4>
+                    <p class="text-gray-600">${prescription.patientName}</p>
+                  </div>
+                  <div>
+                    <h4 class="font-medium text-gray-900 mb-2">Patient ID</h4>
+                    <p class="text-gray-600">${prescription.patientId || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <h4 class="font-medium text-gray-900 mb-2">Doctor</h4>
+                    <p class="text-gray-600">${prescription.doctorName}</p>
+                  </div>
+                  <div>
+                    <h4 class="font-medium text-gray-900 mb-2">Status</h4>
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full capitalize ${
+                      prescription.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      prescription.status === 'ready' ? 'bg-blue-100 text-blue-800' :
+                      prescription.status === 'filled' ? 'bg-green-100 text-green-800' :
+                      prescription.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }">${prescription.status}</span>
+                  </div>
+                  <div class="md:col-span-2">
+                    <h4 class="font-medium text-gray-900 mb-2">Medication</h4>
+                    <p class="text-gray-600">${prescription.medication}</p>
+                  </div>
+                  <div class="md:col-span-2">
+                    <h4 class="font-medium text-gray-900 mb-2">Dosage</h4>
+                    <p class="text-gray-600">${prescription.dosage}</p>
+                  </div>
+                  <div class="md:col-span-2">
+                    <h4 class="font-medium text-gray-900 mb-2">Instructions</h4>
+                    <p class="text-gray-600">${prescription.instructions}</p>
+                  </div>
+                  <div>
+                    <h4 class="font-medium text-gray-900 mb-2">Total Cost</h4>
+                    <p class="text-gray-600">ZMW${prescription.totalCost ? prescription.totalCost.toFixed(2) : '0.00'}</p>
+                  </div>
+                  <div>
+                    <h4 class="font-medium text-gray-900 mb-2">Urgent</h4>
+                    <p class="text-gray-600">${prescription.isUrgent ? 'Yes' : 'No'}</p>
+                  </div>
+                  ${prescription.notes ? `
+                  <div class="md:col-span-2">
+                    <h4 class="font-medium text-gray-900 mb-2">Notes</h4>
+                    <p class="text-gray-600">${prescription.notes}</p>
+                  </div>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(modal);
+        },
+        
+        showNotification(message, type = 'info') {
+          const notification = document.createElement('div');
+          notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            'bg-blue-500 text-white'
+          }`;
+          notification.textContent = message;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
         },
         
         logout() {
-          window.location.reload();
+          window.location.href = '../auth/signin.html';
         }
       }
     }

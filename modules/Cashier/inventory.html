@@ -287,16 +287,203 @@
 
       <!-- Page Content -->
       <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
-        <!-- Blank content area -->
-        <div class="h-full flex items-center justify-center">
-          <div class="text-center">
-            <div class="h-24 w-24 mx-auto bg-gray-200 rounded-full flex items-center justify-center mb-4">
-              <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-              </svg>
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 bg-blue-100 rounded-lg p-3">
+                <i class="fas fa-boxes h-6 w-6 text-blue-600"></i>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Total Products</p>
+                <p class="text-2xl font-bold text-gray-900" x-text="totalProducts"></p>
+              </div>
             </div>
-            <h2 class="text-xl font-semibold text-gray-900 mb-2">Inventory</h2>
-            <p class="text-gray-500">This page is intentionally left blank for future development.</p>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 bg-yellow-100 rounded-lg p-3">
+                <i class="fas fa-exclamation-triangle h-6 w-6 text-yellow-600"></i>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Low Stock Items</p>
+                <p class="text-2xl font-bold text-gray-900" x-text="lowStockItems"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
+                <i class="fas fa-check-circle h-6 w-6 text-green-600"></i>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">In Stock</p>
+                <p class="text-2xl font-bold text-gray-900" x-text="inStockItems"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 bg-red-100 rounded-lg p-3">
+                <i class="fas fa-times-circle h-6 w-6 text-red-600"></i>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Out of Stock</p>
+                <p class="text-2xl font-bold text-gray-900" x-text="outOfStockItems"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search and Filters -->
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Search Products</label>
+              <div class="relative">
+                <input 
+                  type="text" 
+                  x-model="searchQuery"
+                  placeholder="Search by name, generic name, brand, or batch..."
+                  class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                >
+                <i class="fas fa-search absolute left-3 top-3 h-5 w-5 text-gray-400"></i>
+              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Packing Type</label>
+              <select x-model="selectedPackingType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+                <option value="">All Types</option>
+                <option value="Box">Box</option>
+                <option value="Bottle">Bottle</option>
+                <option value="Packet">Packet</option>
+                <option value="Blister">Blister</option>
+                <option value="Tube">Tube</option>
+                <option value="Vial">Vial</option>
+                <option value="Carton">Carton</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Stock Status</label>
+              <select x-model="stockStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+                <option value="">All Status</option>
+                <option value="in-stock">In Stock</option>
+                <option value="low-stock">Low Stock</option>
+                <option value="out-of-stock">Out of Stock</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="mt-4 flex justify-between items-center">
+            <div class="flex space-x-2">
+              <button @click="exportInventory()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                <i class="fas fa-download mr-2"></i>Export
+              </button>
+            </div>
+            <div class="text-sm text-gray-600">
+              Showing <span x-text="filteredProducts.length"></span> of <span x-text="products.length"></span> products
+            </div>
+          </div>
+        </div>
+
+        <!-- Products Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inventory Item</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Generic Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manufacture Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch Number</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Zambia REG Number</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Packing Type</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selling Price</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <template x-for="item in paginatedProducts" :key="item.id">
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm font-medium text-gray-900" x-text="item.inventoryItemName"></div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.genericName"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.brandName"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="new Date(item.manufactureDate).toLocaleDateString()"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.batchNumber"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.zambiaRegNumber || '-'"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.packingType"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900" x-text="item.quantity"></div>
+                      <div class="text-xs text-gray-500" x-text="'Min: ' + item.reorderLevel"></div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="'ZMW' + item.sellingPrice"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span 
+                        :class="{
+                          'bg-green-100 text-green-800': item.quantity > item.reorderLevel,
+                          'bg-yellow-100 text-yellow-800': item.quantity > 0 && item.quantity <= item.reorderLevel,
+                          'bg-red-100 text-red-800': item.quantity === 0
+                        }"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                        x-text="item.quantity > item.reorderLevel ? 'In Stock' : item.quantity > 0 ? 'Low Stock' : 'Out of Stock'"
+                      ></span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Pagination -->
+          <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+              <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Previous
+              </button>
+              <button @click="nextPage()" :disabled="currentPage === totalPages" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Next
+              </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-gray-700">
+                  Showing
+                  <span class="font-medium" x-text="(currentPage - 1) * itemsPerPage + 1"></span>
+                  to
+                  <span class="font-medium" x-text="Math.min(currentPage * itemsPerPage, filteredProducts.length)"></span>
+                  of
+                  <span class="font-medium" x-text="filteredProducts.length"></span>
+                  results
+                </p>
+              </div>
+              <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <template x-for="page in totalPages" :key="page">
+                    <button 
+                      @click="currentPage = page"
+                      :class="currentPage === page ? 'bg-ocean-50 border-ocean-500 text-ocean-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'"
+                      class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                      x-text="page"
+                    ></button>
+                  </template>
+                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </nav>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -307,10 +494,143 @@
     function cashierDashboard() {
       return {
         mobileMenuOpen: false,
+        searchQuery: '',
+        selectedPackingType: '',
+        stockStatus: '',
+        currentPage: 1,
+        itemsPerPage: 10,
+        products: [],
+        
+        init() {
+          this.loadInventoryData();
+        },
+        
+        async loadInventoryData() {
+          try {
+            const response = await fetch('/api/tenantadmin/inventory/items');
+            if (response.ok) {
+              this.products = await response.json();
+            } else {
+              console.error('Failed to load inventory data');
+              this.products = [];
+            }
+          } catch (error) {
+            console.error('Error loading inventory data:', error);
+            this.products = [];
+          }
+        },
+        
+        get totalProducts() {
+          return this.products.length;
+        },
+        
+        get lowStockItems() {
+          return this.products.filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel).length;
+        },
+        
+        get inStockItems() {
+          return this.products.filter(p => p.quantity > p.reorderLevel).length;
+        },
+        
+        get outOfStockItems() {
+          return this.products.filter(p => p.quantity === 0).length;
+        },
+        
+        get filteredProducts() {
+          let filtered = this.products;
+          
+          if (this.searchQuery) {
+            filtered = filtered.filter(p => 
+              p.inventoryItemName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              p.genericName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              p.brandName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              p.batchNumber.toLowerCase().includes(this.searchQuery.toLowerCase())
+            );
+          }
+          
+          if (this.selectedPackingType) {
+            filtered = filtered.filter(p => p.packingType === this.selectedPackingType);
+          }
+          
+          if (this.stockStatus) {
+            if (this.stockStatus === 'in-stock') {
+              filtered = filtered.filter(p => p.quantity > p.reorderLevel);
+            } else if (this.stockStatus === 'low-stock') {
+              filtered = filtered.filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel);
+            } else if (this.stockStatus === 'out-of-stock') {
+              filtered = filtered.filter(p => p.quantity === 0);
+            }
+          }
+          
+          return filtered;
+        },
+        
+        get paginatedProducts() {
+          const start = (this.currentPage - 1) * this.itemsPerPage;
+          const end = start + this.itemsPerPage;
+          return this.filteredProducts.slice(start, end);
+        },
+        
+        get totalPages() {
+          return Math.ceil(this.filteredProducts.length / this.itemsPerPage);
+        },
+        
+        previousPage() {
+          if (this.currentPage > 1) {
+            this.currentPage--;
+          }
+        },
+        
+        nextPage() {
+          if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+          }
+        },
+        
+        async exportInventory() {
+          try {
+            const response = await fetch('/api/tenantadmin/inventory/export-csv');
+            if (response.ok) {
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.style.display = 'none';
+              a.href = url;
+              a.download = `inventory_export_${new Date().toISOString().slice(0,10)}.csv`;
+              document.body.appendChild(a);
+              a.click();
+              window.URL.revokeObjectURL(url);
+              document.body.removeChild(a);
+              this.showNotification('Inventory exported successfully', 'success');
+            } else {
+              this.showNotification('Failed to export inventory', 'error');
+            }
+          } catch (error) {
+            console.error('Error exporting inventory:', error);
+            this.showNotification('Error exporting inventory', 'error');
+          }
+        },
+        
+        showNotification(message, type = 'info') {
+          // Simple notification system - in production, you might want to use a proper notification library
+          const notification = document.createElement('div');
+          notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            type === 'warning' ? 'bg-yellow-500 text-white' :
+            'bg-blue-500 text-white'
+          }`;
+          notification.textContent = message;
+          
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
+        },
         
         logout() {
-          // Simple page reload for demo
-          window.location.reload();
+          window.location.href = '../auth/signin.html';
         }
       }
     }

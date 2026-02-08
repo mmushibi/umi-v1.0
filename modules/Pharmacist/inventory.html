@@ -278,27 +278,11 @@
           <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
               <div class="flex-shrink-0 bg-blue-100 rounded-lg p-3">
-                <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-                </svg>
+                <i class="fas fa-boxes h-6 w-6 text-blue-600"></i>
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Total Items</p>
-                <p class="text-2xl font-bold text-gray-900">-</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="bg-white rounded-lg shadow p-6">
-            <div class="flex items-center">
-              <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
-                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-              </div>
-              <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">In Stock</p>
-                <p class="text-2xl font-bold text-gray-900">-</p>
+                <p class="text-sm font-medium text-gray-600">Total Products</p>
+                <p class="text-2xl font-bold text-gray-900" x-text="totalProducts"></p>
               </div>
             </div>
           </div>
@@ -306,13 +290,23 @@
           <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
               <div class="flex-shrink-0 bg-yellow-100 rounded-lg p-3">
-                <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                </svg>
+                <i class="fas fa-exclamation-triangle h-6 w-6 text-yellow-600"></i>
               </div>
               <div class="ml-4">
-                <p class="text-sm font-medium text-gray-600">Low Stock</p>
-                <p class="text-2xl font-bold text-gray-900">-</p>
+                <p class="text-sm font-medium text-gray-600">Low Stock Items</p>
+                <p class="text-2xl font-bold text-gray-900" x-text="lowStockItems"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
+                <i class="fas fa-check-circle h-6 w-6 text-green-600"></i>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">In Stock</p>
+                <p class="text-2xl font-bold text-gray-900" x-text="inStockItems"></p>
               </div>
             </div>
           </div>
@@ -320,68 +314,303 @@
           <div class="bg-white rounded-lg shadow p-6">
             <div class="flex items-center">
               <div class="flex-shrink-0 bg-red-100 rounded-lg p-3">
-                <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
+                <i class="fas fa-times-circle h-6 w-6 text-red-600"></i>
               </div>
               <div class="ml-4">
                 <p class="text-sm font-medium text-gray-600">Out of Stock</p>
-                <p class="text-2xl font-bold text-gray-900">-</p>
+                <p class="text-2xl font-bold text-gray-900" x-text="outOfStockItems"></p>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Search and Filters -->
-        <div class="bg-white rounded-lg shadow mb-6">
-          <div class="p-6">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-              <div class="flex-1 max-w-lg">
-                <div class="relative">
-                  <input type="text" 
-                         x-model="searchQuery"
-                         placeholder="Search medications by name, category, or SKU..." 
-                         class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
-                  <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                  </svg>
-                </div>
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Search Products</label>
+              <div class="relative">
+                <input 
+                  type="text" 
+                  x-model="searchQuery"
+                  placeholder="Search by name, generic name, brand, or batch..."
+                  class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                >
+                <i class="fas fa-search absolute left-3 top-3 h-5 w-5 text-gray-400"></i>
               </div>
-              <div class="flex items-center space-x-3">
-                <select class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
-                  <option>All Categories</option>
-                  <option>Prescription Drugs</option>
-                  <option>OTC Medications</option>
-                  <option>Medical Supplies</option>
-                  <option>Equipment</option>
-                </select>
-                <button class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 flex items-center space-x-2">
-                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                  </svg>
-                  <span>Add Item</span>
-                </button>
-              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Packing Type</label>
+              <select x-model="selectedPackingType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+                <option value="">All Types</option>
+                <option value="Box">Box</option>
+                <option value="Bottle">Bottle</option>
+                <option value="Packet">Packet</option>
+                <option value="Blister">Blister</option>
+                <option value="Tube">Tube</option>
+                <option value="Vial">Vial</option>
+                <option value="Carton">Carton</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Stock Status</label>
+              <select x-model="stockStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+                <option value="">All Status</option>
+                <option value="in-stock">In Stock</option>
+                <option value="low-stock">Low Stock</option>
+                <option value="out-of-stock">Out of Stock</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="mt-4 flex justify-between items-center">
+            <div class="flex space-x-2">
+              <button @click="showAddProduct = true" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
+                <i class="fas fa-plus mr-2"></i>Add Product
+              </button>
+              <button @click="exportInventory()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                <i class="fas fa-download mr-2"></i>Export
+              </button>
+            </div>
+            <div class="text-sm text-gray-600">
+              Showing <span x-text="filteredProducts.length"></span> of <span x-text="products.length"></span> products
             </div>
           </div>
         </div>
 
-        <!-- Inventory Table -->
-        <div class="bg-white rounded-lg shadow">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Medication Inventory</h2>
+        <!-- Products Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Inventory Item</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Generic Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brand Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Manufacture Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch Number</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Zambia REG Number</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Packing Type</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quantity</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Selling Price</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <template x-for="item in paginatedProducts" :key="item.id">
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm font-medium text-gray-900" x-text="item.inventoryItemName"></div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.genericName"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.brandName"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="new Date(item.manufactureDate).toLocaleDateString()"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.batchNumber"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.zambiaRegNumber || '-'"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="item.packingType"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900" x-text="item.quantity"></div>
+                      <div class="text-xs text-gray-500" x-text="'Min: ' + item.reorderLevel"></div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="'ZMW' + item.sellingPrice"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span 
+                        :class="{
+                          'bg-green-100 text-green-800': item.quantity > item.reorderLevel,
+                          'bg-yellow-100 text-yellow-800': item.quantity > 0 && item.quantity <= item.reorderLevel,
+                          'bg-red-100 text-red-800': item.quantity === 0
+                        }"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                        x-text="item.quantity > item.reorderLevel ? 'In Stock' : item.quantity > 0 ? 'Low Stock' : 'Out of Stock'"
+                      ></span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button @click="editProduct(item)" class="text-ocean-600 hover:text-ocean-900 mr-3" title="Edit product">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <span class="text-gray-400 text-sm">No delete access</span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
           </div>
-          <div class="p-6">
-            <div class="text-center py-12">
-              <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-              </svg>
-              <h3 class="mt-2 text-sm font-medium text-gray-900">No inventory items found</h3>
-              <p class="mt-1 text-sm text-gray-500">Get started by adding medications to your inventory.</p>
+          
+          <!-- Pagination -->
+          <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+              <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Previous
+              </button>
+              <button @click="nextPage()" :disabled="currentPage === totalPages" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Next
+              </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-gray-700">
+                  Showing
+                  <span class="font-medium" x-text="(currentPage - 1) * itemsPerPage + 1"></span>
+                  to
+                  <span class="font-medium" x-text="Math.min(currentPage * itemsPerPage, filteredProducts.length)"></span>
+                  of
+                  <span class="font-medium" x-text="filteredProducts.length"></span>
+                  results
+                </p>
+              </div>
+              <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <template x-for="page in totalPages" :key="page">
+                    <button 
+                      @click="currentPage = page"
+                      :class="currentPage === page ? 'bg-ocean-50 border-ocean-500 text-ocean-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'"
+                      class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                      x-text="page"
+                    ></button>
+                  </template>
+                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </nav>
+              </div>
             </div>
           </div>
         </div>
       </main>
+    </div>
+  </div>
+
+  <!-- Add Product Modal -->
+  <div x-show="showAddProduct" x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+       class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div x-show="showAddProduct" x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+           class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showAddProduct = false"></div>
+
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+      <div x-show="showAddProduct" x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+           x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+           x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+           class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+        <form @submit.prevent="addProduct()">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="w-full">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                  Add New Inventory Item
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Inventory Item Name *</label>
+                    <input type="text" x-model="newItem.inventoryItemName" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Generic Name *</label>
+                    <input type="text" x-model="newItem.genericName" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Brand Name *</label>
+                    <input type="text" x-model="newItem.brandName" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Manufacture Date *</label>
+                    <input type="date" x-model="newItem.manufactureDate" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Batch Number *</label>
+                    <input type="text" x-model="newItem.batchNumber" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">License Number</label>
+                    <input type="text" x-model="newItem.licenseNumber"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Zambia REG Number</label>
+                    <input type="text" x-model="newItem.zambiaRegNumber"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Packing Type *</label>
+                    <select x-model="newItem.packingType" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                      <option value="">Select Packing Type</option>
+                      <option value="Box">Box</option>
+                      <option value="Bottle">Bottle</option>
+                      <option value="Packet">Packet</option>
+                      <option value="Blister">Blister</option>
+                      <option value="Tube">Tube</option>
+                      <option value="Vial">Vial</option>
+                      <option value="Carton">Carton</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
+                    <input type="number" x-model="newItem.quantity" min="0" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Unit Price *</label>
+                    <input type="number" x-model="newItem.unitPrice" min="0" step="0.01" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price *</label>
+                    <input type="number" x-model="newItem.sellingPrice" min="0" step="0.01" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Reorder Level</label>
+                    <input type="number" x-model="newItem.reorderLevel" min="0"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-ocean-600 text-base font-medium text-white hover:bg-ocean-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ocean-500 sm:ml-3 sm:w-auto sm:text-sm">
+              Add Item
+            </button>
+            <button type="button" @click="showAddProduct = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ocean-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -390,13 +619,205 @@
       return {
         mobileMenuOpen: false,
         searchQuery: '',
+        selectedPackingType: '',
+        stockStatus: '',
+        showAddProduct: false,
+        currentPage: 1,
+        itemsPerPage: 10,
+        products: [],
+        newItem: {
+          inventoryItemName: '',
+          genericName: '',
+          brandName: '',
+          manufactureDate: '',
+          batchNumber: '',
+          licenseNumber: '',
+          zambiaRegNumber: '',
+          packingType: '',
+          quantity: '',
+          unitPrice: '',
+          sellingPrice: '',
+          reorderLevel: 10
+        },
         
         init() {
-          // Initialize page
+          this.loadInventoryData();
+        },
+        
+        async loadInventoryData() {
+          try {
+            const response = await fetch('/api/tenantadmin/inventory/items');
+            if (response.ok) {
+              this.products = await response.json();
+            } else {
+              console.error('Failed to load inventory data');
+              this.products = [];
+            }
+          } catch (error) {
+            console.error('Error loading inventory data:', error);
+            this.products = [];
+          }
+        },
+        
+        get totalProducts() {
+          return this.products.length;
+        },
+        
+        get lowStockItems() {
+          return this.products.filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel).length;
+        },
+        
+        get inStockItems() {
+          return this.products.filter(p => p.quantity > p.reorderLevel).length;
+        },
+        
+        get outOfStockItems() {
+          return this.products.filter(p => p.quantity === 0).length;
+        },
+        
+        get filteredProducts() {
+          let filtered = this.products;
+          
+          if (this.searchQuery) {
+            filtered = filtered.filter(p => 
+              p.inventoryItemName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              p.genericName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              p.brandName.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              p.batchNumber.toLowerCase().includes(this.searchQuery.toLowerCase())
+            );
+          }
+          
+          if (this.selectedPackingType) {
+            filtered = filtered.filter(p => p.packingType === this.selectedPackingType);
+          }
+          
+          if (this.stockStatus) {
+            if (this.stockStatus === 'in-stock') {
+              filtered = filtered.filter(p => p.quantity > p.reorderLevel);
+            } else if (this.stockStatus === 'low-stock') {
+              filtered = filtered.filter(p => p.quantity > 0 && p.quantity <= p.reorderLevel);
+            } else if (this.stockStatus === 'out-of-stock') {
+              filtered = filtered.filter(p => p.quantity === 0);
+            }
+          }
+          
+          return filtered;
+        },
+        
+        get paginatedProducts() {
+          const start = (this.currentPage - 1) * this.itemsPerPage;
+          const end = start + this.itemsPerPage;
+          return this.filteredProducts.slice(start, end);
+        },
+        
+        get totalPages() {
+          return Math.ceil(this.filteredProducts.length / this.itemsPerPage);
+        },
+        
+        previousPage() {
+          if (this.currentPage > 1) {
+            this.currentPage--;
+          }
+        },
+        
+        nextPage() {
+          if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+          }
+        },
+        
+        async addProduct() {
+          try {
+            const response = await fetch('/api/tenantadmin/inventory/items', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(this.newItem)
+            });
+            
+            if (response.ok) {
+              await this.loadInventoryData();
+              this.showAddProduct = false;
+              this.resetNewItem();
+              this.showNotification('Inventory item added successfully', 'success');
+            } else {
+              const error = await response.json();
+              this.showNotification(error.error || 'Failed to add inventory item', 'error');
+            }
+          } catch (error) {
+            console.error('Error adding inventory item:', error);
+            this.showNotification('Error adding inventory item', 'error');
+          }
+        },
+        
+        resetNewItem() {
+          this.newItem = {
+            inventoryItemName: '',
+            genericName: '',
+            brandName: '',
+            manufactureDate: '',
+            batchNumber: '',
+            licenseNumber: '',
+            zambiaRegNumber: '',
+            packingType: '',
+            quantity: '',
+            unitPrice: '',
+            sellingPrice: '',
+            reorderLevel: 10
+          };
+        },
+        
+        editProduct(item) {
+          // For now, just log the item. In a full implementation, this would open an edit modal
+          console.log('Edit product:', item);
+          this.showNotification('Edit functionality coming soon', 'info');
+        },
+        
+        async exportInventory() {
+          try {
+            const response = await fetch('/api/tenantadmin/inventory/export-csv');
+            if (response.ok) {
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.style.display = 'none';
+              a.href = url;
+              a.download = `inventory_export_${new Date().toISOString().slice(0,10)}.csv`;
+              document.body.appendChild(a);
+              a.click();
+              window.URL.revokeObjectURL(url);
+              document.body.removeChild(a);
+              this.showNotification('Inventory exported successfully', 'success');
+            } else {
+              this.showNotification('Failed to export inventory', 'error');
+            }
+          } catch (error) {
+            console.error('Error exporting inventory:', error);
+            this.showNotification('Error exporting inventory', 'error');
+          }
+        },
+        
+        showNotification(message, type = 'info') {
+          // Simple notification system - in production, you might want to use a proper notification library
+          const notification = document.createElement('div');
+          notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            type === 'warning' ? 'bg-yellow-500 text-white' :
+            'bg-blue-500 text-white'
+          }`;
+          notification.textContent = message;
+          
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
         },
         
         logout() {
-          window.location.reload();
+          window.location.href = '../auth/signin.html';
         }
       }
     }

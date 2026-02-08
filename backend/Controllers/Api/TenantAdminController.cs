@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -16,15 +17,18 @@ namespace UmiHealthPOS.Controllers.Api
         private readonly IDashboardService _dashboardService;
         private readonly ILogger<TenantAdminController> _logger;
         private readonly IInventoryService _inventoryService;
+        private readonly IPrescriptionService _prescriptionService;
 
         public TenantAdminController(
             IDashboardService dashboardService,
             ILogger<TenantAdminController> logger,
-            IInventoryService inventoryService)
+            IInventoryService inventoryService,
+            IPrescriptionService prescriptionService)
         {
             _dashboardService = dashboardService;
             _logger = logger;
             _inventoryService = inventoryService;
+            _prescriptionService = prescriptionService;
         }
 
         [HttpGet("dashboard/stats")]
@@ -217,6 +221,315 @@ namespace UmiHealthPOS.Controllers.Api
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
+
+        [HttpGet("inventory/items")]
+        public async Task<ActionResult<List<InventoryItem>>> GetInventoryItems()
+        {
+            try
+            {
+                var inventoryItems = await _inventoryService.GetInventoryItemsAsync();
+                return Ok(inventoryItems);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving inventory items");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("inventory/items")]
+        public async Task<ActionResult<InventoryItem>> CreateInventoryItem([FromBody] CreateInventoryItemRequest request)
+        {
+            try
+            {
+                var inventoryItem = await _inventoryService.CreateInventoryItemAsync(request);
+                return CreatedAtAction(nameof(GetInventoryItems), new { id = inventoryItem.Id }, inventoryItem);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating inventory item");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPut("inventory/items/{id}")]
+        public async Task<ActionResult<InventoryItem>> UpdateInventoryItem(int id, [FromBody] UpdateInventoryItemRequest request)
+        {
+            try
+            {
+                var inventoryItem = await _inventoryService.UpdateInventoryItemAsync(id, request);
+                if (inventoryItem == null)
+                {
+                    return NotFound(new { error = "Inventory item not found" });
+                }
+                return Ok(inventoryItem);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating inventory item");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpDelete("inventory/items/{id}")]
+        public async Task<ActionResult> DeleteInventoryItem(int id)
+        {
+            try
+            {
+                var result = await _inventoryService.DeleteInventoryItemAsync(id);
+                if (!result)
+                {
+                    return NotFound(new { error = "Inventory item not found" });
+                }
+                return Ok(new { success = true, message = "Inventory item deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting inventory item");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("inventory/import-csv")]
+        public async Task<ActionResult> ImportInventoryFromCsv(IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { error = "No file uploaded" });
+                }
+
+                var result = await _inventoryService.ImportInventoryFromCsvAsync(file);
+                return Ok(new { 
+                    success = true, 
+                    message = $"Successfully imported {result.ImportedCount} inventory items",
+                    errors = result.Errors
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing inventory from CSV");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("inventory/export-csv")]
+        public async Task<IActionResult> ExportInventoryToCsv()
+        {
+            try
+            {
+                var csvContent = await _inventoryService.ExportInventoryToCsvAsync();
+                var fileName = $"inventory_export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
+                
+                Response.Headers.Add("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+                return File(csvContent, "text/csv", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting inventory to CSV");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        // Prescription Management Endpoints
+        [HttpGet("prescriptions")]
+        public async Task<ActionResult<List<Prescription>>> GetPrescriptions()
+        {
+            try
+            {
+                var prescriptions = await _prescriptionService.GetPrescriptionsAsync();
+                return Ok(prescriptions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving prescriptions");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("prescriptions/{id}")]
+        public async Task<ActionResult<Prescription>> GetPrescription(int id)
+        {
+            try
+            {
+                var prescription = await _prescriptionService.GetPrescriptionAsync(id);
+                if (prescription == null)
+                {
+                    return NotFound(new { error = "Prescription not found" });
+                }
+                return Ok(prescription);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving prescription with ID: {Id}", id);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("prescriptions")]
+        public async Task<ActionResult<Prescription>> CreatePrescription([FromBody] CreatePrescriptionRequest request)
+        {
+            try
+            {
+                var prescription = await _prescriptionService.CreatePrescriptionAsync(request);
+                return CreatedAtAction(nameof(GetPrescription), new { id = prescription.Id }, prescription);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating prescription");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPut("prescriptions/{id}")]
+        public async Task<ActionResult<Prescription>> UpdatePrescription(int id, [FromBody] UpdatePrescriptionRequest request)
+        {
+            try
+            {
+                var prescription = await _prescriptionService.UpdatePrescriptionAsync(id, request);
+                if (prescription == null)
+                {
+                    return NotFound(new { error = "Prescription not found" });
+                }
+                return Ok(prescription);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating prescription with ID: {Id}", id);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpDelete("prescriptions/{id}")]
+        public async Task<ActionResult> DeletePrescription(int id)
+        {
+            try
+            {
+                var result = await _prescriptionService.DeletePrescriptionAsync(id);
+                if (!result)
+                {
+                    return NotFound(new { error = "Prescription not found" });
+                }
+                return Ok(new { success = true, message = "Prescription deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting prescription with ID: {Id}", id);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("prescriptions/{id}/fill")]
+        public async Task<ActionResult> FillPrescription(int id)
+        {
+            try
+            {
+                var result = await _prescriptionService.FillPrescriptionAsync(id);
+                if (!result)
+                {
+                    return NotFound(new { error = "Prescription not found" });
+                }
+                return Ok(new { success = true, message = "Prescription filled successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error filling prescription with ID: {Id}", id);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("prescriptions/export-csv")]
+        public async Task<IActionResult> ExportPrescriptionsToCsv()
+        {
+            try
+            {
+                var csvContent = await _prescriptionService.ExportPrescriptionsToCsvAsync();
+                var fileName = $"prescriptions_export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
+                
+                Response.Headers.Add("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+                return File(csvContent, "text/csv", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting prescriptions to CSV");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        // Patient Management Endpoints
+        [HttpGet("patients")]
+        public async Task<ActionResult<List<Patient>>> GetPatients()
+        {
+            try
+            {
+                var patients = await _prescriptionService.GetPatientsAsync();
+                return Ok(patients);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving patients");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("patients/{id}")]
+        public async Task<ActionResult<Patient>> GetPatient(int id)
+        {
+            try
+            {
+                var patient = await _prescriptionService.GetPatientAsync(id);
+                if (patient == null)
+                {
+                    return NotFound(new { error = "Patient not found" });
+                }
+                return Ok(patient);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving patient with ID: {Id}", id);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("patients")]
+        public async Task<ActionResult<Patient>> CreatePatient([FromBody] CreatePatientRequest request)
+        {
+            try
+            {
+                var patient = await _prescriptionService.CreatePatientAsync(request);
+                return CreatedAtAction(nameof(GetPatient), new { id = patient.Id }, patient);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating patient");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("doctors")]
+        public async Task<ActionResult<List<Doctor>>> GetDoctors()
+        {
+            try
+            {
+                // For now, return mock doctors data. In a real implementation, this would fetch from user management
+                var doctors = new List<Doctor>
+                {
+                    new Doctor { Id = 1, Name = "Dr. Sarah Mwamba", RegistrationNumber = "ZMC/2023/001", Specialization = "General Practitioner" },
+                    new Doctor { Id = 2, Name = "Dr. James Banda", RegistrationNumber = "ZMC/2022/045", Specialization = "Pediatrics" },
+                    new Doctor { Id = 3, Name = "Dr. Elizabeth Chanda", RegistrationNumber = "ZMC/2021/089", Specialization = "Internal Medicine" },
+                    new Doctor { Id = 4, Name = "Dr. Michael Phiri", RegistrationNumber = "ZMC/2023/012", Specialization = "Cardiology" },
+                    new Doctor { Id = 5, Name = "Dr. Mary Mulenga", RegistrationNumber = "ZMC/2020/156", Specialization = "Obstetrics & Gynecology" }
+                };
+                
+                return Ok(doctors);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving doctors");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
     }
 
     // Request/Response Models
@@ -265,5 +578,13 @@ namespace UmiHealthPOS.Controllers.Api
         public string Name { get; set; }
         public int QuantitySold { get; set; }
         public decimal Revenue { get; set; }
+    }
+
+    public class Doctor
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string RegistrationNumber { get; set; }
+        public string Specialization { get; set; }
     }
 }
