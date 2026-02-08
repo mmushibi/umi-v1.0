@@ -1,0 +1,26 @@
+using Microsoft.Extensions.DependencyInjection;
+using UmiHealthPOS.Services;
+using UmiHealthPOS.Hubs;
+
+namespace UmiHealthPOS.Configuration
+{
+    public static class ServiceCollectionExtensions
+    {
+        public static IServiceCollection AddApplicationServices(this IServiceCollection services)
+        {
+            // Register services
+            services.AddScoped<IDashboardService, DashboardService>();
+            services.AddScoped<IDashboardNotificationService, DashboardNotificationService>();
+            
+            // Add SignalR
+            services.AddSignalR();
+            
+            // TODO: Add other services as needed
+            // services.AddScoped<IUserService, UserService>();
+            // services.AddScoped<IInventoryService, InventoryService>();
+            // services.AddScoped<IReportService, ReportService>();
+            
+            return services;
+        }
+    }
+}

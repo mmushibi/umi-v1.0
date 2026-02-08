@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pharmacist Dashboard - Umi Health</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -290,7 +291,10 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Prescriptions Today</p>
-            <p class="text-2xl font-bold text-gray-900">-</p>
+            <p class="text-2xl font-bold text-gray-900">
+              <span x-show="!loadingStats" x-text="stats.prescriptionsToday"></span>
+              <span x-show="loadingStats" class="text-gray-400">Loading...</span>
+            </p>
           </div>
         </div>
       </div>
@@ -304,7 +308,10 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Filled Today</p>
-            <p class="text-2xl font-bold text-gray-900">-</p>
+            <p class="text-2xl font-bold text-gray-900">
+              <span x-show="!loadingStats" x-text="stats.prescriptionsToday"></span>
+              <span x-show="loadingStats" class="text-gray-400">Loading...</span>
+            </p>
           </div>
         </div>
       </div>
@@ -318,7 +325,10 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Patients Today</p>
-            <p class="text-2xl font-bold text-gray-900">-</p>
+            <p class="text-2xl font-bold text-gray-900">
+              <span x-show="!loadingStats" x-text="stats.patientsToday"></span>
+              <span x-show="loadingStats" class="text-gray-400">Loading...</span>
+            </p>
           </div>
         </div>
       </div>
@@ -332,7 +342,10 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Pending Reviews</p>
-            <p class="text-2xl font-bold text-gray-900">-</p>
+            <p class="text-2xl font-bold text-gray-900">
+              <span x-show="!loadingStats" x-text="stats.pendingReviews"></span>
+              <span x-show="loadingStats" class="text-gray-400">Loading...</span>
+            </p>
           </div>
         </div>
       </div>
@@ -345,7 +358,7 @@
       </div>
       <div class="p-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button class="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button @click="navigateTo('prescriptions')" class="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
             <svg class="h-6 w-6 text-ocean-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
             </svg>
@@ -355,7 +368,7 @@
             </div>
           </button>
 
-          <button class="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button @click="navigateTo('patients')" class="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
             <svg class="h-6 w-6 text-ocean-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
             </svg>
@@ -365,7 +378,7 @@
             </div>
           </button>
 
-          <button class="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button @click="navigateTo('inventory')" class="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
             <svg class="h-6 w-6 text-ocean-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
             </svg>
@@ -384,8 +397,37 @@
         <h2 class="text-lg font-semibold text-gray-900">Recent Prescriptions</h2>
       </div>
       <div class="p-6">
-        <div class="space-y-4">
-          <div class="flex items-center justify-between">
+        <!-- Loading state -->
+        <div x-show="loadingPrescriptions" class="flex items-center justify-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-ocean-600"></div>
+          <span class="ml-3 text-gray-600">Loading recent prescriptions...</span>
+        </div>
+        
+        <!-- Prescriptions list -->
+        <div x-show="!loadingPrescriptions" class="space-y-4">
+          <template x-for="prescription in recentPrescriptions" :key="prescription.id">
+            <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+              <div class="flex items-center">
+                <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <svg class="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm font-medium text-gray-900" x-text="prescription.patientName"></p>
+                  <p class="text-xs text-gray-500" x-text="prescription.medication"></p>
+                  <p class="text-xs text-gray-400" x-text="prescription.timestamp"></p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      :class="getPrescriptionStatusColor(prescription.status)" x-text="prescription.status"></span>
+              </div>
+            </div>
+          </template>
+          
+          <!-- Empty state -->
+          <div x-show="recentPrescriptions.length === 0" class="flex items-center justify-between">
             <div class="flex items-center">
               <div class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
                 <svg class="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -409,10 +451,301 @@
     function pharmacistDashboard() {
       return {
         mobileMenuOpen: false,
+        loading: false,
+        loadingStats: false,
+        loadingPrescriptions: false,
+        stats: {
+          prescriptionsToday: 0,
+          patientsToday: 0,
+          pendingReviews: 0,
+          lowStockItems: 0
+        },
+        recentPrescriptions: [],
+        
+        init() {
+          this.loadDashboardData();
+          this.startRealTimeUpdates();
+        },
+        
+        async loadDashboardData() {
+          this.loading = true;
+          try {
+            // Fetch dashboard stats from backend API
+            this.loadingStats = true;
+            const statsResponse = await this.makeApiRequest('/api/pharmacist/dashboard/stats');
+            if (statsResponse && statsResponse.ok) {
+              const statsData = await statsResponse.json();
+              this.stats = {
+                prescriptionsToday: statsData.prescriptionsToday || 0,
+                patientsToday: statsData.patientsToday || 0,
+                pendingReviews: statsData.pendingReviews || 0,
+                lowStockItems: statsData.lowStockItems || 0
+              };
+            } else if (statsResponse) {
+              console.error('Failed to fetch dashboard stats:', statsResponse.statusText);
+              this.showError('Failed to load dashboard statistics');
+            }
+            this.loadingStats = false;
+          } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            this.showError('Error connecting to server');
+            this.loadingStats = false;
+          }
+
+          // Fetch recent prescriptions
+          await this.fetchRecentPrescriptions();
+          this.loading = false;
+        },
+        
+        startRealTimeUpdates() {
+          // Set up real-time updates every 15 seconds for better responsiveness
+          this.updateInterval = setInterval(async () => {
+            await this.fetchRecentPrescriptions();
+            await this.updateStats();
+          }, 15000);
+          
+          // Also fetch immediately on load
+          this.fetchRecentPrescriptions();
+          
+          // Set up WebSocket for real-time updates (if available)
+          this.setupWebSocket();
+        },
+        
+        async fetchRecentPrescriptions() {
+          this.loadingPrescriptions = true;
+          try {
+            const response = await this.makeApiRequest('/api/pharmacist/dashboard/recent-prescriptions?limit=10');
+            if (response && response.ok) {
+              const prescriptions = await response.json();
+              this.recentPrescriptions = prescriptions.map(prescription => ({
+                ...prescription,
+                timestamp: this.formatTimestamp(prescription.createdAt)
+              }));
+            } else if (response) {
+              console.error('Failed to fetch recent prescriptions:', response.statusText);
+            }
+          } catch (error) {
+            console.error('Error fetching recent prescriptions:', error);
+          } finally {
+            this.loadingPrescriptions = false;
+          }
+        },
+        
+        async updateStats() {
+          try {
+            const response = await this.makeApiRequest('/api/pharmacist/dashboard/stats');
+            if (response && response.ok) {
+              const statsData = await response.json();
+              this.stats = {
+                prescriptionsToday: statsData.prescriptionsToday || this.stats.prescriptionsToday,
+                patientsToday: statsData.patientsToday || this.stats.patientsToday,
+                pendingReviews: statsData.pendingReviews || this.stats.pendingReviews,
+                lowStockItems: statsData.lowStockItems || this.stats.lowStockItems
+              };
+            }
+          } catch (error) {
+            console.error('Error updating stats:', error);
+          }
+        },
+        
+        setupWebSocket() {
+          try {
+            // Initialize SignalR connection
+            const options = {
+              logMessageContent: true,
+              logger: signalR.LogLevel.Information,
+              accessTokenFactory: () => {
+                return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+              }
+            };
+            
+            // Create connection
+            this.connection = new signalR.HubConnectionBuilder()
+              .withUrl(`${this.getApiBaseUrl()}/dashboardHub`, options)
+              .withAutomaticReconnect()
+              .configureLogging(signalR.LogLevel.Information)
+              .build();
+            
+            // Set up event handlers
+            this.connection.on('PharmacistStatsUpdate', (data) => {
+              this.handleRealtimeUpdate(data);
+            });
+            
+            this.connection.on('NewPrescriptionUpdate', (data) => {
+              this.handleRealtimeUpdate(data);
+            });
+            
+            this.connection.onreconnected(() => {
+              console.log('SignalR reconnected');
+              this.joinPharmacistGroup();
+            });
+            
+            // Start the connection
+            this.connection.start()
+              .then(() => {
+                console.log('SignalR connected successfully');
+                this.joinPharmacistGroup();
+              })
+              .catch(err => {
+                console.error('SignalR connection failed:', err);
+              });
+              
+          } catch (error) {
+            console.error('Error setting up SignalR:', error);
+          }
+        },
+        
+        joinPharmacistGroup() {
+          const tenantId = localStorage.getItem('tenantId') || 'default-tenant';
+          
+          if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
+            this.connection.invoke('JoinTenantGroup', tenantId)
+              .catch(err => console.error('Error joining tenant group:', err));
+          }
+        },
+        
+        handleRealtimeUpdate(data) {
+          console.log('Received real-time update:', data);
+          
+          if (data.type === 'stats') {
+            this.stats = { ...this.stats, ...data.payload };
+          } else if (data.type === 'prescription') {
+            this.recentPrescriptions = [data.payload, ...this.recentPrescriptions.slice(0, 9)];
+            this.showNotification(data.payload);
+          }
+        },
+        
+        showNotification(prescription) {
+          const notification = document.createElement('div');
+          notification.className = 'fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 transform transition-all duration-300 translate-x-full';
+          notification.innerHTML = `
+            <div class="flex items-center">
+              <div class="h-8 w-8 rounded-full flex items-center justify-center bg-blue-100">
+                <svg class="h-4 w-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm font-medium text-gray-900">New prescription for ${prescription.patientName}</p>
+                <p class="text-xs text-gray-500">Just now</p>
+              </div>
+            </div>
+          `;
+          
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+          }, 100);
+          
+          setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+              document.body.removeChild(notification);
+            }, 300);
+          }, 5000);
+        },
+        
+        getApiBaseUrl() {
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return 'http://localhost:5000';
+          }
+          return window.location.origin;
+        },
+        
+        getAuthHeaders() {
+          const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+          const headers = {
+            'Content-Type': 'application/json',
+          };
+          
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          
+          return headers;
+        },
+        
+        async makeApiRequest(url, options = {}) {
+          try {
+            const response = await fetch(`${this.getApiBaseUrl()}${url}`, {
+              ...options,
+              headers: {
+                ...this.getAuthHeaders(),
+                ...options.headers
+              }
+            });
+            
+            if (response.status === 401) {
+              this.handleUnauthorized();
+              return null;
+            }
+            
+            return response;
+          } catch (error) {
+            console.error('API request failed:', error);
+            this.showError('Network error. Please check your connection.');
+            return null;
+          }
+        },
+        
+        handleUnauthorized() {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('tenantId');
+          sessionStorage.removeItem('authToken');
+          sessionStorage.removeItem('tenantId');
+          console.warn('Unauthorized access - redirecting to login');
+        },
+        
+        formatTimestamp(dateString) {
+          const date = new Date(dateString);
+          const now = new Date();
+          const diffMs = now - date;
+          const diffMins = Math.floor(diffMs / 60000);
+          const diffHours = Math.floor(diffMs / 3600000);
+          const diffDays = Math.floor(diffMs / 86400000);
+          
+          if (diffMins < 1) return 'Just now';
+          if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+          if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+          if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+          
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        },
+        
+        getPrescriptionStatusColor(status) {
+          const colors = {
+            'Pending': 'bg-yellow-100 text-yellow-800',
+            'Approved': 'bg-green-100 text-green-800',
+            'Filled': 'bg-blue-100 text-blue-800',
+            'Cancelled': 'bg-red-100 text-red-800'
+          };
+          return colors[status] || 'bg-gray-100 text-gray-800';
+        },
+        
+        showError(message) {
+          console.error(message);
+        },
+        
+        navigateTo(page) {
+          window.location.href = `${page}.html`;
+        },
         
         logout() {
-          // Simple page reload for demo
-          window.location.reload();
+          if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+          }
+          
+          if (this.connection) {
+            this.connection.stop().catch(err => console.error('Error stopping SignalR connection:', err));
+          }
+          
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('tenantId');
+          sessionStorage.removeItem('authToken');
+          sessionStorage.removeItem('tenantId');
+          
+          window.location.href = '../../index.html';
         }
       }
     }

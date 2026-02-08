@@ -238,11 +238,23 @@
             if (this.credentials.email === 'admin@umihealth.com' && 
                 this.credentials.password === 'Admin123!' && 
                 this.credentials.totp === '123456') {
+              
+              // Verify this is a Super Admin only portal
+              const userRole = 'superadmin'; // In production, this would come from the API response
+              
+              if (userRole !== 'superadmin') {
+                this.error = 'This portal is restricted to Super Administrators only. Regular users should use the standard login page.';
+                this.loading = false;
+                return;
+              }
+              
               this.success = true;
               
-              // Store session
+              // Store Super Admin session
               if (this.credentials.remember) {
                 localStorage.setItem('super-admin-session', 'true');
+                localStorage.setItem('umihealthUserRole', 'superadmin');
+                sessionStorage.setItem('umihealthUserRole', 'superadmin');
               }
               
               // Redirect to dashboard after success
@@ -250,16 +262,25 @@
                 window.location.href = './dashboard.html';
               }, 2000);
             } else {
-              this.error = 'Invalid credentials. Please check your email, password, and 2FA code.';
+              this.error = 'Invalid Super Admin credentials. Please check your email, password, and 2FA code.';
             }
             this.loading = false;
           }, 1500);
         },
 
         init() {
-          // Check if user is already logged in
-          if (localStorage.getItem('super-admin-session') === 'true') {
+          // Check if user is already logged in as Super Admin
+          const adminSession = localStorage.getItem('super-admin-session');
+          const userRole = localStorage.getItem('umihealthUserRole') || sessionStorage.getItem('umihealthUserRole');
+          
+          if (adminSession === 'true' && userRole === 'superadmin') {
             window.location.href = './dashboard.html';
+          } else if (adminSession === 'true' && userRole !== 'superadmin') {
+            // Clear invalid session and show error
+            localStorage.removeItem('super-admin-session');
+            localStorage.removeItem('umihealthUserRole');
+            sessionStorage.removeItem('umihealthUserRole');
+            this.error = 'Access denied. This portal is restricted to Super Administrators only.';
           }
         }
       }

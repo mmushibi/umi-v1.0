@@ -171,10 +171,6 @@
         cashier: [
           'view_pos', 'view_customers', 'view_inventory',
           'process_sales', 'manage_customers'
-        ],
-        superadmin: [
-          'view_dashboard', 'manage_users', 'manage_settings',
-          'view_reports', 'view_inventory', 'view_pos'
         ]
       };
 
@@ -478,9 +474,15 @@
             'admin': '../Tenant-Admin/home.html',
             'pharmacist': '../Pharmacist/home.html',
             'cashier': '../Cashier/home.html',
-            'operations': '../Sales-Operations/home.html',
-            'superadmin': '../Super-Admin/home.html'
+            'operations': '../Sales-Operations/home.html'
           };
+          
+          // Block Super Admin access through regular signin
+          if (role === 'superadmin') {
+            this.error = 'Super Admin must use the dedicated admin portal for authentication.';
+            this.loading = false;
+            return;
+          }
           
           // Store user role for dashboard verification
           if (role) {

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Tenant Admin Dashboard - Umi Health</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -303,7 +304,10 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Total Staff</p>
-            <p class="text-2xl font-bold text-gray-900">-</p>
+            <p class="text-2xl font-bold text-gray-900">
+              <span x-show="!loadingStats" x-text="stats.totalStaff"></span>
+              <span x-show="loadingStats" class="text-gray-400">Loading...</span>
+            </p>
           </div>
         </div>
       </div>
@@ -317,7 +321,10 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Active Prescriptions</p>
-            <p class="text-2xl font-bold text-gray-900">-</p>
+            <p class="text-2xl font-bold text-gray-900">
+              <span x-show="!loadingStats" x-text="stats.activePrescriptions"></span>
+              <span x-show="loadingStats" class="text-gray-400">Loading...</span>
+            </p>
           </div>
         </div>
       </div>
@@ -331,7 +338,10 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Low Stock Items</p>
-            <p class="text-2xl font-bold text-gray-900">-</p>
+            <p class="text-2xl font-bold text-gray-900">
+              <span x-show="!loadingStats" x-text="stats.lowStockItems"></span>
+              <span x-show="loadingStats" class="text-gray-400">Loading...</span>
+            </p>
           </div>
         </div>
       </div>
@@ -345,7 +355,10 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Monthly Revenue</p>
-            <p class="text-2xl font-bold text-gray-900">-</p>
+            <p class="text-2xl font-bold text-gray-900">
+              <span x-show="!loadingStats" x-text="stats.monthlyRevenue"></span>
+              <span x-show="loadingStats" class="text-gray-400">Loading...</span>
+            </p>
           </div>
         </div>
       </div>
@@ -358,7 +371,7 @@
       </div>
       <div class="p-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button class="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button @click="navigateTo('user-management')" class="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
             <svg class="h-6 w-6 text-ocean-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
             </svg>
@@ -368,7 +381,7 @@
             </div>
           </button>
 
-          <button class="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button @click="navigateTo('inventory')" class="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
             <svg class="h-6 w-6 text-ocean-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
             </svg>
@@ -378,7 +391,7 @@
             </div>
           </button>
 
-          <button class="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
+          <button @click="navigateTo('reports')" class="flex items-center p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
             <svg class="h-6 w-6 text-ocean-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v1a3 3 0 003 3h0a3 3 0 003-3v-1m-6 0h6M9 7h6m-6 4h6m-6-8h6a2 2 0 012 2v8a2 2 0 01-2 2H9a2 2 0 01-2-2V5a2 2 0 012-2z"></path>
             </svg>
@@ -397,8 +410,38 @@
         <h2 class="text-lg font-semibold text-gray-900">Recent Activity</h2>
       </div>
       <div class="p-6">
-        <div class="space-y-4">
-          <div class="flex items-center justify-between">
+        <!-- Loading state -->
+        <div x-show="loadingActivity" class="flex items-center justify-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-ocean-600"></div>
+          <span class="ml-3 text-gray-600">Loading recent activity...</span>
+        </div>
+        
+        <!-- Activity list -->
+        <div x-show="!loadingActivity" class="space-y-4">
+          <template x-for="activity in recentActivity" :key="activity.id">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center">
+                <div class="h-8 w-8 rounded-full flex items-center justify-center"
+                     :class="getActivityColor(activity.type)">
+                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          :d="getActivityIcon(activity.type)"></path>
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm font-medium text-gray-900" x-text="activity.message"></p>
+                  <p class="text-xs text-gray-500" x-text="activity.timestamp"></p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                      :class="getActivityBadgeColor(activity.type)" x-text="activity.type"></span>
+              </div>
+            </div>
+          </template>
+          
+          <!-- Empty state -->
+          <div x-show="recentActivity.length === 0" class="flex items-center justify-between">
             <div class="flex items-center">
               <div class="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center">
                 <svg class="h-4 w-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -422,10 +465,369 @@
     function tenantAdminDashboard() {
       return {
         mobileMenuOpen: false,
+        loading: false,
+        loadingStats: false,
+        loadingActivity: false,
+        stats: {
+          totalStaff: 0,
+          activePrescriptions: 0,
+          lowStockItems: 0,
+          monthlyRevenue: 'ZMK 0'
+        },
+        recentActivity: [],
+        
+        init() {
+          this.loadDashboardData();
+          this.startRealTimeUpdates();
+        },
+        
+        async loadDashboardData() {
+          this.loading = true;
+          try {
+            // Fetch dashboard stats from backend API
+            this.loadingStats = true;
+            const statsResponse = await this.makeApiRequest('/api/tenantadmin/dashboard/stats');
+            if (statsResponse && statsResponse.ok) {
+              const statsData = await statsResponse.json();
+              this.stats = {
+                totalStaff: statsData.totalStaff || 0,
+                activePrescriptions: statsData.activePrescriptions || 0,
+                lowStockItems: statsData.lowStockItems || 0,
+                monthlyRevenue: statsData.monthlyRevenue || 'ZMK 0'
+              };
+            } else if (statsResponse) {
+              console.error('Failed to fetch dashboard stats:', statsResponse.statusText);
+              this.showError('Failed to load dashboard statistics');
+            }
+            this.loadingStats = false;
+          } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            this.showError('Error connecting to server');
+            this.loadingStats = false;
+          }
+
+          // Fetch recent activity
+          await this.fetchRealTimeActivity();
+          this.loading = false;
+        },
+        
+        startRealTimeUpdates() {
+          // Set up real-time updates every 30 seconds
+          this.updateInterval = setInterval(async () => {
+            await this.fetchRealTimeActivity();
+            await this.updateStats();
+          }, 30000);
+          
+          // Also fetch immediately on load
+          this.fetchRealTimeActivity();
+          
+          // Set up WebSocket for real-time updates (if available)
+          this.setupWebSocket();
+        },
+        
+        async fetchRealTimeActivity() {
+          this.loadingActivity = true;
+          try {
+            const response = await this.makeApiRequest('/api/tenantadmin/dashboard/recent-activity?limit=10');
+            if (response && response.ok) {
+              const activities = await response.json();
+              this.recentActivity = activities.map(activity => ({
+                ...activity,
+                timestamp: this.formatTimestamp(activity.createdAt)
+              }));
+            } else if (response) {
+              console.error('Failed to fetch recent activity:', response.statusText);
+            }
+          } catch (error) {
+            console.error('Error fetching recent activity:', error);
+          } finally {
+            this.loadingActivity = false;
+          }
+        },
+        
+        async updateStats() {
+          try {
+            const response = await this.makeApiRequest('/api/tenantadmin/dashboard/stats');
+            if (response && response.ok) {
+              const statsData = await response.json();
+              this.stats = {
+                totalStaff: statsData.totalStaff || this.stats.totalStaff,
+                activePrescriptions: statsData.activePrescriptions || this.stats.activePrescriptions,
+                lowStockItems: statsData.lowStockItems || this.stats.lowStockItems,
+                monthlyRevenue: statsData.monthlyRevenue || this.stats.monthlyRevenue
+              };
+            }
+          } catch (error) {
+            console.error('Error updating stats:', error);
+          }
+        },
+        
+        setupWebSocket() {
+          try {
+            // Initialize SignalR connection
+            const protocol = new signalR.JsonHubProtocol();
+            const transport = signalR.HttpTransportType.WebSockets;
+            
+            // Create connection options
+            const options = {
+              transport: transport,
+              logMessageContent: true,
+              logger: signalR.LogLevel.Information,
+              accessTokenFactory: () => {
+                // Return the auth token for SignalR authentication
+                return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+              }
+            };
+            
+            // Create connection
+            this.connection = new signalR.HubConnectionBuilder()
+              .withUrl(`${this.getApiBaseUrl()}/dashboardHub`, options)
+              .withAutomaticReconnect()
+              .configureLogging(signalR.LogLevel.Information)
+              .build();
+            
+            // Set up event handlers
+            this.connection.on('DashboardStatsUpdate', (data) => {
+              this.handleRealtimeUpdate(data);
+            });
+            
+            this.connection.on('DashboardActivityUpdate', (data) => {
+              this.handleRealtimeUpdate(data);
+            });
+            
+            this.connection.onreconnected(() => {
+              console.log('SignalR reconnected');
+              // Re-join tenant group after reconnection
+              this.joinTenantGroup();
+            });
+            
+            this.connection.onclose(() => {
+              console.log('SignalR connection closed');
+            });
+            
+            // Start the connection
+            this.connection.start()
+              .then(() => {
+                console.log('SignalR connected successfully');
+                this.joinTenantGroup();
+              })
+              .catch(err => {
+                console.error('SignalR connection failed:', err);
+                // Fallback to polling if SignalR fails
+                console.log('Falling back to polling for updates');
+              });
+              
+          } catch (error) {
+            console.error('Error setting up SignalR:', error);
+          }
+        },
+        
+        joinTenantGroup() {
+          // Get tenant ID from user context or localStorage
+          const tenantId = localStorage.getItem('tenantId') || 'default-tenant';
+          
+          if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
+            this.connection.invoke('JoinTenantGroup', tenantId)
+              .catch(err => console.error('Error joining tenant group:', err));
+          }
+        },
+        
+        handleRealtimeUpdate(data) {
+          console.log('Received real-time update:', data);
+          
+          if (data.type === 'stats') {
+            this.stats = { ...this.stats, ...data.payload };
+          } else if (data.type === 'activity') {
+            // Add new activity to the beginning of the array
+            this.recentActivity = [data.payload, ...this.recentActivity.slice(0, 9)];
+            
+            // Show a subtle notification for new activity
+            this.showActivityNotification(data.payload);
+          }
+        },
+        
+        showActivityNotification(activity) {
+          // Create a simple notification (you could enhance this with a toast library)
+          const notification = document.createElement('div');
+          notification.className = 'fixed top-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50 transform transition-all duration-300 translate-x-full';
+          notification.innerHTML = `
+            <div class="flex items-center">
+              <div class="h-8 w-8 rounded-full flex items-center justify-center ${this.getActivityColor(activity.type)}">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="${this.getActivityIcon(activity.type)}"></path>
+                </svg>
+              </div>
+              <div class="ml-3">
+                <p class="text-sm font-medium text-gray-900">${activity.message}</p>
+                <p class="text-xs text-gray-500">Just now</p>
+              </div>
+            </div>
+          `;
+          
+          document.body.appendChild(notification);
+          
+          // Animate in
+          setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+          }, 100);
+          
+          // Remove after 5 seconds
+          setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+              document.body.removeChild(notification);
+            }, 300);
+          }, 5000);
+        },
+        
+        getApiBaseUrl() {
+          // Determine API base URL based on environment
+          if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return 'http://localhost:5000'; // Default ASP.NET Core port
+          }
+          return window.location.origin;
+        },
+        
+        getAuthHeaders() {
+          // Get authentication token from localStorage or sessionStorage
+          const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+          const headers = {
+            'Content-Type': 'application/json',
+          };
+          
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+          
+          return headers;
+        },
+        
+        async makeApiRequest(url, options = {}) {
+          try {
+            const response = await fetch(`${this.getApiBaseUrl()}${url}`, {
+              ...options,
+              headers: {
+                ...this.getAuthHeaders(),
+                ...options.headers
+              }
+            });
+            
+            // Handle unauthorized responses
+            if (response.status === 401) {
+              this.handleUnauthorized();
+              return null;
+            }
+            
+            return response;
+          } catch (error) {
+            console.error('API request failed:', error);
+            this.showError('Network error. Please check your connection.');
+            return null;
+          }
+        },
+        
+        handleUnauthorized() {
+          // Clear stored tokens and redirect to login
+          localStorage.removeItem('authToken');
+          sessionStorage.removeItem('authToken');
+          console.warn('Unauthorized access - redirecting to login');
+          // In a real app, you would redirect to login page
+          // window.location.href = '../../login.html';
+        },
+        
+        formatTimestamp(dateString) {
+          const date = new Date(dateString);
+          const now = new Date();
+          const diffMs = now - date;
+          const diffMins = Math.floor(diffMs / 60000);
+          const diffHours = Math.floor(diffMs / 3600000);
+          const diffDays = Math.floor(diffMs / 86400000);
+          
+          if (diffMins < 1) return 'Just now';
+          if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+          if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+          if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+          
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        },
+        
+        showError(message) {
+          // Simple error display - you could enhance this with a toast notification
+          console.error(message);
+          // You could also update the UI to show error states
+        },
+        
+        navigateTo(page) {
+          // Navigate to specific pages
+          window.location.href = `${page}.html`;
+        },
+        
+        getActivityColor(type) {
+          const colors = {
+            sale: 'bg-green-100 text-green-600',
+            inventory: 'bg-yellow-100 text-yellow-600',
+            user: 'bg-blue-100 text-blue-600',
+            prescription: 'bg-purple-100 text-purple-600',
+            payment: 'bg-ocean-100 text-ocean-600',
+            system: 'bg-gray-100 text-gray-600'
+          };
+          return colors[type] || colors.system;
+        },
+        
+        getActivityBadgeColor(type) {
+          const colors = {
+            sale: 'bg-green-100 text-green-800',
+            inventory: 'bg-yellow-100 text-yellow-800',
+            user: 'bg-blue-100 text-blue-800',
+            prescription: 'bg-purple-100 text-purple-800',
+            payment: 'bg-ocean-100 text-ocean-800',
+            system: 'bg-gray-100 text-gray-800'
+          };
+          return colors[type] || colors.system;
+        },
+        
+        getActivityIcon(type) {
+          const icons = {
+            sale: 'M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z',
+            inventory: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
+            user: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z',
+            prescription: 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z',
+            payment: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z',
+            system: 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+          };
+          return icons[type] || icons.system;
+        },
         
         logout() {
-          // Simple page reload for demo
-          window.location.reload();
+          // Clear real-time updates
+          if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+          }
+          
+          // Close SignalR connection if exists
+          if (this.connection) {
+            this.connection.stop().catch(err => console.error('Error stopping SignalR connection:', err));
+          }
+          
+          // Clear any stored authentication tokens
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('tenantId');
+          sessionStorage.removeItem('authToken');
+          sessionStorage.removeItem('tenantId');
+          
+          // Redirect to login page or home
+          window.location.href = '../../index.html';
+        },
+        
+        // Cleanup function when component is destroyed
+        destroy() {
+          if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+          }
+          
+          if (this.connection) {
+            this.connection.stop().catch(err => console.error('Error stopping SignalR connection:', err));
+          }
         }
       }
     }
