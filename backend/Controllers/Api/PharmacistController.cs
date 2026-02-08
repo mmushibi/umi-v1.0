@@ -125,6 +125,31 @@ namespace UmiHealthPOS.Controllers.Api
             }
         }
 
+        [HttpPost("prescriptions")]
+        public async Task<ActionResult<Prescription>> CreatePrescription([FromBody] CreatePrescriptionRequest request)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                var tenantId = GetCurrentTenantId();
+
+                if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(tenantId))
+                {
+                    return Unauthorized(new { error = "User not authenticated" });
+                }
+
+                var prescription = await _prescriptionService.CreatePrescriptionAsync(request);
+                _logger.LogInformation("Prescription created successfully: {PrescriptionId} by user {UserId}", prescription.Id, userId);
+                
+                return CreatedAtAction(nameof(GetPrescriptions), new { id = prescription.Id }, prescription);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating prescription");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
         [HttpGet("prescriptions/pending")]
         public async Task<ActionResult<List<PendingPrescription>>> GetPendingPrescriptions()
         {

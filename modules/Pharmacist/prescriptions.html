@@ -321,7 +321,7 @@
                 </div>
               </div>
               <div class="flex items-center space-x-3">
-                <button class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 flex items-center space-x-2">
+                <button @click="showNewPrescription = true" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 flex items-center space-x-2">
                   <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                   </svg>
@@ -586,6 +586,170 @@
     </div>
   </div>
 
+  <!-- New Prescription Modal -->
+  <div x-show="showNewPrescription" x-transition.opacity 
+       class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div @click.away="showNewPrescription = false" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-90"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-90"
+         class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      
+      <!-- Modal Header -->
+      <div class="bg-ocean-600 text-white px-6 py-4 rounded-t-lg">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-semibold">New Prescription</h3>
+          <button @click="showNewPrescription = false" 
+                  class="text-white hover:text-gray-200 transition-colors"
+                  title="Close modal">
+            <i class="fas fa-times h-5 w-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Modal Body -->
+      <form @submit.prevent="createPrescription()" class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Patient Information -->
+          <div class="md:col-span-2">
+            <h4 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Patient Information</h4>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Patient Name *</label>
+            <input type="text" 
+                   x-model="newPrescription.patientName"
+                   required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="Enter patient's name">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Patient ID Number</label>
+            <input type="text" 
+                   x-model="newPrescription.patientIdNumber"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="Enter patient ID number">
+          </div>
+
+          <!-- Doctor Information -->
+          <div class="md:col-span-2">
+            <h4 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Doctor Information</h4>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Doctor Name *</label>
+            <input type="text" 
+                   x-model="newPrescription.doctorName"
+                   required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="Enter doctor's name">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Doctor Registration Number</label>
+            <input type="text" 
+                   x-model="newPrescription.doctorRegistrationNumber"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="Enter doctor's registration number">
+          </div>
+
+          <!-- Prescription Details -->
+          <div class="md:col-span-2">
+            <h4 class="text-lg font-medium text-gray-900 mb-4 border-b pb-2">Prescription Details</h4>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Medication *</label>
+            <input type="text" 
+                   x-model="newPrescription.medication"
+                   required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="Enter medication name">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Dosage *</label>
+            <input type="text" 
+                   x-model="newPrescription.dosage"
+                   required
+                   placeholder="e.g., 500mg, 1 tablet"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+          </div>
+          
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Instructions *</label>
+            <textarea x-model="newPrescription.instructions"
+                      required
+                      rows="2"
+                      placeholder="e.g., Take twice daily with meals"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"></textarea>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Total Cost (ZMW) *</label>
+            <input type="number" 
+                   x-model="newPrescription.totalCost"
+                   required
+                   step="0.01"
+                   min="0"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="Enter total cost">
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+            <input type="date" 
+                   x-model="newPrescription.expiryDate"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="Select expiry date">
+          </div>
+          
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+            <textarea x-model="newPrescription.notes"
+                      rows="3"
+                      placeholder="Additional notes or special instructions..."
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"></textarea>
+          </div>
+          
+          <div class="md:col-span-2">
+            <label class="flex items-center">
+              <input type="checkbox" 
+                     x-model="newPrescription.isUrgent"
+                     class="rounded border-gray-300 text-ocean-600 focus:ring-ocean-500">
+              <span class="ml-2 text-sm text-gray-700">Mark as urgent prescription</span>
+            </label>
+          </div>
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="mt-6 flex justify-end space-x-3 border-t pt-4">
+          <button type="button" 
+                  @click="showNewPrescription = false"
+                  class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+            Cancel
+          </button>
+          <button type="submit" 
+                  :disabled="isSubmitting"
+                  class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <span x-show="!isSubmitting">Create Prescription</span>
+            <span x-show="isSubmitting" class="flex items-center">
+              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Creating...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     function pharmacistPrescriptions() {
       return {
@@ -597,6 +761,21 @@
         prescriptions: [],
         isLoading: false,
         expandedRows: {},
+        showNewPrescription: false,
+        isSubmitting: false,
+        newPrescription: {
+          patientName: '',
+          patientIdNumber: '',
+          doctorName: '',
+          doctorRegistrationNumber: '',
+          medication: '',
+          dosage: '',
+          instructions: '',
+          totalCost: 0,
+          expiryDate: '',
+          notes: '',
+          isUrgent: false
+        },
         
         init() {
           this.loadPrescriptionsData();
@@ -691,6 +870,73 @@
         togglePatientDetails(index) {
           // Toggle the expanded state for this specific row
           this.$set(this.expandedRows, index, !this.expandedRows[index]);
+        },
+
+        async createPrescription() {
+          try {
+            this.isSubmitting = true;
+            
+            const prescriptionData = {
+              patientId: 0, // Will be set to 0 for now, can be enhanced with patient search
+              patientName: this.newPrescription.patientName,
+              patientIdNumber: this.newPrescription.patientIdNumber,
+              doctorName: this.newPrescription.doctorName,
+              doctorRegistrationNumber: this.newPrescription.doctorRegistrationNumber,
+              medication: this.newPrescription.medication,
+              dosage: this.newPrescription.dosage,
+              instructions: this.newPrescription.instructions,
+              totalCost: parseFloat(this.newPrescription.totalCost),
+              prescriptionDate: new Date().toISOString().split('T')[0],
+              expiryDate: this.newPrescription.expiryDate || null,
+              notes: this.newPrescription.notes,
+              isUrgent: this.newPrescription.isUrgent
+            };
+
+            const response = await fetch('/api/pharmacist/prescriptions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(prescriptionData)
+            });
+
+            if (response.ok) {
+              const newPrescription = await response.json();
+              this.prescriptions.unshift({
+                ...newPrescription,
+                date: newPrescription.prescriptionDate.split('T')[0],
+                patientId: newPrescription.patientIdNumber || ''
+              });
+              
+              this.resetNewPrescriptionForm();
+              this.showNewPrescription = false;
+              this.showNotification('Prescription created successfully!', 'success');
+            } else {
+              const error = await response.json();
+              this.showNotification(error.error || 'Error creating prescription', 'error');
+            }
+          } catch (error) {
+            console.error('Error creating prescription:', error);
+            this.showNotification('Error creating prescription', 'error');
+          } finally {
+            this.isSubmitting = false;
+          }
+        },
+
+        resetNewPrescriptionForm() {
+          this.newPrescription = {
+            patientName: '',
+            patientIdNumber: '',
+            doctorName: '',
+            doctorRegistrationNumber: '',
+            medication: '',
+            dosage: '',
+            instructions: '',
+            totalCost: 0,
+            expiryDate: '',
+            notes: '',
+            isUrgent: false
+          };
         },
         
         async approvePrescription(prescription) {
