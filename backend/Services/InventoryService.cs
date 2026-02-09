@@ -599,14 +599,14 @@ namespace UmiHealthPOS.Services
 
     public class CreateInventoryItemRequest
     {
-        public string InventoryItemName { get; set; }
-        public string GenericName { get; set; }
-        public string BrandName { get; set; }
+        public string? InventoryItemName { get; set; }
+        public string? GenericName { get; set; }
+        public string? BrandName { get; set; }
         public DateTime ManufactureDate { get; set; }
-        public string BatchNumber { get; set; }
-        public string LicenseNumber { get; set; }
-        public string ZambiaRegNumber { get; set; }
-        public string PackingType { get; set; }
+        public string? BatchNumber { get; set; }
+        public string? LicenseNumber { get; set; }
+        public string? ZambiaRegNumber { get; set; }
+        public string? PackingType { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal SellingPrice { get; set; }
@@ -615,24 +615,18 @@ namespace UmiHealthPOS.Services
 
     public class UpdateInventoryItemRequest
     {
-        public string InventoryItemName { get; set; }
-        public string GenericName { get; set; }
-        public string BrandName { get; set; }
+        public string? InventoryItemName { get; set; }
+        public string? GenericName { get; set; }
+        public string? BrandName { get; set; }
         public DateTime ManufactureDate { get; set; }
-        public string BatchNumber { get; set; }
-        public string LicenseNumber { get; set; }
-        public string ZambiaRegNumber { get; set; }
-        public string PackingType { get; set; }
+        public string? BatchNumber { get; set; }
+        public string? LicenseNumber { get; set; }
+        public string? ZambiaRegNumber { get; set; }
+        public string? PackingType { get; set; }
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal SellingPrice { get; set; }
         public int ReorderLevel { get; set; }
         public bool IsActive { get; set; }
-    }
-
-    public class CsvImportResult
-    {
-        public int ImportedCount { get; set; }
-        public List<string> Errors { get; set; } = new List<string>();
     }
 }

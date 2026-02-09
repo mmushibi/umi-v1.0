@@ -13,6 +13,7 @@ namespace UmiHealthPOS.Configuration
             services.AddScoped<IDashboardNotificationService, DashboardNotificationService>();
             services.AddScoped<IInventoryService, InventoryService>();
             services.AddScoped<IPrescriptionService, PrescriptionService>();
+            services.AddScoped<ReportsService>();
             
             // Add SignalR
             services.AddSignalR();

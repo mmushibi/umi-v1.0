@@ -15,15 +15,19 @@ namespace UmiHealthPOS.Data
         {
         }
 
-        public DbSet<Product> Products { get; set; }
-        public DbSet<Customer> Customers { get; set; }
-        public DbSet<Sale> Sales { get; set; }
-        public DbSet<SaleItem> SaleItems { get; set; }
-        public DbSet<StockTransaction> StockTransactions { get; set; }
-        public DbSet<InventoryItem> InventoryItems { get; set; }
-        public DbSet<Prescription> Prescriptions { get; set; }
-        public DbSet<Patient> Patients { get; set; }
-        public DbSet<PrescriptionItem> PrescriptionItems { get; set; }
+        public required DbSet<User> Users { get; set; } = null!;
+        public required DbSet<Product> Products { get; set; } = null!;
+        public required DbSet<Customer> Customers { get; set; } = null!;
+        public required DbSet<Sale> Sales { get; set; } = null!;
+        public required DbSet<SaleItem> SaleItems { get; set; } = null!;
+        public required DbSet<StockTransaction> StockTransactions { get; set; } = null!;
+        public required DbSet<InventoryItem> InventoryItems { get; set; } = null!;
+        public required DbSet<Prescription> Prescriptions { get; set; } = null!;
+        public required DbSet<Patient> Patients { get; set; } = null!;
+        public required DbSet<PrescriptionItem> PrescriptionItems { get; set; } = null!;
+        public required DbSet<Branch> Branches { get; set; } = null!;
+        public required DbSet<UserBranch> UserBranches { get; set; } = null!;
+        public required DbSet<ReportSchedule> ReportSchedules { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -57,18 +61,25 @@ namespace UmiHealthPOS.Data
             modelBuilder.Entity<Sale>(entity =>
             {
                 entity.HasKey(e => e.Id);
+                entity.Property(e => e.ReceiptNumber).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Subtotal).HasPrecision(10, 2);
                 entity.Property(e => e.Tax).HasPrecision(10, 2);
                 entity.Property(e => e.Total).HasPrecision(10, 2);
                 entity.Property(e => e.CashReceived).HasPrecision(10, 2);
                 entity.Property(e => e.Change).HasPrecision(10, 2);
                 entity.Property(e => e.PaymentMethod).IsRequired().HasMaxLength(20);
-                entity.Property(e => e.Status).HasMaxLength(20);
+                entity.Property(e => e.PaymentDetails).HasMaxLength(100);
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.RefundReason).HasMaxLength(500);
                 
                 entity.HasOne(e => e.Customer)
                       .WithMany(c => c.Sales)
                       .HasForeignKey(e => e.CustomerId)
                       .OnDelete(DeleteBehavior.Restrict);
+                      
+                entity.HasIndex(e => e.ReceiptNumber).IsUnique();
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => e.Status);
             });
 
             // SaleItem configuration
@@ -191,6 +202,77 @@ namespace UmiHealthPOS.Data
                       .WithMany()
                       .HasForeignKey(e => e.InventoryItemId)
                       .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // Branch configuration
+            modelBuilder.Entity<Branch>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Address).HasMaxLength(500);
+                entity.Property(e => e.Phone).HasMaxLength(100);
+                entity.Property(e => e.Email).HasMaxLength(100);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.HasIndex(e => e.Name);
+                entity.HasIndex(e => e.IsActive);
+            });
+
+            // UserBranch configuration
+            modelBuilder.Entity<UserBranch>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+                entity.Property(e => e.UserRole).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.AssignedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                
+                entity.HasOne(e => e.Branch)
+                      .WithMany(b => b.UserBranches)
+                      .HasForeignKey(e => e.BranchId)
+                      .OnDelete(DeleteBehavior.Cascade);
+                      
+                entity.HasIndex(e => new { e.UserId, e.BranchId });
+                entity.HasIndex(e => e.UserRole);
+            });
+
+            // ReportSchedule configuration
+            modelBuilder.Entity<ReportSchedule>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ReportType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Frequency).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.DateRange).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Format).IsRequired().HasMaxLength(10);
+                entity.Property(e => e.RecipientEmail).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.CreatedBy).IsRequired().HasMaxLength(450);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                
+                entity.HasOne(e => e.Branch)
+                      .WithMany()
+                      .HasForeignKey(e => e.BranchId)
+                      .OnDelete(DeleteBehavior.Restrict);
+                      
+                entity.HasIndex(e => e.ReportType);
+                entity.HasIndex(e => e.NextRunAt);
+                entity.HasIndex(e => e.CreatedBy);
+            });
+
+            // User configuration
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Id).HasMaxLength(450);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.Phone).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Role).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(20).HasDefaultValue("active");
+                entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                
+                entity.HasIndex(e => e.Email).IsUnique();
+                entity.HasIndex(e => e.Role);
+                entity.HasIndex(e => e.Status);
             });
         }
     }

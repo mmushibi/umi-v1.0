@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" x-data="cashierDashboard()" x-init="init()">
+<html lang="en" x-data="cashierPatients()" x-init="init()">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -28,6 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -287,16 +288,174 @@
 
       <!-- Page Content -->
       <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
-        <!-- Blank content area -->
-        <div class="h-full flex items-center justify-center">
-          <div class="text-center">
-            <div class="h-24 w-24 mx-auto bg-gray-200 rounded-full flex items-center justify-center mb-4">
-              <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-              </svg>
+        <!-- Search and Filters -->
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Search Patients</label>
+              <div class="relative">
+                <input 
+                  type="text" 
+                  x-model="searchQuery"
+                  placeholder="Name, ID, phone, email..."
+                  class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                >
+                <i class="fas fa-search absolute left-3 top-3 h-5 w-5 text-gray-400"></i>
+              </div>
             </div>
-            <h2 class="text-xl font-semibold text-gray-900 mb-2">Patients</h2>
-            <p class="text-gray-500">This page is intentionally left blank for future development.</p>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select x-model="selectedStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" title="Filter by patient status">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Age Group</label>
+              <select x-model="selectedAgeGroup" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" title="Filter by age group">
+                <option value="">All Ages</option>
+                <option value="0-17">0-17</option>
+                <option value="18-35">18-35</option>
+                <option value="36-50">36-50</option>
+                <option value="51+">51+</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Registration Date</label>
+              <input 
+                type="date" 
+                x-model="registrationDate"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                title="Filter by registration date"
+                placeholder="Select registration date"
+              >
+            </div>
+          </div>
+          
+          <div class="mt-4 flex justify-between items-center">
+            <div class="text-sm text-gray-600">
+              Showing <span x-text="filteredPatients.length"></span> of <span x-text="patients.length"></span> patients
+            </div>
+            <div class="flex space-x-2">
+              <button @click="exportPatients()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                <i class="fas fa-download mr-2"></i>Export
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Patients Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age/Gender</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Blood Type</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <template x-for="patient in paginatedPatients" :key="patient.id">
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10">
+                          <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                            <i class="fas fa-user text-gray-500"></i>
+                          </div>
+                        </div>
+                        <div class="ml-4">
+                          <div class="text-sm font-medium text-gray-900" x-text="patient.name"></div>
+                          <div class="text-sm text-gray-500" x-text="'ID: ' + patient.patientId"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900" x-text="patient.phone"></div>
+                      <div class="text-sm text-gray-500" x-text="patient.email"></div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900" x-text="patient.age + ' years'"></div>
+                      <div class="text-sm text-gray-500 capitalize" x-text="patient.gender"></div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="patient.bloodType"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="patient.registrationDate"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span 
+                        :class="{
+                          'bg-green-100 text-green-800': patient.status === 'active',
+                          'bg-gray-100 text-gray-800': patient.status === 'inactive',
+                          'bg-red-100 text-red-800': patient.status === 'archived'
+                        }"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize"
+                        x-text="patient.status"
+                      ></span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button @click="viewPatient(patient)" class="text-ocean-600 hover:text-ocean-900 mr-3" title="View patient details">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      <button @click="viewPrescriptions(patient.id)" class="text-green-600 hover:text-green-900 mr-3" title="View patient prescriptions">
+                        <i class="fas fa-prescription-bottle"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+          
+          <!-- Pagination -->
+          <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+              <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" title="Previous page">
+                Previous
+              </button>
+              <button @click="nextPage()" :disabled="currentPage === totalPages" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Next
+              </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-gray-700">
+                  Showing
+                  <span class="font-medium" x-text="(currentPage - 1) * itemsPerPage + 1"></span>
+                  to
+                  <span class="font-medium" x-text="Math.min(currentPage * itemsPerPage, filteredPatients.length)"></span>
+                  of
+                  <span class="font-medium" x-text="filteredPatients.length"></span>
+                  results
+                </p>
+              </div>
+              <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" title="Previous page">
+                    <i class="fas fa-chevron-left"></i>
+                  </button>
+                  <template x-for="page in totalPages" :key="page">
+                    <button 
+                      @click="currentPage = page"
+                      :class="currentPage === page ? 'bg-ocean-50 border-ocean-500 text-ocean-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'"
+                      class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                      x-text="page"
+                    ></button>
+                  </template>
+                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" title="Next page">
+                    <i class="fas fa-chevron-right"></i>
+                  </button>
+                </nav>
+              </div>
+            </div>
           </div>
         </div>
       </main>
@@ -304,13 +463,155 @@
   </div>
 
   <script>
-    function cashierDashboard() {
+    function cashierPatients() {
       return {
         mobileMenuOpen: false,
+        searchQuery: '',
+        selectedStatus: '',
+        selectedAgeGroup: '',
+        registrationDate: '',
+        currentPage: 1,
+        itemsPerPage: 10,
+        patients: [],
+        
+        init() {
+          this.loadPatientsData();
+        },
+        
+        loadPatientsData() {
+          // Fetch patients from API (read-only access)
+          fetch('/api/tenantadmin/patients')
+            .then(response => response.json())
+            .then(data => {
+              this.patients = data.map(p => ({
+                ...p,
+                patientId: p.idNumber || 'PAT' + p.id.toString().padStart(6, '0'),
+                age: p.dateOfBirth ? this.calculateAge(p.dateOfBirth) : 0,
+                bloodType: 'N/A', // Not in current model
+                registrationDate: p.createdAt.split('T')[0],
+                status: p.isActive ? 'active' : 'inactive'
+              }));
+            })
+            .catch(error => {
+              console.error('Error loading patients:', error);
+              this.showNotification('Error loading patients', 'error');
+            });
+        },
+        
+        get filteredPatients() {
+          let filtered = this.patients;
+          
+          if (this.searchQuery) {
+            filtered = filtered.filter(p => 
+              p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              p.patientId.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              p.phone.includes(this.searchQuery) ||
+              p.email.toLowerCase().includes(this.searchQuery.toLowerCase())
+            );
+          }
+          
+          if (this.selectedStatus) {
+            filtered = filtered.filter(p => p.status === this.selectedStatus);
+          }
+          
+          if (this.selectedAgeGroup) {
+            if (this.selectedAgeGroup === '0-17') {
+              filtered = filtered.filter(p => p.age <= 17);
+            } else if (this.selectedAgeGroup === '18-35') {
+              filtered = filtered.filter(p => p.age >= 18 && p.age <= 35);
+            } else if (this.selectedAgeGroup === '36-50') {
+              filtered = filtered.filter(p => p.age >= 36 && p.age <= 50);
+            } else if (this.selectedAgeGroup === '51+') {
+              filtered = filtered.filter(p => p.age >= 51);
+            }
+          }
+          
+          if (this.registrationDate) {
+            filtered = filtered.filter(p => p.registrationDate === this.registrationDate);
+          }
+          
+          return filtered;
+        },
+        
+        get paginatedPatients() {
+          const start = (this.currentPage - 1) * this.itemsPerPage;
+          const end = start + this.itemsPerPage;
+          return this.filteredPatients.slice(start, end);
+        },
+        
+        get totalPages() {
+          return Math.ceil(this.filteredPatients.length / this.itemsPerPage);
+        },
+        
+        previousPage() {
+          if (this.currentPage > 1) {
+            this.currentPage--;
+          }
+        },
+        
+        nextPage() {
+          if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+          }
+        },
+        
+        calculateAge(dateOfBirth) {
+          const today = new Date();
+          const birthDate = new Date(dateOfBirth);
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+          return age;
+        },
+        
+        viewPatient(patient) {
+          // View patient details (read-only)
+          alert(`Viewing patient: ${patient.name}\nID: ${patient.patientId}\nPhone: ${patient.phone}\nEmail: ${patient.email}`);
+        },
+        
+        viewPrescriptions(patientId) {
+          // View patient prescriptions
+          window.location.href = `prescriptions.html?patientId=${patientId}`;
+        },
+        
+        exportPatients() {
+          fetch('/api/tenantadmin/patients/export-csv')
+            .then(response => response.blob())
+            .then(blob => {
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `patients_${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+              this.showNotification('Patients exported successfully', 'success');
+            })
+            .catch(error => {
+              console.error('Error exporting patients:', error);
+              this.showNotification('Error exporting patients', 'error');
+            });
+        },
+        
+        showNotification(message, type = 'info') {
+          // Simple notification system
+          const notification = document.createElement('div');
+          notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            'bg-blue-500 text-white'
+          }`;
+          notification.textContent = message;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
+        },
         
         logout() {
-          // Simple page reload for demo
-          window.location.reload();
+          window.location.href = '../auth/signin.html';
         }
       }
     }

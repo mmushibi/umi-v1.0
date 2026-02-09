@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" x-data="cashierDashboard()" x-init="init()">
+<html lang="en" x-data="salesManagement()" x-init="init()">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -249,8 +249,6 @@
           </div>
         </div>
       </nav>
-    </aside>
-
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
       <!-- Header -->
@@ -301,16 +299,188 @@
         </div>
       </main>
     </div>
+
+    <!-- Notification Toast -->
+    <div x-show="notification" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-2"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-y-0"
+         x-transition:leave-end="opacity-0 transform translate-y-2"
+         x-cloak
+         class="fixed top-4 right-4 z-50 max-w-sm">
+      <div :class="{
+        'bg-green-100 border-green-400 text-green-700': notification?.type === 'success',
+        'bg-red-100 border-red-400 text-red-700': notification?.type === 'error',
+        'bg-blue-100 border-blue-400 text-blue-700': notification?.type === 'info'
+      }" class="border px-4 py-3 rounded-lg shadow-lg">
+        <div class="flex items-center">
+          <div class="flex-shrink-0">
+            <i :class="{
+              'fas fa-check-circle': notification?.type === 'success',
+              'fas fa-exclamation-circle': notification?.type === 'error',
+              'fas fa-info-circle': notification?.type === 'info'
+            }" class="h-5 w-5"></i>
+          </div>
+          <div class="ml-3">
+            <p x-text="notification?.message" class="text-sm font-medium"></p>
+          </div>
+          <div class="ml-auto pl-3">
+            <button @click="notification = null" class="inline-flex rounded-md p-1.5 focus:outline-none focus:ring-2" title="Dismiss Notification">
+              <i class="fas fa-times h-4 w-4"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sale Details Modal -->
+    <div x-show="showSaleModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 z-50 overflow-y-auto"
+         style="display: none;">
+      <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showSaleModal = false"></div>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="w-full">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Sale Details</h3>
+                <div class="space-y-4">
+                  <div>
+                    <p class="text-sm font-medium text-gray-700">Receipt Number</p>
+                    <p x-text="selectedSale?.receiptNumber" class="mt-1 text-sm text-gray-900"></p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-700">Date</p>
+                    <p x-text="selectedSale?.dateTime" class="mt-1 text-sm text-gray-900"></p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-700">Customer</p>
+                    <p x-text="selectedSale?.customerName" class="mt-1 text-sm text-gray-900"></p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-700">Payment Method</p>
+                    <p x-text="selectedSale?.paymentMethod" class="mt-1 text-sm text-gray-900"></p>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-700">Total</p>
+                    <p x-text="'ZMW' + (selectedSale?.total || 0).toFixed(2)" class="mt-1 text-lg font-bold text-gray-900"></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <button @click="showSaleModal = false" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-ocean-600 text-base font-medium text-white hover:bg-ocean-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ocean-500 sm:ml-3 sm:w-auto sm:text-sm">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
-    function cashierDashboard() {
+    function salesManagement() {
       return {
-        mobileMenuOpen: false,
+        searchQuery: '',
+        dateRange: '',
+        paymentMethod: '',
+        status: '',
+        currentPage: 1,
+        itemsPerPage: 10,
+        sales: [],
+        selectedSale: null,
+        showSaleModal: false,
+        notification: null,
         
-        logout() {
-          // Simple page reload for demo
-          window.location.reload();
+        init() {
+          this.fetchSales();
+          setInterval(() => this.fetchSales(), 30000);
+        },
+        
+        fetchSales() {
+          fetch('/api/cashier/sales')
+            .then(response => response.json())
+            .then(data => this.sales = data)
+            .catch(() => this.showNotification('Failed to fetch sales', 'error'));
+        },
+        
+        get filteredSales() {
+          return this.sales.filter(sale => {
+            const matchesSearch = !this.searchQuery || 
+              sale.receiptNumber.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              sale.customerName?.toLowerCase().includes(this.searchQuery.toLowerCase());
+            const matchesPayment = !this.paymentMethod || sale.paymentMethod === this.paymentMethod;
+            const matchesStatus = !this.status || sale.status === this.status;
+            return matchesSearch && matchesPayment && matchesStatus;
+          });
+        },
+        
+        get paginatedSales() {
+          const start = (this.currentPage - 1) * this.itemsPerPage;
+          return this.filteredSales.slice(start, start + this.itemsPerPage);
+        },
+        
+        get totalPages() {
+          return Math.ceil(this.filteredSales.length / this.itemsPerPage);
+        },
+        
+        get todaySales() {
+          const today = new Date().toISOString().split('T')[0];
+          return this.sales.filter(s => s.dateTime.startsWith(today) && s.status === 'completed')
+            .reduce((sum, s) => sum + s.total, 0);
+        },
+        
+        get totalTransactions() {
+          return this.sales.filter(s => s.status === 'completed').length;
+        },
+        
+        get avgTransaction() {
+          const completed = this.sales.filter(s => s.status === 'completed');
+          return completed.length ? completed.reduce((sum, s) => sum + s.total, 0) / completed.length : 0;
+        },
+        
+        get monthlyGrowth() {
+          return 0;
+        },
+        
+        viewSale(sale) {
+          this.selectedSale = sale;
+          this.showSaleModal = true;
+        },
+        
+        printReceipt(sale) {
+          window.print();
+        },
+        
+        exportSales() {
+          const params = new URLSearchParams({ searchQuery: this.searchQuery });
+          fetch(`/api/cashier/sales/export-csv?${params}`)
+            .then(response => response.blob())
+            .then(blob => {
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'sales.csv';
+              a.click();
+            });
+        },
+        
+        generateReport() {
+          this.showNotification('Report generation not available', 'info');
+        },
+        
+        showNotification(message, type) {
+          this.notification = { message, type };
+          setTimeout(() => this.notification = null, 3000);
         }
       }
     }

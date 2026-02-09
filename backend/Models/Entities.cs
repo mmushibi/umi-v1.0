@@ -72,7 +72,10 @@ namespace UmiHealthPOS.Models
         public int Id { get; set; }
         
         [Required]
-        public int CustomerId { get; set; }
+        [StringLength(50)]
+        public string ReceiptNumber { get; set; }
+        
+        public int? CustomerId { get; set; }
         
         [Column(TypeName = "decimal(10,2)")]
         public decimal Subtotal { get; set; }
@@ -87,15 +90,27 @@ namespace UmiHealthPOS.Models
         [StringLength(20)]
         public string PaymentMethod { get; set; }
         
+        [StringLength(100)]
+        public string PaymentDetails { get; set; }
+        
         [Column(TypeName = "decimal(10,2)")]
         public decimal CashReceived { get; set; }
         
         [Column(TypeName = "decimal(10,2)")]
         public decimal Change { get; set; }
         
-        public string Status { get; set; } = "Completed";
+        [StringLength(20)]
+        public string Status { get; set; } = "completed"; // "completed", "pending", "refunded", "cancelled"
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        public DateTime? UpdatedAt { get; set; }
+        
+        public string RefundReason { get; set; }
+        
+        public DateTime? RefundedAt { get; set; }
+        
+        public int? BranchId { get; set; }
         
         // Navigation properties
         public virtual Customer Customer { get; set; }
@@ -200,6 +215,8 @@ namespace UmiHealthPOS.Models
         
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         
+        public int? BranchId { get; set; }
+        
         // Navigation properties
         public virtual ICollection<StockTransaction> StockTransactions { get; set; }
     }
@@ -266,6 +283,8 @@ namespace UmiHealthPOS.Models
         
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         
+        public int? BranchId { get; set; }
+        
         // Navigation properties
         public virtual Patient Patient { get; set; }
         public virtual ICollection<PrescriptionItem> PrescriptionItems { get; set; }
@@ -308,6 +327,8 @@ namespace UmiHealthPOS.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        
+        public int? BranchId { get; set; }
         
         // Navigation properties
         public virtual ICollection<Prescription> Prescriptions { get; set; }

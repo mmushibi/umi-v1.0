@@ -274,39 +274,197 @@
       <!-- Page Content -->
       <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
         <!-- Search and Filters -->
-        <div class="bg-white rounded-lg shadow mb-6">
-          <div class="p-6">
-            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-              <div class="flex-1 max-w-lg">
-                <div class="relative">
-                  <input type="text" 
-                         x-model="searchQuery"
-                         placeholder="Search patients by name, ID, or phone..." 
-                         class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
-                  <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                  </svg>
-                </div>
+        <div class="bg-white rounded-lg shadow p-4 mb-6">
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Search Patients</label>
+              <div class="relative">
+                <input 
+                  type="text" 
+                  x-model="searchQuery"
+                  placeholder="Name, ID, phone, email..."
+                  class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                >
+                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                </svg>
               </div>
-              <div class="flex items-center space-x-3">
-                <button class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 flex items-center space-x-2">
-                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                  </svg>
-                  <span>Add Patient</span>
-                </button>
-              </div>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select x-model="selectedStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" title="Filter by patient status">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Age Group</label>
+              <select x-model="selectedAgeGroup" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" title="Filter by age group">
+                <option value="">All Ages</option>
+                <option value="0-17">0-17</option>
+                <option value="18-35">18-35</option>
+                <option value="36-50">36-50</option>
+                <option value="51+">51+</option>
+              </select>
+            </div>
+            
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Registration Date</label>
+              <input 
+                type="date" 
+                x-model="registrationDate"
+                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                title="Filter by registration date"
+                placeholder="Select registration date"
+              >
+            </div>
+          </div>
+          
+          <div class="mt-4 flex justify-between items-center">
+            <div class="flex space-x-2">
+              <button @click="showAddPatient = true" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0 3h3m-3 6h.01M9 21h.01M12 12h.01M15 12h.01M12 12h-3.01m-6 0h-3.01m0-6h.01m6-6V3m0 0V3m0 0h6m-6 0h6m-3 0h3.01"></path>
+                </svg>Add Patient
+              </button>
+              <button @click="exportPatients()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>Export
+              </button>
+            </div>
+            <div class="text-sm text-gray-600">
+              Showing <span x-text="filteredPatients.length"></span> of <span x-text="patients.length"></span> patients
             </div>
           </div>
         </div>
 
-        <!-- Patient List -->
-        <div class="bg-white rounded-lg shadow">
-          <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Patient Records</h2>
+        <!-- Patients Table -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age/Gender</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Blood Type</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registration</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <template x-for="patient in paginatedPatients" :key="patient.id">
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center">
+                        <div class="flex-shrink-0 h-10 w-10">
+                          <div class="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                            <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            </svg>
+                          </div>
+                        </div>
+                        <div class="ml-4">
+                          <div class="text-sm font-medium text-gray-900" x-text="patient.name"></div>
+                          <div class="text-sm text-gray-500" x-text="'ID: ' + patient.patientId"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900" x-text="patient.phone"></div>
+                      <div class="text-sm text-gray-500" x-text="patient.email"></div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="text-sm text-gray-900" x-text="patient.age + ' years'"></div>
+                      <div class="text-sm text-gray-500 capitalize" x-text="patient.gender"></div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="patient.bloodType"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="patient.registrationDate"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span 
+                        :class="{
+                          'bg-green-100 text-green-800': patient.status === 'active',
+                          'bg-gray-100 text-gray-800': patient.status === 'inactive',
+                          'bg-red-100 text-red-800': patient.status === 'archived'
+                        }"
+                        class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full capitalize"
+                        x-text="patient.status"
+                      ></span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button @click="viewPatient(patient)" class="text-ocean-600 hover:text-ocean-900 mr-3" title="View patient details">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                      </button>
+                      <button @click="editPatient(patient)" class="text-blue-600 hover:text-blue-900 mr-3" title="Edit patient">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5h-1.586a1 1 0 00-.707-.293l-5.414-5.414A1 1 0 0012.586 6H12z"></path>
+                        </svg>
+                      </button>
+                      <button @click="viewPrescriptions(patient.id)" class="text-green-600 hover:text-green-900 mr-3" title="View patient prescriptions">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
           </div>
-          <div class="p-6">
-            <div class="text-center py-12">
+          
+          <!-- Pagination -->
+          <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+              <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" title="Previous page">
+                Previous
+              </button>
+              <button @click="nextPage()" :disabled="currentPage === totalPages" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                Next
+              </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+              <div>
+                <p class="text-sm text-gray-700">
+                  Showing
+                  <span class="font-medium" x-text="(currentPage - 1) * itemsPerPage + 1"></span>
+                  to
+                  <span class="font-medium" x-text="Math.min(currentPage * itemsPerPage, filteredPatients.length)"></span>
+                  of
+                  <span class="font-medium" x-text="filteredPatients.length"></span>
+                  results
+                </p>
+              </div>
+              <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" title="Previous page">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                  </button>
+                  <template x-for="page in totalPages" :key="page">
+                    <button 
+                      @click="currentPage = page"
+                      :class="currentPage === page ? 'bg-ocean-50 border-ocean-500 text-ocean-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'"
+                      class="relative inline-flex items-center px-4 py-2 border text-sm font-medium"
+                      x-text="page"
+                    ></button>
+                  </template>
+                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" title="Next page">
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                  </button>
+                </nav>
+              </div>
               <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
               </svg>
@@ -319,18 +477,350 @@
     </div>
   </div>
 
+  <!-- Add Patient Modal -->
+  <div x-show="showAddPatient" x-transition.opacity
+       class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div x-show="showAddPatient" x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-90"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-90"
+         class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <h2 class="text-xl font-semibold text-gray-900">Add New Patient</h2>
+        <button @click="showAddPatient = false" 
+                class="text-gray-400 hover:text-gray-600 transition-colors"
+                title="Close modal">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <form @submit.prevent="addPatient()" class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Name -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
+            <input type="text" x-model="newPatient.name" required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="Enter patient's full name">
+          </div>
+
+          <!-- ID Number -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">ID Number</label>
+            <input type="text" x-model="newPatient.idNumber"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="National ID or passport number">
+          </div>
+
+          <!-- Phone -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+            <input type="tel" x-model="newPatient.phone" required
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="+260123456789">
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+            <input type="email" x-model="newPatient.email"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   placeholder="patient@example.com">
+          </div>
+
+          <!-- Date of Birth -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+            <input type="date" x-model="newPatient.dateOfBirth"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+          </div>
+
+          <!-- Gender -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+            <select x-model="newPatient.gender"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <!-- Address -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+            <textarea x-model="newPatient.address" rows="2"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                      placeholder="Enter patient's address"></textarea>
+          </div>
+
+          <!-- Allergies -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Allergies</label>
+            <textarea x-model="newPatient.allergies" rows="2"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                      placeholder="List any known allergies (e.g., Penicillin, Nuts)"></textarea>
+          </div>
+
+          <!-- Medical History -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">Medical History</label>
+            <textarea x-model="newPatient.medicalHistory" rows="3"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                      placeholder="Enter relevant medical history (e.g., Hypertension, Diabetes, Asthma)"></textarea>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+          <button type="button" @click="showAddPatient = false"
+                  class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
+            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0 3h3m-3 6h.01M9 21h.01M12 12h.01M15 12h.01M12 12h-3.01m-6 0h-3.01m0-6h.01m6-6V3m0 0V3m0 0h6m-6 0h6m-3 0h3.01"></path>
+            </svg>Add Patient
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
     function pharmacistPatients() {
       return {
         mobileMenuOpen: false,
         searchQuery: '',
+        selectedStatus: '',
+        selectedAgeGroup: '',
+        registrationDate: '',
+        showAddPatient: false,
+        newPatient: {
+          name: '',
+          idNumber: '',
+          phone: '',
+          email: '',
+          dateOfBirth: '',
+          gender: '',
+          address: '',
+          allergies: '',
+          medicalHistory: ''
+        },
+        currentPage: 1,
+        itemsPerPage: 10,
+        patients: [],
         
         init() {
-          // Initialize page
+          this.loadPatientsData();
+        },
+        
+        loadPatientsData() {
+          // Fetch patients from API (pharmacist access - can add/edit but not delete)
+          fetch('/api/tenantadmin/patients')
+            .then(response => response.json())
+            .then(data => {
+              this.patients = data.map(p => ({
+                ...p,
+                patientId: p.idNumber || 'PAT' + p.id.toString().padStart(6, '0'),
+                age: p.dateOfBirth ? this.calculateAge(p.dateOfBirth) : 0,
+                bloodType: 'N/A', // Not in current model
+                registrationDate: p.createdAt.split('T')[0],
+                status: p.isActive ? 'active' : 'inactive'
+              }));
+            })
+            .catch(error => {
+              console.error('Error loading patients:', error);
+              this.showNotification('Error loading patients', 'error');
+            });
+        },
+        
+        get filteredPatients() {
+          let filtered = this.patients;
+          
+          if (this.searchQuery) {
+            filtered = filtered.filter(p => 
+              p.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              p.patientId.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              p.phone.includes(this.searchQuery) ||
+              p.email.toLowerCase().includes(this.searchQuery.toLowerCase())
+            );
+          }
+          
+          if (this.selectedStatus) {
+            filtered = filtered.filter(p => p.status === this.selectedStatus);
+          }
+          
+          if (this.selectedAgeGroup) {
+            if (this.selectedAgeGroup === '0-17') {
+              filtered = filtered.filter(p => p.age <= 17);
+            } else if (this.selectedAgeGroup === '18-35') {
+              filtered = filtered.filter(p => p.age >= 18 && p.age <= 35);
+            } else if (this.selectedAgeGroup === '36-50') {
+              filtered = filtered.filter(p => p.age >= 36 && p.age <= 50);
+            } else if (this.selectedAgeGroup === '51+') {
+              filtered = filtered.filter(p => p.age >= 51);
+            }
+          }
+          
+          if (this.registrationDate) {
+            filtered = filtered.filter(p => p.registrationDate === this.registrationDate);
+          }
+          
+          return filtered;
+        },
+        
+        get paginatedPatients() {
+          const start = (this.currentPage - 1) * this.itemsPerPage;
+          const end = start + this.itemsPerPage;
+          return this.filteredPatients.slice(start, end);
+        },
+        
+        get totalPages() {
+          return Math.ceil(this.filteredPatients.length / this.itemsPerPage);
+        },
+        
+        previousPage() {
+          if (this.currentPage > 1) {
+            this.currentPage--;
+          }
+        },
+        
+        nextPage() {
+          if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+          }
+        },
+        
+        calculateAge(dateOfBirth) {
+          const today = new Date();
+          const birthDate = new Date(dateOfBirth);
+          let age = today.getFullYear() - birthDate.getFullYear();
+          const monthDiff = today.getMonth() - birthDate.getMonth();
+          if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+          }
+          return age;
+        },
+        
+        viewPatient(patient) {
+          // View patient details
+          alert(`Viewing patient: ${patient.name}\nID: ${patient.patientId}\nPhone: ${patient.phone}\nEmail: ${patient.email}`);
+        },
+        
+        editPatient(patient) {
+          // Edit patient (pharmacist can edit)
+          this.newPatient = {
+            name: patient.name,
+            idNumber: patient.idNumber,
+            phone: patient.phone,
+            email: patient.email,
+            dateOfBirth: patient.dateOfBirth,
+            gender: patient.gender,
+            address: patient.address,
+            allergies: patient.allergies,
+            medicalHistory: patient.medicalHistory
+          };
+          this.showAddPatient = true;
+        },
+        
+        viewPrescriptions(patientId) {
+          // View patient prescriptions
+          window.location.href = `prescriptions.html?patientId=${patientId}`;
+        },
+        
+        addPatient() {
+          const patientData = {
+            name: this.newPatient.name,
+            idNumber: this.newPatient.idNumber,
+            phoneNumber: this.newPatient.phone,
+            email: this.newPatient.email,
+            dateOfBirth: this.newPatient.dateOfBirth || null,
+            gender: this.newPatient.gender,
+            address: this.newPatient.address,
+            allergies: this.newPatient.allergies,
+            medicalHistory: this.newPatient.medicalHistory
+          };
+
+          fetch('/api/tenantadmin/patients', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(patientData)
+          })
+          .then(response => response.json())
+          .then(data => {
+            this.showNotification('Patient added successfully', 'success');
+            this.showAddPatient = false;
+            this.resetNewPatient();
+            this.loadPatientsData();
+          })
+          .catch(error => {
+            console.error('Error adding patient:', error);
+            this.showNotification('Error adding patient', 'error');
+          });
+        },
+
+        resetNewPatient() {
+          this.newPatient = {
+            name: '',
+            idNumber: '',
+            phone: '',
+            email: '',
+            dateOfBirth: '',
+            gender: '',
+            address: '',
+            allergies: '',
+            medicalHistory: ''
+          };
+        },
+        
+        exportPatients() {
+          fetch('/api/tenantadmin/patients/export-csv')
+            .then(response => response.blob())
+            .then(blob => {
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `patients_${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+              this.showNotification('Patients exported successfully', 'success');
+            })
+            .catch(error => {
+              console.error('Error exporting patients:', error);
+              this.showNotification('Error exporting patients', 'error');
+            });
+        },
+        
+        showNotification(message, type = 'info') {
+          // Simple notification system
+          const notification = document.createElement('div');
+          notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            'bg-blue-500 text-white'
+          }`;
+          notification.textContent = message;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
         },
         
         logout() {
-          window.location.reload();
+          window.location.href = '../auth/signin.html';
         }
       }
     }

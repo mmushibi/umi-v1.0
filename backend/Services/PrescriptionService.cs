@@ -23,6 +23,10 @@ namespace UmiHealthPOS.Services
         Task<List<Patient>> GetPatientsAsync();
         Task<Patient> GetPatientAsync(int id);
         Task<Patient> CreatePatientAsync(CreatePatientRequest request);
+        Task<Patient> UpdatePatientAsync(int id, CreatePatientRequest request);
+        Task<bool> DeletePatientAsync(int id);
+        Task<CsvImportResult> ImportPatientsFromCsvAsync(IFormFile file);
+        Task<byte[]> ExportPatientsToCsvAsync();
         Task<byte[]> ExportPrescriptionsToCsvAsync();
         Task<string> GenerateRxNumberAsync();
     }
@@ -245,7 +249,10 @@ namespace UmiHealthPOS.Services
                     Gender = request.Gender,
                     Address = request.Address,
                     Allergies = request.Allergies,
-                    MedicalHistory = request.MedicalHistory
+                    MedicalHistory = request.MedicalHistory,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 };
 
                 _context.Patients.Add(patient);
@@ -256,6 +263,168 @@ namespace UmiHealthPOS.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating patient");
+                throw;
+            }
+        }
+
+        public async Task<Patient> UpdatePatientAsync(int id, CreatePatientRequest request)
+        {
+            try
+            {
+                var patient = await _context.Patients.FindAsync(id);
+                if (patient == null)
+                {
+                    return null;
+                }
+
+                patient.Name = request.Name;
+                patient.IdNumber = request.IdNumber;
+                patient.PhoneNumber = request.PhoneNumber;
+                patient.Email = request.Email;
+                patient.DateOfBirth = request.DateOfBirth;
+                patient.Gender = request.Gender;
+                patient.Address = request.Address;
+                patient.Allergies = request.Allergies;
+                patient.MedicalHistory = request.MedicalHistory;
+                patient.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Updated patient: {Name}", patient.Name);
+                return patient;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating patient with ID: {Id}", id);
+                throw;
+            }
+        }
+
+        public async Task<bool> DeletePatientAsync(int id)
+        {
+            try
+            {
+                var patient = await _context.Patients.FindAsync(id);
+                if (patient == null)
+                {
+                    return false;
+                }
+
+                // Soft delete by setting IsActive to false
+                patient.IsActive = false;
+                patient.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Deleted patient: {Name}", patient.Name);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting patient with ID: {Id}", id);
+                throw;
+            }
+        }
+
+        public async Task<CsvImportResult> ImportPatientsFromCsvAsync(IFormFile file)
+        {
+            var result = new CsvImportResult();
+            
+            try
+            {
+                using var reader = new StreamReader(file.OpenReadStream());
+                var headerLine = await reader.ReadLineAsync();
+                
+                if (string.IsNullOrEmpty(headerLine))
+                {
+                    result.Errors.Add("CSV file is empty");
+                    return result;
+                }
+
+                var lineCount = 1;
+                while (!reader.EndOfStream)
+                {
+                    lineCount++;
+                    var line = await reader.ReadLineAsync();
+                    
+                    if (string.IsNullOrWhiteSpace(line))
+                        continue;
+
+                    var values = line.Split(',');
+                    if (values.Length < 8)
+                    {
+                        result.Errors.Add($"Line {lineCount}: Insufficient columns");
+                        continue;
+                    }
+
+                    try
+                    {
+                        var patientRequest = new CreatePatientRequest
+                        {
+                            Name = values[0].Trim('"'),
+                            IdNumber = values[1].Trim('"'),
+                            PhoneNumber = values[2].Trim('"'),
+                            Email = values[3].Trim('"'),
+                            Gender = values[4].Trim('"'),
+                            Address = values[5].Trim('"'),
+                            Allergies = values[6].Trim('"'),
+                            MedicalHistory = values[7].Trim('"')
+                        };
+
+                        if (DateTime.TryParse(values[8].Trim('"'), out var dateOfBirth))
+                        {
+                            patientRequest.DateOfBirth = dateOfBirth;
+                        }
+
+                        await CreatePatientAsync(patientRequest);
+                        result.ImportedCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        result.Errors.Add($"Line {lineCount}: {ex.Message}");
+                    }
+                }
+
+                _logger.LogInformation("Imported {Count} patients from CSV", result.ImportedCount);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing patients from CSV");
+                result.Errors.Add($"General error: {ex.Message}");
+                return result;
+            }
+        }
+
+        public async Task<byte[]> ExportPatientsToCsvAsync()
+        {
+            try
+            {
+                var patients = await GetPatientsAsync();
+                var csv = new StringBuilder();
+                
+                // Header
+                csv.AppendLine("Name,ID Number,Phone,Email,Gender,Address,Allergies,Medical History,Date of Birth,Registration Date,Status");
+                
+                // Data rows
+                foreach (var patient in patients)
+                {
+                    csv.AppendLine($"\"{patient.Name}\"," +
+                                  $"\"{patient.IdNumber}\"," +
+                                  $"\"{patient.PhoneNumber}\"," +
+                                  $"\"{patient.Email}\"," +
+                                  $"\"{patient.Gender}\"," +
+                                  $"\"{patient.Address}\"," +
+                                  $"\"{patient.Allergies}\"," +
+                                  $"\"{patient.MedicalHistory}\"," +
+                                  $"{(patient.DateOfBirth?.ToString("yyyy-MM-dd") ?? "")}," +
+                                  $"{patient.CreatedAt:yyyy-MM-dd}," +
+                                  $"{(patient.IsActive ? "Active" : "Inactive")}");
+                }
+                
+                return Encoding.UTF8.GetBytes(csv.ToString());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting patients to CSV");
                 throw;
             }
         }
@@ -329,54 +498,54 @@ namespace UmiHealthPOS.Services
     public class CreatePrescriptionRequest
     {
         public int PatientId { get; set; }
-        public string PatientName { get; set; }
-        public string PatientIdNumber { get; set; }
-        public string DoctorName { get; set; }
-        public string DoctorRegistrationNumber { get; set; }
-        public string Medication { get; set; }
-        public string Dosage { get; set; }
-        public string Instructions { get; set; }
+        public string? PatientName { get; set; }
+        public string? PatientIdNumber { get; set; }
+        public string? DoctorName { get; set; }
+        public string? DoctorRegistrationNumber { get; set; }
+        public string? Medication { get; set; }
+        public string? Dosage { get; set; }
+        public string? Instructions { get; set; }
         public decimal TotalCost { get; set; }
         public DateTime PrescriptionDate { get; set; }
         public DateTime? ExpiryDate { get; set; }
-        public string Notes { get; set; }
+        public string? Notes { get; set; }
         public bool IsUrgent { get; set; }
-        public List<CreatePrescriptionItemRequest> PrescriptionItems { get; set; }
+        public List<CreatePrescriptionItemRequest>? PrescriptionItems { get; set; }
     }
 
     public class UpdatePrescriptionRequest
     {
-        public string PatientName { get; set; }
-        public string DoctorName { get; set; }
-        public string Medication { get; set; }
-        public string Dosage { get; set; }
-        public string Instructions { get; set; }
+        public string? PatientName { get; set; }
+        public string? DoctorName { get; set; }
+        public string? Medication { get; set; }
+        public string? Dosage { get; set; }
+        public string? Instructions { get; set; }
         public decimal TotalCost { get; set; }
-        public string Notes { get; set; }
+        public string? Notes { get; set; }
         public bool IsUrgent { get; set; }
     }
 
     public class CreatePrescriptionItemRequest
     {
         public int InventoryItemId { get; set; }
-        public string MedicationName { get; set; }
-        public string Dosage { get; set; }
+        public string? MedicationName { get; set; }
+        public string? Dosage { get; set; }
         public int Quantity { get; set; }
-        public string Instructions { get; set; }
+        public string? Instructions { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
     }
 
     public class CreatePatientRequest
     {
-        public string Name { get; set; }
-        public string IdNumber { get; set; }
-        public string PhoneNumber { get; set; }
-        public string Email { get; set; }
+        public string? Name { get; set; }
+        public string? IdNumber { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Email { get; set; }
         public DateTime? DateOfBirth { get; set; }
-        public string Gender { get; set; }
-        public string Address { get; set; }
-        public string Allergies { get; set; }
-        public string MedicalHistory { get; set; }
+        public string? Gender { get; set; }
+        public string? Address { get; set; }
+        public string? Allergies { get; set; }
+        public string? MedicalHistory { get; set; }
     }
 }

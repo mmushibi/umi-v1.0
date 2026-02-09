@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: umi-postgres
+    environment:
+      POSTGRES_DB: umi_health_pos
+      POSTGRES_USER: umi_admin
+      POSTGRES_PASSWORD: umi_secure_password_2024
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - umi-network
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: umi-backend-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=umi_health_pos;Username=umi_admin;Password=umi_secure_password_2024
+      - Jwt__Issuer=UmiHealthPOS
+      - Jwt__Audience=UmiHealthPOSUsers
+      - Jwt__Key=ThisIsASecretKeyForJWTTokenGenerationThatShouldBeAtLeast32CharactersLong!
+      - Frontend__AllowedOrigins=http://localhost:3000,http://localhost:8080
+    ports:
+      - "5000:80"
+      - "5001:443"
+    depends_on:
+      - postgres
+    networks:
+      - umi-network
+    restart: unless-stopped
+    volumes:
+      - ./backend/uploads:/app/uploads
+
+  # Frontend (Nginx serving static files)
+  frontend:
+    image: nginx:alpine
+    container_name: umi-frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./wwwroot:/usr/share/nginx/html
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - backend
+    networks:
+      - umi-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  umi-network:
+    driver: bridge

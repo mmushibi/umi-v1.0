@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using UmiHealthPOS.Configuration;
 using UmiHealthPOS.Hubs;
 using UmiHealthPOS.Data;
@@ -64,6 +65,9 @@ builder.Services.AddScoped<IStockTransactionRepository, StockTransactionReposito
 // Add business services
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 
+// Add data seeder
+builder.Services.AddScoped<SalesDataSeeder>();
+
 var app = builder.Build();
 
 app.UseHttpsRedirection();
@@ -75,5 +79,11 @@ app.UseAuthorization();
 app.MapHub<DashboardHub>("/dashboardHub");
 
 app.MapControllers();
+
+// Seed data in development
+if (app.Environment.IsDevelopment())
+{
+    await app.SeedSalesDataAsync();
+}
 
 app.Run();

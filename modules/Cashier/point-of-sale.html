@@ -317,7 +317,9 @@
                       </template>
                     </select>
                     <button @click="showAddCustomer = true" class="px-3 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
-                      <i class="fas fa-plus"></i>
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                      </svg>
                     </button>
                   </div>
                 </div>
@@ -346,7 +348,9 @@
                     class="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer hover:border-ocean-300"
                   >
                     <div class="aspect-square bg-gray-100 rounded-lg mb-2 flex items-center justify-center">
-                      <i class="fas fa-pills text-3xl text-gray-400"></i>
+                      <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                      </svg>
                     </div>
                     <h3 class="font-medium text-sm text-gray-900 truncate" x-text="product.name"></h3>
                     <p class="text-xs text-gray-500 truncate" x-text="product.category"></p>
@@ -380,27 +384,35 @@
                           @click="updateQuantity(index, item.quantity - 1)"
                           class="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
                         >
-                          <i class="fas fa-minus text-xs"></i>
+                          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
+                          </svg>
                         </button>
                         <span class="text-sm font-medium w-8 text-center" x-text="item.quantity"></span>
                         <button 
                           @click="updateQuantity(index, item.quantity + 1)"
                           class="w-6 h-6 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center"
                         >
-                          <i class="fas fa-plus text-xs"></i>
+                          <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                          </svg>
                         </button>
                         <button 
                           @click="removeFromCart(index)"
                           class="w-6 h-6 rounded-full bg-red-100 hover:bg-red-200 flex items-center justify-center ml-2"
                         >
-                          <i class="fas fa-trash text-xs text-red-600"></i>
+                          <svg class="h-3 w-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                          </svg>
                         </button>
                       </div>
                     </div>
                   </template>
                   
                   <div x-show="cart.length === 0" class="text-center py-8 text-gray-500">
-                    <i class="fas fa-shopping-cart text-3xl mb-2"></i>
+                    <svg class="h-8 w-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
                     <p class="text-sm">Cart is empty</p>
                   </div>
                 </div>
@@ -439,28 +451,36 @@
                       :class="paymentMethod === 'cash' ? 'bg-ocean-600 text-white' : 'bg-gray-100 text-gray-700'"
                       class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                     >
-                      <i class="fas fa-money-bill-wave mr-1"></i> Cash
+                      <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                      </svg> Cash
                     </button>
                     <button 
                       @click="paymentMethod = 'card'"
                       :class="paymentMethod === 'card' ? 'bg-ocean-600 text-white' : 'bg-gray-100 text-gray-700'"
                       class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                     >
-                      <i class="fas fa-credit-card mr-1"></i> Card
+                      <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+                      </svg> Card
                     </button>
                     <button 
                       @click="paymentMethod = 'mobile'"
                       :class="paymentMethod === 'mobile' ? 'bg-ocean-600 text-white' : 'bg-gray-100 text-gray-700'"
                       class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                     >
-                      <i class="fas fa-mobile-alt mr-1"></i> Mobile
+                      <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8m-4-18h.01M12 8.01V3m0 0l-4 4m4-4l-4 4m0 0V12.01M16 20.01a4 4 0 01-4-4 4 4 0 01-4-4z"></path>
+                      </svg> Mobile
                     </button>
                     <button 
                       @click="paymentMethod = 'insurance'"
                       :class="paymentMethod === 'insurance' ? 'bg-ocean-600 text-white' : 'bg-gray-100 text-gray-700'"
                       class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                     >
-                      <i class="fas fa-shield-alt mr-1"></i> Insurance
+                      <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.618 4.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                      </svg> Insurance
                     </button>
                   </div>
                 </div>
@@ -487,14 +507,18 @@
                     :disabled="cart.length === 0 || (paymentMethod === 'cash' && cashReceived < total)"
                     class="w-full py-3 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-medium"
                   >
-                    <i class="fas fa-check-circle mr-2"></i> Complete Sale
+                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg> Complete Sale
                   </button>
                   
                   <button 
                     @click="clearCart()"
                     class="w-full py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 font-medium"
                   >
-                    <i class="fas fa-times-circle mr-2"></i> Clear Cart
+                    <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg> Clear Cart
                   </button>
                 </div>
               </div>

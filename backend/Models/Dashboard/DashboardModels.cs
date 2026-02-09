@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace UmiHealthPOS.Models.Dashboard
 {
@@ -8,6 +9,11 @@ namespace UmiHealthPOS.Models.Dashboard
         public int ActivePrescriptions { get; set; }
         public int LowStockItems { get; set; }
         public string MonthlyRevenue { get; set; }
+        public int FilledPrescriptions { get; set; }
+        public int TotalPatients { get; set; }
+        public int TotalPrescriptions { get; set; }
+        public int PendingPrescriptions { get; set; }
+        public List<RecentActivity> RecentActivity { get; set; } = new List<RecentActivity>();
     }
 
     public class RecentActivity
