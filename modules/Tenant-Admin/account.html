@@ -252,6 +252,39 @@
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Trial Notification Banner -->
+      <div x-show="subscription.isTrial" x-transition:enter="transition ease-out duration-300" 
+           x-transition:enter-start="opacity-0 transform -translate-y-2"
+           x-transition:enter-end="opacity-100 transform translate-y-0"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 transform translate-y-0"
+           x-transition:leave-end="opacity-0 transform -translate-y-2"
+           class="bg-gradient-to-r from-ocean-500 to-ocean-600 text-white px-4 py-3 shadow-lg">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+          <div class="flex items-center">
+            <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3l-3 3m0-6l-3-3m6 3l-3-3M9 21h6a2 2 0 002-2V8a2 2 0 00-2-2H9a2 2 0 00-2 2v11a2 2 0 002 2z"></path>
+            </svg>
+            <div>
+              <h3 class="font-semibold">14-Day Trial Period</h3>
+              <p class="text-ocean-100 text-sm mt-1">
+                Your trial ends on <span x-text="new Date(subscription.trialEndDate).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })"></span>
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-4">
+            <button class="bg-white text-ocean-600 px-4 py-2 rounded-md text-sm font-medium hover:bg-ocean-50 transition-colors" title="Upgrade to paid plan">
+              Upgrade Now
+            </button>
+            <button @click="showNotification = false" class="text-ocean-100 hover:text-white px-3 py-1 rounded-md text-sm transition-colors" title="Dismiss notification">
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+      
       <!-- Header -->
       <header class="bg-white shadow-sm border-b border-gray-200">
         <div class="px-6 py-4">

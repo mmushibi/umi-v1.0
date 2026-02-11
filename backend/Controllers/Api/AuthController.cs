@@ -99,6 +99,12 @@ namespace UmiHealthPOS.Controllers.Api
                     return BadRequest(new { message = "Email already exists." });
                 }
 
+                // Check if pharmacy name already exists
+                if (await _context.Pharmacies.AnyAsync(p => p.Name.ToLower() == request.OrganizationName.ToLower()))
+                {
+                    return BadRequest(new { message = "A pharmacy with this name already exists. Please choose a different name." });
+                }
+
                 // Create user
                 var user = new User
                 {
@@ -137,6 +143,22 @@ namespace UmiHealthPOS.Controllers.Api
                 };
 
                 _context.Pharmacies.Add(pharmacy);
+                
+                // Create 14-day trial subscription
+                var subscription = new Subscription
+                {
+                    PharmacyId = pharmacy.Id,
+                    PlanId = 1, // Basic plan ID
+                    Status = "trial",
+                    StartDate = DateTime.UtcNow,
+                    EndDate = DateTime.UtcNow.AddDays(14),
+                    AutoRenew = false,
+                    TrialUsed = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                
+                _context.Subscriptions.Add(subscription);
                 await _context.SaveChangesAsync();
 
                 // Assign user to first branch or create default branch
@@ -219,8 +241,10 @@ namespace UmiHealthPOS.Controllers.Api
                     userId = user.Id,
                     accessToken = tokenString,
                     refreshToken = refreshToken,
-                    plan = request.Plan ?? "basic",
-                    message = "Account created successfully"
+                    plan = "trial", // Always start with trial plan
+                    trialEndDate = DateTime.UtcNow.AddDays(14).ToString("yyyy-MM-dd"),
+                    isTrial = true,
+                    message = "Account created successfully. Your 14-day trial has started!"
                 });
             }
             catch (Exception ex)
@@ -378,12 +402,24 @@ namespace UmiHealthPOS.Controllers.Api
                 return Convert.ToBase64String(hashedBytes);
             }
         }
-    }
     
     public class SignInRequest
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+    }
+    
+    private bool IsValidEmail(string email)
+    {
+        try
+        {
+            var addr = new System.Net.Mail.MailAddress(email);
+            return addr.Address == email;
+        }
+        catch
+        {
+            return false;
+        }
     }
     
     public class SignInResponse

@@ -486,9 +486,13 @@
                 plan: this.form.plan || result.plan,
                 email: this.form.email,
                 name: `${this.form.firstName} ${this.form.lastName}`,
-                tenantName: this.form.organization
+                tenantName: this.form.organization,
+                isTrial: result.isTrial || false,
+                trialEndDate: result.trialEndDate || null
               }, { role, permissions, remember: true });
-              this.success = 'Account created! Redirecting to dashboard...';
+              this.success = result.isTrial ? 
+                'Account created! Your 14-day trial has started. Redirecting to dashboard...' : 
+                'Account created! Redirecting to dashboard...';
             } else {
               const account = this.persistDevAccount();
               this.persistSession(account, {
