@@ -75,6 +75,7 @@ app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseBranchIsolation();
+app.UseInactivityCheck();
 app.UseAuthorization();
 
 // Map SignalR hubs
@@ -86,6 +87,15 @@ app.MapControllers();
 if (app.Environment.IsDevelopment())
 {
     await DataSeeder.SeedDataAsync(app.Services);
+}
+
+// Extension method for inactivity middleware
+public static class InactivityMiddlewareExtensions
+{
+    public static IApplicationBuilder UseInactivityCheck(this IApplicationBuilder builder)
+    {
+        return builder.UseMiddleware<InactivityMiddleware>();
+    }
 }
 
 app.Run();

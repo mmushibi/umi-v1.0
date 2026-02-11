@@ -204,7 +204,7 @@ namespace UmiHealthPOS.Controllers.Api
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
                     Subject = user.Id,
-                    Expires = DateTime.UtcNow.AddHours(24),
+                    Expires = DateTime.UtcNow.AddMinutes(30), // 30 minutes inactivity timeout
                     Issuer = _configuration["Jwt:Issuer"],
                     Audience = _configuration["Jwt:Audience"],
                     SigningCredentials = new SigningCredentials(
@@ -218,7 +218,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 var refreshToken = Guid.NewGuid().ToString();
 
-                // Store refresh token
+                // Store refresh token with inactivity tracking
                 var userSession = new UserSession
                 {
                     UserId = user.Id,
@@ -226,7 +226,8 @@ namespace UmiHealthPOS.Controllers.Api
                     DeviceInfo = "Web Browser",
                     Browser = "Unknown",
                     IpAddress = "127.0.0.1",
-                    ExpiresAt = DateTime.UtcNow.AddDays(30),
+                    ExpiresAt = DateTime.UtcNow.AddMinutes(30), // 30 minutes inactivity
+                    LastAccessAt = DateTime.UtcNow, // Track last activity
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };

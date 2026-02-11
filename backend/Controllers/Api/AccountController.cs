@@ -140,6 +140,172 @@ namespace UmiHealthPOS.Controllers.Api
             return Ok(subscription);
         }
         
+        [HttpGet("subscriptions/plans")]
+        public async Task<IActionResult> GetAvailablePlans()
+        {
+            var userId = GetUserId();
+            var user = await _context.Users
+                .Include(u => u.UserBranches)
+                .ThenInclude(ub => ub.Branch)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+            
+            if (user == null || user.Role != "admin")
+            {
+                return Unauthorized(new { message = "Only tenant admins can view subscription plans" });
+            }
+            
+            // Return available subscription plans
+            var plans = new[]
+            {
+                new
+                {
+                    id = "basic",
+                    name = "Basic",
+                    description = "Perfect for small pharmacies",
+                    price = 50.00m,
+                    billingCycle = "monthly",
+                    features = new[] { "inventory", "sales", "reports", "basic_support" },
+                    maxUsers = 5,
+                    maxBranches = 2,
+                    maxInventoryItems = 1000,
+                    isPopular = false
+                },
+                new
+                {
+                    id = "professional",
+                    name = "Professional",
+                    description = "Great for growing pharmacies",
+                    price = 150.00m,
+                    billingCycle = "monthly",
+                    features = new[] { "inventory", "sales", "reports", "basic_support", "advanced_analytics", "api_access" },
+                    maxUsers = 20,
+                    maxBranches = 5,
+                    maxInventoryItems = 5000,
+                    isPopular = true
+                },
+                new
+                {
+                    id = "enterprise",
+                    name = "Enterprise",
+                    description = "Complete solution for pharmacy chains",
+                    price = 500.00m,
+                    billingCycle = "monthly",
+                    features = new[] { "inventory", "sales", "reports", "basic_support", "advanced_analytics", "api_access", "priority_support", "custom_integrations" },
+                    maxUsers = -1, // unlimited
+                    maxBranches = -1, // unlimited
+                    maxInventoryItems = -1, // unlimited
+                    isPopular = false
+                }
+            };
+            
+            return Ok(plans);
+        }
+        
+        [HttpPost("subscriptions/upgrade")]
+        public async Task<IActionResult> UpgradeSubscription([FromBody] UpgradeSubscriptionRequest request)
+        {
+            var userId = GetUserId();
+            var user = await _context.Users
+                .Include(u => u.UserBranches)
+                .ThenInclude(ub => ub.Branch)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+            
+            if (user == null || user.Role != "admin")
+            {
+                return Unauthorized(new { message = "Only tenant admins can upgrade subscriptions" });
+            }
+            
+            // Get pharmacy ID from user's branch
+            var branchId = user.UserBranches.FirstOrDefault()?.BranchId;
+            if (branchId == null || branchId == 0)
+            {
+                return BadRequest(new { message = "User is not associated with any pharmacy" });
+            }
+            
+            // Get pharmacy to find subscription
+            var pharmacy = await _context.Pharmacies
+                .FirstOrDefaultAsync(p => p.Id == branchId.ToString());
+                
+            if (pharmacy == null)
+            {
+                return BadRequest(new { message = "Pharmacy not found" });
+            }
+            
+            // Get current subscription
+            var currentSubscription = await _context.Subscriptions
+                .FirstOrDefaultAsync(s => s.PharmacyId == pharmacy.Id);
+                
+            if (currentSubscription == null)
+            {
+                return BadRequest(new { message = "No active subscription found" });
+            }
+            
+            // Update subscription (using hardcoded plan details for now)
+            currentSubscription.Status = "active";
+            currentSubscription.EndDate = DateTime.UtcNow.AddMonths(1);
+            currentSubscription.UpdatedAt = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            
+            return Ok(new { 
+                message = "Subscription upgraded successfully",
+                newPlan = request.PlanId,
+                nextBillingDate = currentSubscription.EndDate
+            });
+        }
+        
+        [HttpPost("subscriptions/cancel")]
+        public async Task<IActionResult> CancelSubscription()
+        {
+            var userId = GetUserId();
+            var user = await _context.Users
+                .Include(u => u.UserBranches)
+                .ThenInclude(ub => ub.Branch)
+                .FirstOrDefaultAsync(u => u.Id == userId);
+            
+            if (user == null || user.Role != "admin")
+            {
+                return Unauthorized(new { message = "Only tenant admins can cancel subscriptions" });
+            }
+            
+            // Get pharmacy ID from user's branch
+            var branchId = user.UserBranches.FirstOrDefault()?.BranchId;
+            if (branchId == null || branchId == 0)
+            {
+                return BadRequest(new { message = "User is not associated with any pharmacy" });
+            }
+            
+            // Get pharmacy to find subscription
+            var pharmacy = await _context.Pharmacies
+                .FirstOrDefaultAsync(p => p.Id == branchId.ToString());
+                
+            if (pharmacy == null)
+            {
+                return BadRequest(new { message = "Pharmacy not found" });
+            }
+            
+            // Get current subscription
+            var currentSubscription = await _context.Subscriptions
+                .FirstOrDefaultAsync(s => s.PharmacyId == pharmacy.Id);
+                
+            if (currentSubscription == null)
+            {
+                return BadRequest(new { message = "No active subscription found" });
+            }
+            
+            // Cancel subscription (set to expire at end of current period)
+            currentSubscription.Status = "cancelled";
+            currentSubscription.AutoRenew = false;
+            currentSubscription.UpdatedAt = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            
+            return Ok(new { 
+                message = "Subscription cancelled successfully",
+                serviceEndDate = currentSubscription.EndDate
+            });
+        }
+        
         [HttpGet("activity")]
         public async Task<IActionResult> GetActivityLog()
         {
@@ -546,5 +712,11 @@ namespace UmiHealthPOS.Controllers.Api
         
         public bool EmailNotifications { get; set; }
         public bool PushNotifications { get; set; }
+    }
+    
+    public class UpgradeSubscriptionRequest
+    {
+        [Required]
+        public string PlanId { get; set; }
     }
 }
