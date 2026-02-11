@@ -119,4 +119,38 @@ namespace UmiHealthPOS.Models
         public DateTime? LastLogin { get; set; }
         public DateTime CreatedAt { get; set; }
     }
+    
+    public class SignupRequest
+    {
+        [Required]
+        [StringLength(200)]
+        public string OrganizationName { get; set; }
+        
+        [Required]
+        [StringLength(100)]
+        public string FirstName { get; set; }
+        
+        [Required]
+        [StringLength(100)]
+        public string LastName { get; set; }
+        
+        [Required]
+        [EmailAddress]
+        [StringLength(200)]
+        public string Email { get; set; }
+        
+        [Required]
+        [StringLength(20)]
+        public string Phone { get; set; }
+        
+        [Required]
+        [StringLength(100)]
+        public string Password { get; set; }
+        
+        [StringLength(50)]
+        public string Plan { get; set; }
+        
+        [StringLength(50)]
+        public string Role { get; set; }
+    }
 }

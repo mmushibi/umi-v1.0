@@ -832,8 +832,11 @@
         async loadUserData() {
           this.loading = true;
           try {
+            const token = localStorage.getItem('authToken');
+            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+            
             // Temporarily remove auth requirement for testing
-            const profileResponse = await fetch('/api/account/profile');
+            const profileResponse = await fetch('/api/account/profile', { headers });
             
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();
@@ -842,28 +845,28 @@
             }
             
             // Load subscription data
-            const subscriptionResponse = await fetch('/api/account/subscription');
+            const subscriptionResponse = await fetch('/api/account/subscription', { headers });
             
             if (subscriptionResponse.ok) {
               this.subscription = await subscriptionResponse.json();
             }
             
             // Load managed users
-            const usersResponse = await fetch('/api/account/users');
+            const usersResponse = await fetch('/api/account/users', { headers });
             
             if (usersResponse.ok) {
               this.managedUsers = await usersResponse.json();
             }
             
             // Load activity log
-            const activityResponse = await fetch('/api/account/activity');
+            const activityResponse = await fetch('/api/account/activity', { headers });
             
             if (activityResponse.ok) {
               this.recentActivities = await activityResponse.json();
             }
             
             // Load active sessions
-            const sessionsResponse = await fetch('/api/account/sessions');
+            const sessionsResponse = await fetch('/api/account/sessions', { headers });
             
             if (sessionsResponse.ok) {
               this.activeSessions = await sessionsResponse.json();

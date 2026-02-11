@@ -72,6 +72,163 @@ namespace UmiHealthPOS.Controllers.Api
             return Ok(response);
         }
         
+        [HttpPost("signup")]
+        public async Task<IActionResult> Signup([FromBody] SignupRequest request)
+        {
+            try
+            {
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(request.OrganizationName) ||
+                    string.IsNullOrWhiteSpace(request.FirstName) ||
+                    string.IsNullOrWhiteSpace(request.LastName) ||
+                    string.IsNullOrWhiteSpace(request.Email) ||
+                    string.IsNullOrWhiteSpace(request.Password))
+                {
+                    return BadRequest(new { message = "All required fields must be provided" });
+                }
+
+                // Validate email format
+                if (!IsValidEmail(request.Email))
+                {
+                    return BadRequest(new { message = "Invalid email format" });
+                }
+
+                // Check if email already exists
+                if (await _context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()))
+                {
+                    return BadRequest(new { message = "Email already exists." });
+                }
+
+                // Create user
+                var user = new User
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    Email = request.Email,
+                    NormalizedEmail = request.Email.ToLower(),
+                    PhoneNumber = request.Phone ?? "+260 000 000 000",
+                    Role = request.Role ?? "admin",
+                    Department = "Management",
+                    Status = "active",
+                    PasswordHash = HashPassword(request.Password),
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    EmailConfirmed = false,
+                    PhoneNumberConfirmed = false
+                };
+
+                _context.Users.Add(user);
+
+                // Create pharmacy/organization
+                var pharmacy = new Pharmacy
+                {
+                    Name = request.OrganizationName,
+                    LicenseNumber = $"ZMP-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}",
+                    Address = "123 Main Street, Lusaka",
+                    City = "Lusaka",
+                    Province = "Lusaka Province",
+                    PostalCode = "10101",
+                    Phone = request.Phone ?? "+260 000 000 000",
+                    Email = request.Email,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.Pharmacies.Add(pharmacy);
+                await _context.SaveChangesAsync();
+
+                // Assign user to first branch or create default branch
+                var branch = await _context.Branches.FirstOrDefaultAsync();
+                if (branch == null)
+                {
+                    branch = new Branch
+                    {
+                        Name = $"{request.OrganizationName} - Main Branch",
+                        Address = "123 Main Street, Lusaka",
+                        Region = "Lusaka Province",
+                        Phone = request.Phone ?? "+260 000 000 000",
+                        Email = request.Email,
+                        ManagerName = $"{request.FirstName} {request.LastName}",
+                        ManagerPhone = request.Phone ?? "+260 000 000 000",
+                        OperatingHours = "08:00-18:00",
+                        Status = "active",
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    _context.Branches.Add(branch);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Create user-branch relationship
+                var userBranch = new UserBranch
+                {
+                    UserId = user.Id,
+                    BranchId = branch.Id,
+                    UserRole = user.Role,
+                    Permission = user.Role == "admin" ? "admin" : "write",
+                    IsActive = true,
+                    AssignedAt = DateTime.UtcNow,
+                    User = user,
+                    Branch = branch
+                };
+
+                _context.UserBranches.Add(userBranch);
+                await _context.SaveChangesAsync();
+
+                // Generate JWT tokens
+                var tokenDescriptor = new SecurityTokenDescriptor
+                {
+                    Subject = user.Id,
+                    Expires = DateTime.UtcNow.AddHours(24),
+                    Issuer = _configuration["Jwt:Issuer"],
+                    Audience = _configuration["Jwt:Audience"],
+                    SigningCredentials = new SigningCredentials(
+                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])),
+                        SecurityAlgorithms.HmacSha256Signature)
+                };
+
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var securityToken = tokenHandler.CreateToken(tokenDescriptor);
+                var tokenString = tokenHandler.WriteToken(securityToken);
+
+                var refreshToken = Guid.NewGuid().ToString();
+
+                // Store refresh token
+                var userSession = new UserSession
+                {
+                    UserId = user.Id,
+                    Token = refreshToken,
+                    DeviceInfo = "Web Browser",
+                    Browser = "Unknown",
+                    IpAddress = "127.0.0.1",
+                    ExpiresAt = DateTime.UtcNow.AddDays(30),
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.UserSessions.Add(userSession);
+                await _context.SaveChangesAsync();
+
+                // Return response matching frontend expectations
+                return Ok(new
+                {
+                    tenantId = pharmacy.Id.ToString(),
+                    userId = user.Id,
+                    accessToken = tokenString,
+                    refreshToken = refreshToken,
+                    plan = request.Plan ?? "basic",
+                    message = "Account created successfully"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = $"Internal server error: {ex.Message}" });
+            }
+        }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] CreateUserRequest request)
         {

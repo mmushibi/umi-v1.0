@@ -80,6 +80,139 @@ namespace UmiHealthPOS.Controllers.Api
             return Ok(response);
         }
         
+        [HttpGet("subscription")]
+        public async Task<IActionResult> GetSubscription()
+        {
+            var userId = GetUserId();
+            var user = await _context.Users.FindAsync(userId);
+            
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+            
+            // Return default subscription for now
+            var subscription = new
+            {
+                plan = "basic",
+                status = "active",
+                startDate = DateTime.UtcNow.AddDays(-30),
+                endDate = DateTime.UtcNow.AddDays(30),
+                features = new[] { "inventory", "sales", "reports" },
+                limits = new
+                {
+                    users = 5,
+                    branches = 2,
+                    inventory = 1000
+                }
+            };
+            
+            return Ok(subscription);
+        }
+        
+        [HttpGet("activity")]
+        public async Task<IActionResult> GetActivityLog()
+        {
+            var userId = GetUserId();
+            var activities = await _context.ActivityLogs
+                .Where(a => a.UserId == userId)
+                .OrderByDescending(a => a.CreatedAt)
+                .Take(50)
+                .Select(a => new
+                {
+                    id = a.Id,
+                    type = a.Type,
+                    description = a.Description,
+                    status = a.Status,
+                    createdAt = a.CreatedAt,
+                    ipAddress = a.IpAddress
+                })
+                .ToListAsync();
+            
+            return Ok(activities);
+        }
+        
+        [HttpGet("sessions")]
+        public async Task<IActionResult> GetActiveSessions()
+        {
+            var userId = GetUserId();
+            var sessions = await _context.UserSessions
+                .Where(s => s.UserId == userId && s.IsActive)
+                .OrderByDescending(s => s.CreatedAt)
+                .Select(s => new
+                {
+                    id = s.Id,
+                    deviceInfo = s.DeviceInfo,
+                    browser = s.Browser,
+                    ipAddress = s.IpAddress,
+                    createdAt = s.CreatedAt,
+                    expiresAt = s.ExpiresAt,
+                    isActive = s.IsActive
+                })
+                .ToListAsync();
+            
+            return Ok(sessions);
+        }
+        
+        [HttpDelete("sessions/{id}/revoke")]
+        public async Task<IActionResult> RevokeSession(int id)
+        {
+            var userId = GetUserId();
+            var session = await _context.UserSessions
+                .FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
+            
+            if (session == null)
+            {
+                return NotFound(new { message = "Session not found" });
+            }
+            
+            session.IsActive = false;
+            await _context.SaveChangesAsync();
+            
+            return Ok(new { message = "Session revoked successfully" });
+        }
+        
+        [HttpPost("toggle-2fa")]
+        public async Task<IActionResult> Toggle2FA()
+        {
+            var userId = GetUserId();
+            var user = await _context.Users.FindAsync(userId);
+            
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+            
+            user.TwoFactorEnabled = !user.TwoFactorEnabled;
+            user.UpdatedAt = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            
+            return Ok(new { 
+                message = "2FA status updated successfully",
+                twoFactorEnabled = user.TwoFactorEnabled 
+            });
+        }
+        
+        [HttpPut("preferences")]
+        public async Task<IActionResult> UpdatePreferences([FromBody] UpdatePreferencesRequest request)
+        {
+            var userId = GetUserId();
+            var user = await _context.Users.FindAsync(userId);
+            
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+            
+            // Update user preferences (this would be expanded with actual preference fields)
+            user.UpdatedAt = DateTime.UtcNow;
+            
+            await _context.SaveChangesAsync();
+            
+            return Ok(new { message = "Preferences updated successfully" });
+        }
+        
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
@@ -503,5 +636,35 @@ namespace UmiHealthPOS.Controllers.Api
         
         public bool EmailNotifications { get; set; }
         public bool PushNotifications { get; set; }
+    }
+    
+    // Additional request classes for missing endpoints
+    public class UpdatePharmacyRequest
+    {
+        public string Name { get; set; }
+        public string LicenseNumber { get; set; }
+        public string Address { get; set; }
+        public string City { get; set; }
+        public string Province { get; set; }
+        public string PostalCode { get; set; }
+        public string Phone { get; set; }
+        public string Email { get; set; }
+    }
+    
+    public class ChangePasswordRequest
+    {
+        public string CurrentPassword { get; set; }
+        public string NewPassword { get; set; }
+        public string ConfirmPassword { get; set; }
+    }
+    
+    public class ToggleUserStatusRequest
+    {
+        public bool IsActive { get; set; }
+    }
+    
+    public class UpdatePreferencesRequest
+    {
+        public object Preferences { get; set; }
     }
 }
