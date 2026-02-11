@@ -8,7 +8,7 @@ using System.Text;
 namespace UmiHealthPOS.Controllers.Api
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/usermanagement")]
     public class UserManagementController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -27,9 +27,9 @@ namespace UmiHealthPOS.Controllers.Api
                 .Select(u => new UserResponse
                 {
                     Id = u.Id,
-                    Name = u.Name,
+                    Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
-                    Phone = u.Phone,
+                    Phone = u.PhoneNumber,
                     Role = u.Role,
                     Branch = u.UserBranches.FirstOrDefault() != null ? u.UserBranches.FirstOrDefault().Branch.Name : null,
                     Status = u.Status,
@@ -51,9 +51,9 @@ namespace UmiHealthPOS.Controllers.Api
                 .Select(u => new UserResponse
                 {
                     Id = u.Id,
-                    Name = u.Name,
+                    Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
-                    Phone = u.Phone,
+                    Phone = u.PhoneNumber,
                     Role = u.Role,
                     Branch = u.UserBranches.FirstOrDefault() != null ? u.UserBranches.FirstOrDefault().Branch.Name : null,
                     Status = u.Status,
@@ -89,9 +89,11 @@ namespace UmiHealthPOS.Controllers.Api
             var user = new User
             {
                 Id = Guid.NewGuid().ToString(),
-                Name = request.Name,
+                // Split name into first and last name
+                FirstName = request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? request.Name,
+                LastName = string.Join(" ", request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)),
                 Email = request.Email,
-                Phone = request.Phone,
+                PhoneNumber = request.Phone,
                 Role = request.Role,
                 Status = "active",
                 PasswordHash = HashPassword(request.Password),
@@ -115,7 +117,8 @@ namespace UmiHealthPOS.Controllers.Api
                         BranchId = branch.Id,
                         UserRole = request.Role,
                         IsActive = true,
-                        AssignedAt = DateTime.UtcNow
+                        AssignedAt = DateTime.UtcNow,
+                        User = user
                     };
                     _context.UserBranches.Add(userBranch);
                 }
@@ -126,9 +129,9 @@ namespace UmiHealthPOS.Controllers.Api
             var response = new UserResponse
             {
                 Id = user.Id,
-                Name = user.Name,
+                Name = $"{user.FirstName} {user.LastName}",
                 Email = user.Email,
-                Phone = user.Phone,
+                Phone = user.PhoneNumber,
                 Role = user.Role,
                 Branch = request.Branch,
                 Status = user.Status,
@@ -164,9 +167,12 @@ namespace UmiHealthPOS.Controllers.Api
                 return BadRequest("Email already exists.");
             }
             
-            user.Name = request.Name;
+            // Split name into first and last name
+            var nameParts = request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            user.FirstName = nameParts.Length > 0 ? nameParts[0] : user.FirstName;
+            user.LastName = nameParts.Length > 1 ? string.Join(" ", nameParts.Skip(1)) : user.LastName;
             user.Email = request.Email;
-            user.Phone = request.Phone;
+            user.PhoneNumber = request.Phone;
             user.Role = request.Role;
             user.UpdatedAt = DateTime.UtcNow;
             
@@ -193,7 +199,8 @@ namespace UmiHealthPOS.Controllers.Api
                         BranchId = branch.Id,
                         UserRole = request.Role,
                         IsActive = true,
-                        AssignedAt = DateTime.UtcNow
+                        AssignedAt = DateTime.UtcNow,
+                        User = user
                     };
                     _context.UserBranches.Add(userBranch);
                 }
@@ -277,9 +284,11 @@ namespace UmiHealthPOS.Controllers.Api
                     var user = new User
                     {
                         Id = Guid.NewGuid().ToString(),
-                        Name = name,
+                        // Split name into first and last name
+                        FirstName = name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? name,
+                        LastName = string.Join(" ", name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)),
                         Email = email,
-                        Phone = phone,
+                        PhoneNumber = phone,
                         Role = role,
                         Status = status == "active" ? "active" : "inactive",
                         PasswordHash = HashPassword("Temp123!"), // Default password
@@ -303,7 +312,8 @@ namespace UmiHealthPOS.Controllers.Api
                                 BranchId = branchEntity.Id,
                                 UserRole = role,
                                 IsActive = true,
-                                AssignedAt = DateTime.UtcNow
+                                AssignedAt = DateTime.UtcNow,
+                                User = user
                             };
                             _context.UserBranches.Add(userBranch);
                         }
@@ -312,9 +322,9 @@ namespace UmiHealthPOS.Controllers.Api
                     users.Add(new UserResponse
                     {
                         Id = user.Id,
-                        Name = user.Name,
+                        Name = $"{user.FirstName} {user.LastName}",
                         Email = user.Email,
-                        Phone = user.Phone,
+                        Phone = user.PhoneNumber,
                         Role = user.Role,
                         Branch = branch,
                         Status = user.Status,
@@ -339,9 +349,9 @@ namespace UmiHealthPOS.Controllers.Api
                 .Select(u => new UserResponse
                 {
                     Id = u.Id,
-                    Name = u.Name,
+                    Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
-                    Phone = u.Phone,
+                    Phone = u.PhoneNumber,
                     Role = u.Role,
                     Branch = u.UserBranches.FirstOrDefault() != null ? u.UserBranches.FirstOrDefault().Branch.Name : null,
                     Status = u.Status,

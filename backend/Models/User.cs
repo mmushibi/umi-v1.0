@@ -8,27 +8,64 @@ namespace UmiHealthPOS.Models
         
         [Required]
         [StringLength(100)]
-        public string Name { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
         
         [Required]
-        [EmailAddress]
-        [StringLength(255)]
+        [StringLength(100)]
+        public string LastName { get; set; } = string.Empty;
+        
+        [Required]
+        [StringLength(200)]
         public string Email { get; set; } = string.Empty;
         
         [Required]
-        [Phone]
-        [StringLength(20)]
-        public string Phone { get; set; } = string.Empty;
+        [StringLength(200)]
+        public string NormalizedEmail { get; set; } = string.Empty;
+        
+        [Required]
+        [StringLength(100)]
+        public string PhoneNumber { get; set; } = string.Empty;
         
         [Required]
         [StringLength(50)]
         public string Role { get; set; } = string.Empty;
+        
+        public string Department { get; set; } = string.Empty;
+        
+        public bool TwoFactorEnabled { get; set; } = false;
         
         public DateTime? LastLogin { get; set; }
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        
+        public int? BranchId { get; set; }
+        
+        public string Address { get; set; } = string.Empty;
+        
+        public string City { get; set; } = string.Empty;
+        
+        public string PostalCode { get; set; } = string.Empty;
+        
+        [StringLength(50)]
+        public string Country { get; set; } = string.Empty;
+        
+        [StringLength(100)]
+        public string LicenseNumber { get; set; } = string.Empty;
+        
+        [StringLength(100)]
+        public string RegistrationNumber { get; set; } = string.Empty;
+        
+        public bool IsActive { get; set; } = true;
+        
+        public bool EmailConfirmed { get; set; } = false;
+        
+        public bool PhoneNumberConfirmed { get; set; } = false;
+        
+        public int FailedLoginAttempts { get; set; } = 0;
+        
+        public DateTime? LockoutEnd { get; set; }
         
         // Password hash (not included in exports)
         public string PasswordHash { get; set; } = string.Empty;
@@ -38,6 +75,8 @@ namespace UmiHealthPOS.Models
         
         // Navigation properties
         public virtual ICollection<UserBranch> UserBranches { get; set; } = new List<UserBranch>();
+        
+        public virtual Branch Branch { get; set; } = null!;
     }
     
     public class CreateUserRequest

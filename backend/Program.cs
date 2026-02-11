@@ -9,6 +9,7 @@ using UmiHealthPOS.Hubs;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Repositories;
 using UmiHealthPOS.Services;
+using UmiHealthPOS.Middleware;
 using Npgsql;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -66,13 +67,14 @@ builder.Services.AddScoped<IStockTransactionRepository, StockTransactionReposito
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 
 // Add data seeder
-builder.Services.AddScoped<SalesDataSeeder>();
+builder.Services.AddScoped<DataSeeder>();
 
 var app = builder.Build();
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
+app.UseBranchIsolation();
 app.UseAuthorization();
 
 // Map SignalR hubs
@@ -83,7 +85,7 @@ app.MapControllers();
 // Seed data in development
 if (app.Environment.IsDevelopment())
 {
-    await app.SeedSalesDataAsync();
+    await DataSeeder.SeedDataAsync(app.Services);
 }
 
 app.Run();

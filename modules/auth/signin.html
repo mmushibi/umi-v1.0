@@ -462,10 +462,16 @@
             if (name) localStorage.setItem('umihealthUserName', name);
             if (tenantName) localStorage.setItem('umihealthTenantName', tenantName);
             localStorage.setItem('umihealth_user_session', JSON.stringify(combinedSession));
-            if (accessToken) localStorage.setItem('umihealth_auth_token', accessToken);
+            if (accessToken) {
+              localStorage.setItem('token', accessToken);
+              localStorage.setItem('umihealth_auth_token', accessToken);
+            }
             if (refreshToken) localStorage.setItem('umihealth_refresh_token', refreshToken);
           } else {
-            if (accessToken) sessionStorage.setItem('umihealth_auth_token', accessToken);
+            if (accessToken) {
+              sessionStorage.setItem('token', accessToken);
+              sessionStorage.setItem('umihealth_auth_token', accessToken);
+            }
             if (refreshToken) sessionStorage.setItem('umihealth_refresh_token', refreshToken);
           }
         },

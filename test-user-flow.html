@@ -41,24 +41,61 @@
             result.innerHTML = 'Testing...';
             
             try {
-                const userData = {
+                // Test backend API first
+                const response = await fetch('/api/usermanagement/users', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        phone: '+260123456789',
+                        role: 'pharmacist',
+                        branch: 'Main Branch',
+                        password: 'Test123!'
+                    })
+                });
+                
+                if (response.ok) {
+                    const user = await response.json();
+                    result.innerHTML = '<span class="text-green-600">✅ User created successfully via backend API!</span>';
+                } else {
+                    // Fallback to localStorage
+                    const users = JSON.parse(localStorage.getItem('umi_users_list') || '[]');
+                    users.push({
+                        id: Date.now().toString(),
+                        name: 'Test User',
+                        email: 'test@example.com',
+                        phone: '+260123456789',
+                        role: 'pharmacist',
+                        branch: 'Main Branch',
+                        status: 'active',
+                        lastLogin: null,
+                        createdAt: new Date().toISOString()
+                    });
+                    localStorage.setItem('umi_users_list', JSON.stringify(users));
+                    
+                    // Store credentials for login
+                    const credentials = JSON.parse(localStorage.getItem('umi_users') || '{}');
+                    credentials['test@example.com'] = {
+                        password: 'Test123!',
+                        role: 'pharmacist'
+                    };
+                    localStorage.setItem('umi_users', JSON.stringify(credentials));
+                    
+                    result.innerHTML = '<span class="text-yellow-600">⚠️ Backend unavailable, user created in localStorage</span>';
+                }
+            } catch (error) {
+                // Fallback to localStorage
+                const users = JSON.parse(localStorage.getItem('umi_users_list') || '[]');
+                users.push({
+                    id: Date.now().toString(),
                     name: 'Test User',
                     email: 'test@example.com',
                     phone: '+260123456789',
                     role: 'pharmacist',
                     branch: 'Main Branch',
-                    password: 'Test123!'
-                };
-                
-                // Test localStorage fallback
-                const users = JSON.parse(localStorage.getItem('umi_users_list') || '[]');
-                users.push({
-                    id: Date.now().toString(),
-                    name: userData.name,
-                    email: userData.email,
-                    phone: userData.phone,
-                    role: userData.role,
-                    branch: userData.branch,
                     status: 'active',
                     lastLogin: null,
                     createdAt: new Date().toISOString()
@@ -67,15 +104,13 @@
                 
                 // Store credentials for login
                 const credentials = JSON.parse(localStorage.getItem('umi_users') || '{}');
-                credentials[userData.email] = {
-                    password: userData.password,
-                    role: userData.role
+                credentials['test@example.com'] = {
+                    password: 'Test123!',
+                    role: 'pharmacist'
                 };
                 localStorage.setItem('umi_users', JSON.stringify(credentials));
                 
-                result.innerHTML = '<span class="text-green-600">✅ User created successfully in localStorage!</span>';
-            } catch (error) {
-                result.innerHTML = `<span class="text-red-600">❌ Error: ${error.message}</span>`;
+                result.innerHTML = '<span class="text-yellow-600">⚠️ Backend unavailable, user created in localStorage</span>';
             }
         }
         
@@ -84,17 +119,42 @@
             result.innerHTML = 'Testing...';
             
             try {
-                // Test localStorage login
+                // Test backend API first
+                const response = await fetch('/api/auth/signin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'test@example.com',
+                        password: 'Test123!'
+                    })
+                });
+                
+                if (response.ok) {
+                    const authResult = await response.json();
+                    result.innerHTML = '<span class="text-green-600">✅ User login successful via backend API!</span>';
+                } else {
+                    // Fallback to localStorage
+                    const credentials = JSON.parse(localStorage.getItem('umi_users') || '{}');
+                    const userCredentials = credentials['test@example.com'];
+                    
+                    if (userCredentials && userCredentials.password === 'Test123!') {
+                        result.innerHTML = '<span class="text-yellow-600">⚠️ Backend unavailable, login successful via localStorage</span>';
+                    } else {
+                        result.innerHTML = '<span class="text-red-600">❌ Login failed - credentials not found</span>';
+                    }
+                }
+            } catch (error) {
+                // Fallback to localStorage
                 const credentials = JSON.parse(localStorage.getItem('umi_users') || '{}');
                 const userCredentials = credentials['test@example.com'];
                 
                 if (userCredentials && userCredentials.password === 'Test123!') {
-                    result.innerHTML = '<span class="text-green-600">✅ User login successful!</span>';
+                    result.innerHTML = '<span class="text-yellow-600">⚠️ Backend unavailable, login successful via localStorage</span>';
                 } else {
                     result.innerHTML = '<span class="text-red-600">❌ Login failed - credentials not found</span>';
                 }
-            } catch (error) {
-                result.innerHTML = `<span class="text-red-600">❌ Error: ${error.message}</span>`;
             }
         }
         

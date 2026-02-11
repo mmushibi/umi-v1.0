@@ -12,27 +12,64 @@ namespace UmiHealthPOS.Models
         [StringLength(200)]
         public string Name { get; set; }
         
+        [Required]
         [StringLength(500)]
         public string Address { get; set; }
         
         [StringLength(100)]
-        public string Phone { get; set; }
+        public string? City { get; set; }
         
         [StringLength(100)]
-        public string Email { get; set; }
+        [Required]
+        public string Region { get; set; }
+        
+        public string? PostalCode { get; set; }
+        
+        [StringLength(50)]
+        public string Country { get; set; } = "Zambia";
+        
+        [Required]
+        [StringLength(50)]
+        public string Phone { get; set; } = string.Empty;
+        
+        [Required]
+        [StringLength(100)]
+        public string Email { get; set; } = string.Empty;
+        
+        [Required]
+        [StringLength(200)]
+        public string ManagerName { get; set; } = string.Empty;
+        
+        [Required]
+        [StringLength(20)]
+        public string ManagerPhone { get; set; } = string.Empty;
+        
+        [Required]
+        [StringLength(100)]
+        public string OperatingHours { get; set; } = string.Empty;
+        
+        [Required]
+        [StringLength(20)]
+        public string Status { get; set; } = "active";
+        
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal MonthlyRevenue { get; set; } = 0;
+        
+        public int StaffCount { get; set; } = 0;
         
         public bool IsActive { get; set; } = true;
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
-        public DateTime? UpdatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         
         // Navigation properties
-        public virtual ICollection<UserBranch> UserBranches { get; set; }
-        public virtual ICollection<Sale> Sales { get; set; }
-        public virtual ICollection<InventoryItem> InventoryItems { get; set; }
-        public virtual ICollection<Prescription> Prescriptions { get; set; }
-        public virtual ICollection<Patient> Patients { get; set; }
+        public virtual ICollection<User> Users { get; set; } = new List<User>();
+        public virtual ICollection<UserBranch> UserBranches { get; set; } = new List<UserBranch>();
+        public virtual ICollection<Sale> Sales { get; set; } = new List<Sale>();
+        public virtual ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
+        public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
+        public virtual ICollection<Patient> Patients { get; set; } = new List<Patient>();
     }
     
     public class UserBranch
@@ -48,12 +85,16 @@ namespace UmiHealthPOS.Models
         [Required]
         public string UserRole { get; set; } // TenantAdmin, Pharmacist, Cashier
         
+        [Required]
+        public string Permission { get; set; } = "read"; // read, write, admin
+        
         public bool IsActive { get; set; } = true;
         
         public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
         
         // Navigation properties
         public virtual Branch Branch { get; set; }
+        public virtual User? User { get; set; }
     }
     
     public class ReportSchedule
@@ -70,7 +111,7 @@ namespace UmiHealthPOS.Models
         public string DateRange { get; set; }
         
         [Required]
-        public string BranchId { get; set; }
+        public int BranchId { get; set; }
         
         [Required]
         public string Format { get; set; }

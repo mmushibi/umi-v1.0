@@ -99,6 +99,7 @@ namespace UmiHealthPOS.Models
         [Column(TypeName = "decimal(10,2)")]
         public decimal Change { get; set; }
         
+        [Required]
         [StringLength(20)]
         public string Status { get; set; } = "completed"; // "completed", "pending", "refunded", "cancelled"
         
@@ -218,6 +219,7 @@ namespace UmiHealthPOS.Models
         public int? BranchId { get; set; }
         
         // Navigation properties
+        public virtual Branch? Branch { get; set; }
         public virtual ICollection<StockTransaction> StockTransactions { get; set; }
     }
 
@@ -370,5 +372,170 @@ namespace UmiHealthPOS.Models
         // Navigation properties
         public virtual Prescription Prescription { get; set; }
         public virtual InventoryItem InventoryItem { get; set; }
+    }
+
+    public class Pharmacy
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        
+        [Required]
+        [StringLength(200)]
+        public string Name { get; set; }
+        
+        [StringLength(100)]
+        public string LicenseNumber { get; set; }
+        
+        [StringLength(500)]
+        public string Address { get; set; }
+        
+        [StringLength(100)]
+        public string City { get; set; }
+        
+        [StringLength(100)]
+        public string Province { get; set; }
+        
+        [StringLength(20)]
+        public string PostalCode { get; set; }
+        
+        [StringLength(50)]
+        public string Country { get; set; } = "Zambia";
+        
+        [StringLength(50)]
+        public string Phone { get; set; }
+        
+        [StringLength(100)]
+        public string Email { get; set; }
+        
+        [StringLength(200)]
+        public string Website { get; set; }
+        
+        public bool IsActive { get; set; } = true;
+        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class SubscriptionPlan
+    {
+        public int Id { get; set; }
+        
+        [Required]
+        [StringLength(100)]
+        public string Name { get; set; }
+        
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal Price { get; set; }
+        
+        public int MaxUsers { get; set; }
+        
+        public int MaxBranches { get; set; }
+        
+        public int MaxStorageGB { get; set; }
+        
+        [StringLength(500)]
+        public string Features { get; set; }
+        
+        public bool IsActive { get; set; } = true;
+        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        
+        // Navigation properties
+        public virtual ICollection<Subscription> Subscriptions { get; set; }
+    }
+
+    public class Subscription
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        
+        [Required]
+        public int PlanId { get; set; }
+        
+        [Required]
+        public string PharmacyId { get; set; }
+        
+        public DateTime StartDate { get; set; }
+        
+        public DateTime EndDate { get; set; }
+        
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal Amount { get; set; }
+        
+        [StringLength(20)]
+        public string Status { get; set; } = "active"; // "active", "expired", "cancelled"
+        
+        public bool IsActive { get; set; } = true;
+        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        
+        // Navigation properties
+        public virtual SubscriptionPlan Plan { get; set; }
+        public virtual Pharmacy Pharmacy { get; set; }
+    }
+
+    public class ActivityLog
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        
+        [Required]
+        public string UserId { get; set; }
+        
+        [Required]
+        [StringLength(100)]
+        public string Type { get; set; } // "login", "logout", "create", "update", "delete", "error"
+        
+        [Required]
+        [StringLength(500)]
+        public string Description { get; set; }
+        
+        [StringLength(20)]
+        public string Status { get; set; } = "success"; // "success", "warning", "error"
+        
+        [StringLength(100)]
+        public string IpAddress { get; set; }
+        
+        [StringLength(500)]
+        public string UserAgent { get; set; }
+        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        // Navigation properties
+        public virtual User User { get; set; }
+    }
+
+    public class UserSession
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        
+        [Required]
+        public string UserId { get; set; }
+        
+        [Required]
+        [StringLength(500)]
+        public string Token { get; set; }
+        
+        [StringLength(100)]
+        public string DeviceInfo { get; set; }
+        
+        [StringLength(100)]
+        public string Browser { get; set; }
+        
+        [StringLength(45)]
+        public string IpAddress { get; set; }
+        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        public DateTime ExpiresAt { get; set; }
+        
+        public DateTime? LastAccessAt { get; set; }
+        
+        public bool IsActive { get; set; } = true;
+        
+        // Navigation properties
+        public virtual User User { get; set; }
     }
 }

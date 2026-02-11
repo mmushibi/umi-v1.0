@@ -62,7 +62,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 UserId = user.Id,
                 Email = user.Email,
-                Name = user.Name,
+                Name = $"{user.FirstName} {user.LastName}",
                 Role = user.Role,
                 Branch = user.UserBranches.FirstOrDefault()?.Branch.Name,
                 AccessToken = token,
@@ -91,9 +91,11 @@ namespace UmiHealthPOS.Controllers.Api
             var user = new User
             {
                 Id = Guid.NewGuid().ToString(),
-                Name = request.Name,
+                // Split name into first and last name
+                FirstName = request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? request.Name,
+                LastName = string.Join(" ", request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)),
                 Email = request.Email,
-                Phone = request.Phone,
+                PhoneNumber = request.Phone,
                 Role = request.Role,
                 Status = "active",
                 PasswordHash = HashPassword(request.Password),
@@ -117,7 +119,8 @@ namespace UmiHealthPOS.Controllers.Api
                         BranchId = branch.Id,
                         UserRole = request.Role,
                         IsActive = true,
-                        AssignedAt = DateTime.UtcNow
+                        AssignedAt = DateTime.UtcNow,
+                        User = user
                     };
                     _context.UserBranches.Add(userBranch);
                 }
@@ -128,9 +131,9 @@ namespace UmiHealthPOS.Controllers.Api
             var response = new UserResponse
             {
                 Id = user.Id,
-                Name = user.Name,
+                Name = $"{user.FirstName} {user.LastName}",
                 Email = user.Email,
-                Phone = user.Phone,
+                Phone = user.PhoneNumber,
                 Role = user.Role,
                 Branch = request.Branch,
                 Status = user.Status,
@@ -151,9 +154,9 @@ namespace UmiHealthPOS.Controllers.Api
                 .Select(u => new UserResponse
                 {
                     Id = u.Id,
-                    Name = u.Name,
+                    Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
-                    Phone = u.Phone,
+                    Phone = u.PhoneNumber,
                     Role = u.Role,
                     Branch = u.UserBranches.FirstOrDefault() != null ? u.UserBranches.FirstOrDefault().Branch.Name : null,
                     Status = u.Status,
@@ -183,7 +186,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.Name),
+                new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
                 new Claim(ClaimTypes.Role, user.Role),
                 new Claim("branch", user.UserBranches.FirstOrDefault()?.Branch.Name ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
