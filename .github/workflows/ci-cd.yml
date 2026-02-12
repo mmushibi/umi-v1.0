@@ -16,6 +16,11 @@ on:
         - staging
         - production
 
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 env:
   DOTNET_VERSION: '8.0.x'
   NODE_VERSION: '18'
