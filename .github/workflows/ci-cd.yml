@@ -2,15 +2,76 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ master, main, develop, staging ]
   pull_request:
-    branches: [ main ]
+    branches: [ master, main, develop ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
 
 env:
   DOTNET_VERSION: '8.0.x'
   NODE_VERSION: '18'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Check CSS formatting
+      run: npm run build-css-prod
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore dependencies
+      run: dotnet restore backend/UmiHealthPOS.csproj
+    
+    - name: Check .NET formatting
+      run: dotnet format backend/UmiHealthPOS.csproj --verify-no-changes
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
   build-and-test:
     runs-on: ubuntu-latest
     
@@ -52,7 +113,25 @@ jobs:
       run: dotnet build backend/UmiHealthPOS.csproj --no-restore --configuration Release
     
     - name: Run unit tests
-      run: dotnet test backend/UmiHealthPOS.csproj --no-build --configuration Release --verbosity normal
+      run: dotnet test backend/UmiHealthPOS.Tests.csproj --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
+    
+    - name: Run integration tests
+      run: dotnet test backend/UmiHealthPOS.Tests.csproj --no-build --configuration Release --filter Category=Integration --verbosity normal --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: TestResults/
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      if: always()
+      with:
+        file: '**/coverage.cobertura.xml'
+        flags: unittests
+        name: codecov-umbrella
     
     - name: Publish application
       run: dotnet publish backend/UmiHealthPOS.csproj --configuration Release --output ./publish
@@ -63,23 +142,65 @@ jobs:
         name: published-app
         path: ./publish
 
-  docker-build:
-    needs: build-and-test
+  frontend-build:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build CSS
+      run: npm run build-css-prod
+    
+    - name: Upload frontend artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-assets
+        path: wwwroot/
+
+  docker-build:
+    needs: [build-and-test, frontend-build]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/develop'
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
     
+    - name: Download frontend artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: frontend-assets
+        path: wwwroot/
+    
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     
-    - name: Login to Docker Hub
+    - name: Log in to Container Registry
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
     
     - name: Build and push backend image
       uses: docker/build-push-action@v5
@@ -87,9 +208,8 @@ jobs:
         context: ./backend
         file: ./backend/Dockerfile
         push: true
-        tags: |
-          ${{ secrets.DOCKER_USERNAME }}/umi-health-pos-backend:latest
-          ${{ secrets.DOCKER_USERNAME }}/umi-health-pos-backend:${{ github.sha }}
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
     
@@ -99,9 +219,8 @@ jobs:
         context: .
         file: ./Dockerfile.frontend
         push: true
-        tags: |
-          ${{ secrets.DOCKER_USERNAME }}/umi-health-pos-frontend:latest
-          ${{ secrets.DOCKER_USERNAME }}/umi-health-pos-frontend:${{ github.sha }}
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
@@ -118,7 +237,9 @@ jobs:
     - name: Deploy to staging
       run: |
         echo "Deploying to staging environment..."
+        echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:develop-${{ github.sha }}"
         # Add your staging deployment commands here
+        # Example: kubectl apply -f k8s/staging/
 
   deploy-production:
     needs: docker-build
@@ -133,4 +254,28 @@ jobs:
     - name: Deploy to production
       run: |
         echo "Deploying to production environment..."
+        echo "Image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:main-${{ github.sha }}"
         # Add your production deployment commands here
+        # Example: kubectl apply -f k8s/production/
+
+  deploy-azure:
+    needs: docker-build
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Deploy to Azure Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+        slot-name: 'production'
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:main-${{ github.sha }}
