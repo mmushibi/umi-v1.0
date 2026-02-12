@@ -94,6 +94,11 @@ jobs:
         ports:
           - 5432:5432
     
+    env:
+      DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -235,6 +240,11 @@ jobs:
     if: github.ref == 'refs/heads/develop'
     environment: staging
     
+    env:
+      DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -252,6 +262,11 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment: production
     
+    env:
+      DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -268,6 +283,11 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.inputs.environment == 'production' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     environment: production
+    
+    env:
+      DATABASE_CONNECTION_STRING: ${{ secrets.DATABASE_CONNECTION_STRING }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
     
     steps:
     - name: Checkout code

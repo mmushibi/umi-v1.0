@@ -392,9 +392,9 @@ namespace UmiHealthPOS.Controllers.Api
                 Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
                 return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", fileName);
             }
-            catch (Exception ex)
+            catch 
             {
-                _logger.LogError(ex, "Error exporting sales to CSV");
+                _logger.LogError("Error exporting sales to CSV");
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }

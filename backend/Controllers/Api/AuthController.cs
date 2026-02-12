@@ -9,6 +9,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using BCrypt.Net;
+using Microsoft.Extensions.Configuration;
 
 namespace UmiHealthPOS.Controllers.Api
 {
@@ -120,7 +121,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 return Ok(response);
             }
-            catch (Exception ex)
+            catch
             {
                 return StatusCode(500, new { message = "Internal server error during token refresh" });
             }
@@ -148,7 +149,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 return Ok(new { message = "Logged out successfully" });
             }
-            catch (Exception ex)
+            catch
             {
                 return StatusCode(500, new { message = "Internal server error during logout" });
             }
@@ -196,7 +197,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 return Ok(response);
             }
-            catch (Exception ex)
+            catch
             {
                 return StatusCode(500, new { message = "Internal server error" });
             }

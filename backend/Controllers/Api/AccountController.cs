@@ -5,6 +5,7 @@ using UmiHealthPOS.Models;
 using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 using BCrypt.Net;
+using Microsoft.Extensions.Configuration;
 
 namespace UmiHealthPOS.Controllers.Api
 {
@@ -436,7 +437,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 return Ok(new { message = "Profile updated successfully" });
             }
-            catch (Exception ex)
+            catch
             {
                 return StatusCode(500, new { message = "Internal server error" });
             }
@@ -473,7 +474,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 return Ok(new { message = "Pharmacy details updated successfully" });
             }
-            catch (Exception ex)
+            catch
             {
                 return StatusCode(500, new { message = "Internal server error" });
             }
@@ -524,7 +525,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 return Ok(new { message = "Password changed successfully" });
             }
-            catch (Exception ex)
+            catch
             {
                 return StatusCode(500, new { message = "Internal server error" });
             }
@@ -557,7 +558,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 return Ok(new { message = "User status updated successfully" });
             }
-            catch (Exception ex)
+            catch
             {
                 return StatusCode(500, new { message = "Internal server error" });
             }
