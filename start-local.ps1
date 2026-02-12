@@ -312,6 +312,19 @@ Write-Host "Check container status:" -ForegroundColor Yellow
 Write-Host "  docker-compose ps" -ForegroundColor Gray
 Write-Host ""
 
+# Auto-open browser if frontend is running
+if (-not $SkipFrontend -and (Test-PortInUse -Port 80)) {
+    Write-Host "Opening browser..." -ForegroundColor Yellow
+    try {
+        Start-Process "http://localhost" -ErrorAction Stop
+        Write-Host "✓ Browser opened to http://localhost" -ForegroundColor Green
+    } catch {
+        Write-Host "⚠ Could not open browser automatically" -ForegroundColor Yellow
+        Write-Host "Please manually navigate to http://localhost" -ForegroundColor Gray
+    }
+    Write-Host ""
+}
+
 Write-Host "=== Startup Complete ===" -ForegroundColor Green
 Write-Host "Your Umi Health POS application is starting up!" -ForegroundColor Cyan
 Write-Host "Please wait a few moments for all services to fully initialize." -ForegroundColor Yellow

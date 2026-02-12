@@ -114,4 +114,16 @@ echo === Startup Complete ===
 echo Your Umi Health POS application is starting up!
 echo Please wait a few moments for all services to fully initialize.
 echo.
+
+REM Auto-open browser
+echo Opening browser...
+start http://localhost 2>nul
+if %errorlevel% equ 0 (
+    echo ✓ Browser opened to http://localhost
+) else (
+    echo ⚠ Could not open browser automatically
+    echo Please manually navigate to http://localhost
+)
+echo.
+
 pause
