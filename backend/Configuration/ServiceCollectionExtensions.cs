@@ -15,14 +15,15 @@ namespace UmiHealthPOS.Configuration
             services.AddScoped<IPrescriptionService, PrescriptionService>();
             services.AddScoped<IBranchService, BranchService>();
             services.AddScoped<ReportsService>();
-            
+            services.AddScoped<IJwtService, JwtService>();
+
             // Add SignalR
             services.AddSignalR();
-            
+
             // TODO: Add other services as needed
             // services.AddScoped<IUserService, UserService>();
             // services.AddScoped<IReportService, ReportService>();
-            
+
             return services;
         }
     }

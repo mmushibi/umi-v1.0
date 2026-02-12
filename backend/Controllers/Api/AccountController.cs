@@ -14,13 +14,13 @@ namespace UmiHealthPOS.Controllers.Api
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
-        
+
         public AccountController(ApplicationDbContext context, IConfiguration configuration)
         {
             _context = context;
             _configuration = configuration;
         }
-        
+
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
@@ -29,7 +29,7 @@ namespace UmiHealthPOS.Controllers.Api
                 .Include(u => u.UserBranches)
                 .ThenInclude(ub => ub.Branch)
                 .FirstOrDefaultAsync(u => u.Id == userId);
-            
+
             if (user == null)
             {
                 // Return default user for testing
@@ -45,9 +45,9 @@ namespace UmiHealthPOS.Controllers.Api
                     TwoFactorEnabled = false
                 };
             }
-            
+
             var pharmacy = await _context.Pharmacies.FirstOrDefaultAsync();
-            
+
             var response = new
             {
                 user = new
@@ -75,71 +75,48 @@ namespace UmiHealthPOS.Controllers.Api
                     email = pharmacy.Email
                 } : null
             };
-            
+
             return Ok(response);
         }
-        
+
         [HttpGet("subscription")]
         public async Task<IActionResult> GetSubscription()
         {
             var userId = GetUserId();
             var user = await _context.Users.FindAsync(userId);
-            
+
             if (user == null)
             {
                 return NotFound(new { message = "User not found" });
             }
-            
+
             // Get actual subscription from database
             var subscription = await _context.Subscriptions
                 .Include(s => s.Plan)
                 .Include(s => s.Pharmacy)
                 .FirstOrDefaultAsync(s => s.PharmacyId == s.PharmacyId);
-            
+
             if (subscription == null)
             {
                 // Return default trial subscription for testing
-                subscription = new
+                subscription = new Subscription
                 {
-                    plan = "trial",
-                    status = "trial",
-                    startDate = DateTime.UtcNow,
-                    endDate = DateTime.UtcNow.AddDays(14),
-                    isTrial = true,
-                    trialEndDate = DateTime.UtcNow.AddDays(14).ToString("yyyy-MM-dd"),
-                    features = new[] { "inventory", "sales", "reports" },
-                    limits = new
-                    {
-                        users = 5,
-                        branches = 2,
-                        inventory = 1000
-                    }
+                    Id = Guid.NewGuid().ToString(),
+                    PlanId = 1,
+                    PharmacyId = "1",
+                    StartDate = DateTime.UtcNow,
+                    EndDate = DateTime.UtcNow.AddDays(14),
+                    Amount = 0,
+                    Status = "trial",
+                    TrialUsed = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 };
             }
-            else
-            {
-                // Return actual subscription data
-                subscription = new
-                {
-                    plan = subscription.Plan?.Name ?? "trial",
-                    status = subscription.Status,
-                    startDate = subscription.StartDate,
-                    endDate = subscription.EndDate,
-                    isTrial = subscription.Status == "trial",
-                    trialEndDate = subscription.Status == "trial" ? subscription.EndDate.ToString("yyyy-MM-dd") : null,
-                    features = subscription.Plan?.Features?.Split(',') ?? new[] { "inventory", "sales", "reports" },
-                    limits = new
-                    {
-                        users = subscription.Plan?.MaxUsers ?? 5,
-                        branches = subscription.Plan?.MaxBranches ?? 2,
-                        inventory = subscription.Plan?.MaxInventoryItems ?? 1000
-                    }
-                };
-            }
-            
+
             return Ok(subscription);
         }
-        
+
         [HttpGet("subscriptions/plans")]
         public async Task<IActionResult> GetAvailablePlans()
         {
@@ -148,12 +125,12 @@ namespace UmiHealthPOS.Controllers.Api
                 .Include(u => u.UserBranches)
                 .ThenInclude(ub => ub.Branch)
                 .FirstOrDefaultAsync(u => u.Id == userId);
-            
+
             if (user == null || user.Role != "admin")
             {
                 return Unauthorized(new { message = "Only tenant admins can view subscription plans" });
             }
-            
+
             // Return available subscription plans
             var plans = new[]
             {
@@ -197,10 +174,10 @@ namespace UmiHealthPOS.Controllers.Api
                     isPopular = false
                 }
             };
-            
+
             return Ok(plans);
         }
-        
+
         [HttpPost("subscriptions/upgrade")]
         public async Task<IActionResult> UpgradeSubscription([FromBody] UpgradeSubscriptionRequest request)
         {
@@ -209,51 +186,52 @@ namespace UmiHealthPOS.Controllers.Api
                 .Include(u => u.UserBranches)
                 .ThenInclude(ub => ub.Branch)
                 .FirstOrDefaultAsync(u => u.Id == userId);
-            
+
             if (user == null || user.Role != "admin")
             {
                 return Unauthorized(new { message = "Only tenant admins can upgrade subscriptions" });
             }
-            
+
             // Get pharmacy ID from user's branch
             var branchId = user.UserBranches.FirstOrDefault()?.BranchId;
             if (branchId == null || branchId == 0)
             {
                 return BadRequest(new { message = "User is not associated with any pharmacy" });
             }
-            
+
             // Get pharmacy to find subscription
             var pharmacy = await _context.Pharmacies
                 .FirstOrDefaultAsync(p => p.Id == branchId.ToString());
-                
+
             if (pharmacy == null)
             {
                 return BadRequest(new { message = "Pharmacy not found" });
             }
-            
+
             // Get current subscription
             var currentSubscription = await _context.Subscriptions
                 .FirstOrDefaultAsync(s => s.PharmacyId == pharmacy.Id);
-                
+
             if (currentSubscription == null)
             {
                 return BadRequest(new { message = "No active subscription found" });
             }
-            
+
             // Update subscription (using hardcoded plan details for now)
             currentSubscription.Status = "active";
             currentSubscription.EndDate = DateTime.UtcNow.AddMonths(1);
             currentSubscription.UpdatedAt = DateTime.UtcNow;
-            
+
             await _context.SaveChangesAsync();
-            
-            return Ok(new { 
+
+            return Ok(new
+            {
                 message = "Subscription upgraded successfully",
                 newPlan = request.PlanId,
                 nextBillingDate = currentSubscription.EndDate
             });
         }
-        
+
         [HttpPost("subscriptions/cancel")]
         public async Task<IActionResult> CancelSubscription()
         {
@@ -262,50 +240,51 @@ namespace UmiHealthPOS.Controllers.Api
                 .Include(u => u.UserBranches)
                 .ThenInclude(ub => ub.Branch)
                 .FirstOrDefaultAsync(u => u.Id == userId);
-            
+
             if (user == null || user.Role != "admin")
             {
                 return Unauthorized(new { message = "Only tenant admins can cancel subscriptions" });
             }
-            
+
             // Get pharmacy ID from user's branch
             var branchId = user.UserBranches.FirstOrDefault()?.BranchId;
             if (branchId == null || branchId == 0)
             {
                 return BadRequest(new { message = "User is not associated with any pharmacy" });
             }
-            
+
             // Get pharmacy to find subscription
             var pharmacy = await _context.Pharmacies
                 .FirstOrDefaultAsync(p => p.Id == branchId.ToString());
-                
+
             if (pharmacy == null)
             {
                 return BadRequest(new { message = "Pharmacy not found" });
             }
-            
+
             // Get current subscription
             var currentSubscription = await _context.Subscriptions
                 .FirstOrDefaultAsync(s => s.PharmacyId == pharmacy.Id);
-                
+
             if (currentSubscription == null)
             {
                 return BadRequest(new { message = "No active subscription found" });
             }
-            
+
             // Cancel subscription (set to expire at end of current period)
             currentSubscription.Status = "cancelled";
             currentSubscription.AutoRenew = false;
             currentSubscription.UpdatedAt = DateTime.UtcNow;
-            
+
             await _context.SaveChangesAsync();
-            
-            return Ok(new { 
+
+            return Ok(new
+            {
                 message = "Subscription cancelled successfully",
                 serviceEndDate = currentSubscription.EndDate
             });
         }
-        
+
         [HttpGet("activity")]
         public async Task<IActionResult> GetActivityLog()
         {
@@ -324,10 +303,10 @@ namespace UmiHealthPOS.Controllers.Api
                     ipAddress = a.IpAddress
                 })
                 .ToListAsync();
-            
+
             return Ok(activities);
         }
-        
+
         [HttpGet("sessions")]
         public async Task<IActionResult> GetActiveSessions()
         {
@@ -346,69 +325,70 @@ namespace UmiHealthPOS.Controllers.Api
                     isActive = s.IsActive
                 })
                 .ToListAsync();
-            
+
             return Ok(sessions);
         }
-        
-        [HttpDelete("sessions/{id}/revoke")]
-        public async Task<IActionResult> RevokeSession(int id)
+
+        [HttpDelete("sessions/{sessionId}/revoke")]
+        public async Task<IActionResult> RevokeSession(string sessionId)
         {
             var userId = GetUserId();
             var session = await _context.UserSessions
-                .FirstOrDefaultAsync(s => s.Id == id && s.UserId == userId);
-            
+                .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == userId);
+
             if (session == null)
             {
                 return NotFound(new { message = "Session not found" });
             }
-            
+
             session.IsActive = false;
             await _context.SaveChangesAsync();
-            
+
             return Ok(new { message = "Session revoked successfully" });
         }
-        
+
         [HttpPost("toggle-2fa")]
         public async Task<IActionResult> Toggle2FA()
         {
             var userId = GetUserId();
             var user = await _context.Users.FindAsync(userId);
-            
+
             if (user == null)
             {
                 return NotFound(new { message = "User not found" });
             }
-            
+
             user.TwoFactorEnabled = !user.TwoFactorEnabled;
             user.UpdatedAt = DateTime.UtcNow;
-            
+
             await _context.SaveChangesAsync();
-            
-            return Ok(new { 
+
+            return Ok(new
+            {
                 message = "2FA status updated successfully",
-                twoFactorEnabled = user.TwoFactorEnabled 
+                twoFactorEnabled = user.TwoFactorEnabled
             });
         }
-        
+
         [HttpPut("preferences")]
         public async Task<IActionResult> UpdatePreferences([FromBody] UpdatePreferencesRequest request)
         {
             var userId = GetUserId();
             var user = await _context.Users.FindAsync(userId);
-            
+
             if (user == null)
             {
                 return NotFound(new { message = "User not found" });
             }
-            
+
             // Update user preferences (this would be expanded with actual preference fields)
             user.UpdatedAt = DateTime.UtcNow;
-            
+
             await _context.SaveChangesAsync();
-            
+
             return Ok(new { message = "Preferences updated successfully" });
         }
-        
+
         [HttpPut("profile")]
         public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest request)
         {
@@ -417,25 +397,25 @@ namespace UmiHealthPOS.Controllers.Api
                 // Validate request
                 if (string.IsNullOrWhiteSpace(request.FirstName))
                     return BadRequest(new { message = "First name is required" });
-                
+
                 if (string.IsNullOrWhiteSpace(request.LastName))
                     return BadRequest(new { message = "Last name is required" });
-                
+
                 if (string.IsNullOrWhiteSpace(request.Email))
                     return BadRequest(new { message = "Email is required" });
-                
+
                 // Validate email format
                 if (!IsValidEmail(request.Email))
                     return BadRequest(new { message = "Invalid email format" });
-                
+
                 var userId = GetUserId();
                 var user = await _context.Users.FindAsync(userId);
-                
+
                 if (user == null)
                 {
                     return NotFound(new { message = "User not found" });
                 }
-                
+
                 // Check if email is being changed and if it's already taken
                 if (user.Email.ToLower() != request.Email.ToLower())
                 {
@@ -446,14 +426,14 @@ namespace UmiHealthPOS.Controllers.Api
                     user.Email = request.Email;
                     user.NormalizedEmail = request.Email.ToLower();
                 }
-                
+
                 user.FirstName = request.FirstName;
                 user.LastName = request.LastName;
                 user.PhoneNumber = request.PhoneNumber;
                 user.UpdatedAt = DateTime.UtcNow;
-                
+
                 await _context.SaveChangesAsync();
-                
+
                 return Ok(new { message = "Profile updated successfully" });
             }
             catch (Exception ex)
@@ -461,7 +441,7 @@ namespace UmiHealthPOS.Controllers.Api
                 return StatusCode(500, new { message = "Internal server error" });
             }
         }
-        
+
         [HttpPut("pharmacy")]
         public async Task<IActionResult> UpdatePharmacyDetails([FromBody] UpdatePharmacyRequest request)
         {
@@ -470,15 +450,15 @@ namespace UmiHealthPOS.Controllers.Api
                 // Validate request
                 if (string.IsNullOrWhiteSpace(request.Name))
                     return BadRequest(new { message = "Pharmacy name is required" });
-                
+
                 var userId = GetUserId();
                 var pharmacy = await _context.Pharmacies.FirstOrDefaultAsync();
-                
+
                 if (pharmacy == null)
                 {
                     return NotFound(new { message = "Pharmacy not found" });
                 }
-                
+
                 pharmacy.Name = request.Name;
                 pharmacy.LicenseNumber = request.LicenseNumber;
                 pharmacy.Address = request.Address;
@@ -488,9 +468,9 @@ namespace UmiHealthPOS.Controllers.Api
                 pharmacy.Phone = request.Phone;
                 pharmacy.Email = request.Email;
                 pharmacy.UpdatedAt = DateTime.UtcNow;
-                
+
                 await _context.SaveChangesAsync();
-                
+
                 return Ok(new { message = "Pharmacy details updated successfully" });
             }
             catch (Exception ex)
@@ -498,50 +478,50 @@ namespace UmiHealthPOS.Controllers.Api
                 return StatusCode(500, new { message = "Internal server error" });
             }
         }
-        
+
         [HttpPut("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
         {
             try
             {
                 // Validate request
-                if (string.IsNullOrWhiteSpace(request.CurrentPassword) || 
-                    string.IsNullOrWhiteSpace(request.NewPassword) || 
+                if (string.IsNullOrWhiteSpace(request.CurrentPassword) ||
+                    string.IsNullOrWhiteSpace(request.NewPassword) ||
                     string.IsNullOrWhiteSpace(request.ConfirmPassword))
                 {
                     return BadRequest(new { message = "All password fields are required" });
                 }
-                
+
                 if (request.NewPassword != request.ConfirmPassword)
                 {
                     return BadRequest(new { message = "New password and confirm password do not match" });
                 }
-                
+
                 if (request.NewPassword.Length < 8)
                 {
                     return BadRequest(new { message = "New password must be at least 8 characters long" });
                 }
-                
+
                 var userId = GetUserId();
                 var user = await _context.Users.FindAsync(userId);
-                
+
                 if (user == null)
                 {
                     return NotFound(new { message = "User not found" });
                 }
-                
+
                 // Verify current password
                 if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
                 {
                     return BadRequest(new { message = "Current password is incorrect" });
                 }
-                
+
                 // Update password
                 user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
                 user.UpdatedAt = DateTime.UtcNow;
-                
+
                 await _context.SaveChangesAsync();
-                
+
                 return Ok(new { message = "Password changed successfully" });
             }
             catch (Exception ex)
@@ -549,7 +529,7 @@ namespace UmiHealthPOS.Controllers.Api
                 return StatusCode(500, new { message = "Internal server error" });
             }
         }
-        
+
         [HttpPost("users/{targetUserId}/toggle-status")]
         public async Task<IActionResult> ToggleUserStatus(string targetUserId, [FromBody] ToggleUserStatusRequest request)
         {
@@ -557,24 +537,24 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var userId = GetUserId();
                 var currentUser = await _context.Users.FindAsync(userId);
-                
+
                 if (currentUser == null || currentUser.Role != "admin")
                 {
                     return Unauthorized(new { message = "Only admins can toggle user status" });
                 }
-                
+
                 var targetUser = await _context.Users.FindAsync(targetUserId);
-                
+
                 if (targetUser == null)
                 {
                     return NotFound(new { message = "User not found" });
                 }
-                
+
                 targetUser.IsActive = request.Active;
                 targetUser.UpdatedAt = DateTime.UtcNow;
-                
+
                 await _context.SaveChangesAsync();
-                
+
                 return Ok(new { message = "User status updated successfully" });
             }
             catch (Exception ex)
@@ -582,7 +562,7 @@ namespace UmiHealthPOS.Controllers.Api
                 return StatusCode(500, new { message = "Internal server error" });
             }
         }
-        
+
         [HttpGet("users")]
         public async Task<IActionResult> GetManagedUsers()
         {
@@ -603,17 +583,17 @@ namespace UmiHealthPOS.Controllers.Api
                     createdAt = u.CreatedAt
                 })
                 .ToListAsync();
-            
+
             return Ok(users);
         }
-        
+
         private string GetUserId()
         {
             // This would normally extract from JWT token
             // For now, return a test user ID
             return "test-user-id";
         }
-        
+
         private bool IsValidEmail(string email)
         {
             try
@@ -627,7 +607,7 @@ namespace UmiHealthPOS.Controllers.Api
             }
         }
     }
-    
+
     public class UpdateProfileRequest
     {
         public string FirstName { get; set; }
@@ -635,85 +615,85 @@ namespace UmiHealthPOS.Controllers.Api
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
     }
-    
+
     public class UpdatePharmacyRequest
     {
         [Required(ErrorMessage = "Pharmacy name is required")]
         [StringLength(200, ErrorMessage = "Pharmacy name cannot exceed 200 characters")]
         public string Name { get; set; }
-        
+
         [Required(ErrorMessage = "License number is required")]
         [StringLength(50, ErrorMessage = "License number cannot exceed 50 characters")]
         public string LicenseNumber { get; set; }
-        
+
         [Required(ErrorMessage = "Address is required")]
         [StringLength(500, ErrorMessage = "Address cannot exceed 500 characters")]
         public string Address { get; set; }
-        
+
         [Required(ErrorMessage = "City is required")]
         [StringLength(100, ErrorMessage = "City cannot exceed 100 characters")]
         public string City { get; set; }
-        
+
         [Required(ErrorMessage = "Province is required")]
         [StringLength(100, ErrorMessage = "Province cannot exceed 100 characters")]
         public string Province { get; set; }
-        
+
         [Required(ErrorMessage = "Postal code is required")]
         [StringLength(20, ErrorMessage = "Postal code cannot exceed 20 characters")]
         public string PostalCode { get; set; }
-        
+
         [Required(ErrorMessage = "Phone number is required")]
         [StringLength(20, ErrorMessage = "Phone number cannot exceed 20 characters")]
         public string Phone { get; set; }
-        
+
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email format")]
         [StringLength(200, ErrorMessage = "Email cannot exceed 200 characters")]
         public string Email { get; set; }
     }
-    
+
     public class ChangePasswordRequest
     {
         [Required(ErrorMessage = "Current password is required")]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 100 characters")]
         public string CurrentPassword { get; set; }
-        
+
         [Required(ErrorMessage = "New password is required")]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 100 characters")]
         public string NewPassword { get; set; }
-        
+
         [Required(ErrorMessage = "Confirm password is required")]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 100 characters")]
         public string ConfirmPassword { get; set; }
     }
-    
+
     public class ToggleTwoFactorRequest
     {
         [Required(ErrorMessage = "Enabled status is required")]
         public bool Enabled { get; set; }
     }
-    
+
     public class ToggleUserStatusRequest
     {
         [Required(ErrorMessage = "Active status is required")]
         public bool Active { get; set; }
     }
-    
+
     public class UpdatePreferencesRequest
     {
         [StringLength(50, ErrorMessage = "Theme cannot exceed 50 characters")]
         public string Theme { get; set; }
-        
+
         [StringLength(10, ErrorMessage = "Language cannot exceed 10 characters")]
         public string Language { get; set; }
-        
+
         [StringLength(50, ErrorMessage = "Time zone cannot exceed 50 characters")]
         public string TimeZone { get; set; }
-        
+
         public bool EmailNotifications { get; set; }
         public bool PushNotifications { get; set; }
     }
-    
+
     public class UpgradeSubscriptionRequest
     {
         [Required]

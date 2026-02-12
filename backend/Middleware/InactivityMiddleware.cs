@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
 
@@ -22,13 +24,13 @@ namespace UmiHealthPOS.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             // Skip inactivity check for login endpoints and static files
-            if (context.Request.Path.StartsWith("/api/auth") || 
-                context.Request.Path.StartsWith("/login") ||
-                context.Request.Path.StartsWith("/signin") ||
-                context.Request.Path.StartsWith("/signup") ||
-                context.Request.Path.StartsWith("/css") ||
-                context.Request.Path.StartsWith("/js") ||
-                context.Request.Path.StartsWith("/images"))
+            if (context.Request.Path.StartsWithSegments("/api/auth") ||
+                context.Request.Path.StartsWithSegments("/login") ||
+                context.Request.Path.StartsWithSegments("/signin") ||
+                context.Request.Path.StartsWithSegments("/signup") ||
+                context.Request.Path.StartsWithSegments("/css") ||
+                context.Request.Path.StartsWithSegments("/js") ||
+                context.Request.Path.StartsWithSegments("/images"))
             {
                 await _next(context);
                 return;
@@ -49,48 +51,52 @@ namespace UmiHealthPOS.Middleware
                 var key = System.Text.Encoding.UTF8.GetBytes(_serviceProvider.GetRequiredService<IConfiguration>()["Jwt:Key"]);
                 var tokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = _serviceProvider.GetRequiredService<IConfiguration>()["Jwt:Issuer"],
-                    ValidateAudience = _serviceProvider.GetRequiredService<IConfiguration>()["Jwt:Audience"],
+                    ValidateIssuer = true,
+                    ValidIssuer = _serviceProvider.GetRequiredService<IConfiguration>()["Jwt:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = _serviceProvider.GetRequiredService<IConfiguration>()["Jwt:Audience"],
                     ValidateLifetime = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ClockSkew = TimeSpan.Zero
                 };
 
-                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters);
+                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
                 if (principal != null)
                 {
                     var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    
+
                     if (!string.IsNullOrEmpty(userId))
                     {
                         using var scope = _serviceProvider.CreateScope();
                         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                        
+
                         // Check user session for inactivity
                         var session = await dbContext.UserSessions
                             .FirstOrDefaultAsync(s => s.UserId == userId && s.Token == token && s.IsActive);
-                        
+
                         if (session != null)
                         {
                             // Check if session has expired due to inactivity (30 minutes)
                             if (DateTime.UtcNow > session.ExpiresAt)
                             {
                                 _logger.LogInformation($"User {userId} session expired due to inactivity");
-                                
+
                                 // Deactivate the session
                                 session.IsActive = false;
                                 await dbContext.SaveChangesAsync();
-                                
+
                                 // Return 401 Unauthorized to trigger logout
                                 context.Response.StatusCode = 401;
                                 context.Response.ContentType = "application/json";
-                                await context.Response.WriteAsAsync(new { 
+                                var response = new
+                                {
                                     message = "Session expired due to inactivity. Please log in again.",
                                     code = "INACTIVITY_LOGOUT"
-                                });
+                                };
+                                await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
                                 return;
                             }
-                            
+
                             // Update last access time for active sessions
                             session.LastAccessAt = DateTime.UtcNow;
                             await dbContext.SaveChangesAsync();

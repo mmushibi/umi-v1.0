@@ -35,7 +35,7 @@ namespace UmiHealthPOS.Services
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_secretKey);
-            
+
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
@@ -85,7 +85,7 @@ namespace UmiHealthPOS.Services
             {
                 var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
                 var jwtSecurityToken = securityToken as JwtSecurityToken;
-                
+
                 if (jwtSecurityToken == null || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
                 {
                     return null;
@@ -103,7 +103,7 @@ namespace UmiHealthPOS.Services
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_secretKey);
-            
+
             try
             {
                 tokenHandler.ValidateToken(token, new TokenValidationParameters

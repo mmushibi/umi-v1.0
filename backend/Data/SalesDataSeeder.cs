@@ -49,7 +49,7 @@ namespace UmiHealthPOS.Data
                 {
                     var saleDate = DateTime.UtcNow.AddDays(-random.Next(0, 30));
                     var customer = random.Next(0, 3) == 0 ? customers[random.Next(customers.Count)] : null;
-                    
+
                     // Create sale items
                     var saleItems = new List<SaleItem>();
                     var itemCount = random.Next(1, 4);
@@ -61,7 +61,7 @@ namespace UmiHealthPOS.Data
                         var quantity = random.Next(1, 5);
                         var unitPrice = product.Price;
                         var totalPrice = unitPrice * quantity;
-                        
+
                         saleItems.Add(new SaleItem
                         {
                             ProductId = product.Id,
@@ -69,7 +69,7 @@ namespace UmiHealthPOS.Data
                             Quantity = quantity,
                             TotalPrice = totalPrice
                         });
-                        
+
                         subtotal += totalPrice;
                     }
 
@@ -146,7 +146,7 @@ namespace UmiHealthPOS.Data
             using var scope = host.Services.CreateScope();
             var services = scope.ServiceProvider;
             var logger = services.GetRequiredService<ILogger<SalesDataSeeder>>();
-            
+
             try
             {
                 var seeder = services.GetRequiredService<SalesDataSeeder>();

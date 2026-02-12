@@ -12,12 +12,12 @@ namespace UmiHealthPOS.Controllers.Api
     public class UserManagementController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-        
+
         public UserManagementController(ApplicationDbContext context)
         {
             _context = context;
         }
-        
+
         [HttpGet("users")]
         public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers()
         {
@@ -37,10 +37,10 @@ namespace UmiHealthPOS.Controllers.Api
                     CreatedAt = u.CreatedAt
                 })
                 .ToListAsync();
-                
+
             return Ok(users);
         }
-        
+
         [HttpGet("users/{id}")]
         public async Task<ActionResult<UserResponse>> GetUser(string id)
         {
@@ -61,15 +61,15 @@ namespace UmiHealthPOS.Controllers.Api
                     CreatedAt = u.CreatedAt
                 })
                 .FirstOrDefaultAsync();
-                
+
             if (user == null)
             {
                 return NotFound();
             }
-            
+
             return Ok(user);
         }
-        
+
         [HttpPost("users")]
         public async Task<ActionResult<UserResponse>> CreateUser([FromBody] CreateUserRequest request)
         {
@@ -79,13 +79,13 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 return BadRequest("Invalid role. Must be admin, pharmacist, or cashier.");
             }
-            
+
             // Check if email already exists
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
             {
                 return BadRequest("Email already exists.");
             }
-            
+
             var user = new User
             {
                 Id = Guid.NewGuid().ToString(),
@@ -100,15 +100,15 @@ namespace UmiHealthPOS.Controllers.Api
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            
+
             _context.Users.Add(user);
-            
+
             // Assign to branch if specified
             if (!string.IsNullOrEmpty(request.Branch))
             {
                 var branch = await _context.Branches
                     .FirstOrDefaultAsync(b => b.Name == request.Branch || b.Id.ToString() == request.Branch);
-                    
+
                 if (branch != null)
                 {
                     var userBranch = new UserBranch
@@ -123,9 +123,9 @@ namespace UmiHealthPOS.Controllers.Api
                     _context.UserBranches.Add(userBranch);
                 }
             }
-            
+
             await _context.SaveChangesAsync();
-            
+
             var response = new UserResponse
             {
                 Id = user.Id,
@@ -138,35 +138,35 @@ namespace UmiHealthPOS.Controllers.Api
                 LastLogin = user.LastLogin,
                 CreatedAt = user.CreatedAt
             };
-            
+
             return CreatedAtAction(nameof(GetUser), new { id = user.Id }, response);
         }
-        
+
         [HttpPut("users/{id}")]
         public async Task<IActionResult> UpdateUser(string id, [FromBody] CreateUserRequest request)
         {
             var user = await _context.Users
                 .Include(u => u.UserBranches)
                 .FirstOrDefaultAsync(u => u.Id == id);
-                
+
             if (user == null)
             {
                 return NotFound();
             }
-            
+
             // Validate role
             var validRoles = new[] { "admin", "pharmacist", "cashier" };
             if (!validRoles.Contains(request.Role.ToLower()))
             {
                 return BadRequest("Invalid role. Must be admin, pharmacist, or cashier.");
             }
-            
+
             // Check if email already exists (excluding current user)
             if (await _context.Users.AnyAsync(u => u.Email == request.Email && u.Id != id))
             {
                 return BadRequest("Email already exists.");
             }
-            
+
             // Split name into first and last name
             var nameParts = request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
             user.FirstName = nameParts.Length > 0 ? nameParts[0] : user.FirstName;
@@ -175,22 +175,22 @@ namespace UmiHealthPOS.Controllers.Api
             user.PhoneNumber = request.Phone;
             user.Role = request.Role;
             user.UpdatedAt = DateTime.UtcNow;
-            
+
             // Update password if provided
             if (!string.IsNullOrEmpty(request.Password))
             {
                 user.PasswordHash = HashPassword(request.Password);
             }
-            
+
             // Update branch assignment
             if (!string.IsNullOrEmpty(request.Branch))
             {
                 // Remove existing branch assignments
                 _context.UserBranches.RemoveRange(user.UserBranches);
-                
+
                 var branch = await _context.Branches
                     .FirstOrDefaultAsync(b => b.Name == request.Branch || b.Id.ToString() == request.Branch);
-                    
+
                 if (branch != null)
                 {
                     var userBranch = new UserBranch
@@ -205,12 +205,12 @@ namespace UmiHealthPOS.Controllers.Api
                     _context.UserBranches.Add(userBranch);
                 }
             }
-            
+
             await _context.SaveChangesAsync();
-            
+
             return NoContent();
         }
-        
+
         [HttpDelete("users/{id}")]
         public async Task<IActionResult> DeleteUser(string id)
         {
@@ -219,19 +219,19 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 return NotFound();
             }
-            
+
             // Remove user branch assignments
             var userBranches = await _context.UserBranches
                 .Where(ub => ub.UserId == id)
                 .ToListAsync();
             _context.UserBranches.RemoveRange(userBranches);
-            
+
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
-            
+
             return NoContent();
         }
-        
+
         [HttpPost("users/import-csv")]
         public async Task<ActionResult<IEnumerable<UserResponse>>> ImportUsers([FromForm] IFormFile file)
         {
@@ -239,10 +239,10 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 return BadRequest("No file uploaded.");
             }
-            
+
             var users = new List<UserResponse>();
             var validRoles = new[] { "admin", "pharmacist", "cashier" };
-            
+
             using (var reader = new StreamReader(file.OpenReadStream()))
             {
                 var header = await reader.ReadLineAsync(); // Skip header
@@ -250,37 +250,37 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     return BadRequest("Empty file.");
                 }
-                
+
                 int lineNum = 2;
                 while (!reader.EndOfStream)
                 {
                     var line = await reader.ReadLineAsync();
                     if (string.IsNullOrWhiteSpace(line)) continue;
-                    
+
                     var values = line.Split(',').Select(v => v.Trim().Replace("\"", "")).ToArray();
                     if (values.Length < 6)
                     {
                         return BadRequest($"Invalid format at line {lineNum}. Expected 6 columns.");
                     }
-                    
+
                     var name = values[0];
                     var email = values[1];
                     var phone = values[2];
                     var role = values[3].ToLower();
                     var branch = values[4];
                     var status = values[5].ToLower();
-                    
+
                     // Validate
                     if (!validRoles.Contains(role))
                     {
                         return BadRequest($"Invalid role '{role}' at line {lineNum}. Must be admin, pharmacist, or cashier.");
                     }
-                    
+
                     if (await _context.Users.AnyAsync(u => u.Email == email))
                     {
                         return BadRequest($"Email '{email}' already exists at line {lineNum}.");
                     }
-                    
+
                     var user = new User
                     {
                         Id = Guid.NewGuid().ToString(),
@@ -295,15 +295,15 @@ namespace UmiHealthPOS.Controllers.Api
                         CreatedAt = DateTime.UtcNow,
                         UpdatedAt = DateTime.UtcNow
                     };
-                    
+
                     _context.Users.Add(user);
-                    
+
                     // Assign to branch if specified
                     if (!string.IsNullOrEmpty(branch))
                     {
                         var branchEntity = await _context.Branches
                             .FirstOrDefaultAsync(b => b.Name == branch || b.Id.ToString() == branch);
-                            
+
                         if (branchEntity != null)
                         {
                             var userBranch = new UserBranch
@@ -318,7 +318,7 @@ namespace UmiHealthPOS.Controllers.Api
                             _context.UserBranches.Add(userBranch);
                         }
                     }
-                    
+
                     users.Add(new UserResponse
                     {
                         Id = user.Id,
@@ -331,15 +331,15 @@ namespace UmiHealthPOS.Controllers.Api
                         LastLogin = user.LastLogin,
                         CreatedAt = user.CreatedAt
                     });
-                    
+
                     lineNum++;
                 }
             }
-            
+
             await _context.SaveChangesAsync();
             return Ok(users);
         }
-        
+
         [HttpGet("users/export-csv")]
         public async Task<IActionResult> ExportUsers()
         {
@@ -359,19 +359,19 @@ namespace UmiHealthPOS.Controllers.Api
                     CreatedAt = u.CreatedAt
                 })
                 .ToListAsync();
-            
+
             var csv = new StringBuilder();
             csv.AppendLine("Name,Email,Phone,Role,Branch,Status,Last Login,Created Date");
-            
+
             foreach (var user in users)
             {
                 csv.AppendLine($"\"{user.Name}\",\"{user.Email}\",\"{user.Phone}\",\"{user.Role}\",\"{user.Branch ?? "All Branches"}\",\"{user.Status}\",\"{user.LastLogin?.ToString() ?? "Never"}\",\"{user.CreatedAt:yyyy-MM-dd HH:mm:ss}\"");
             }
-            
+
             var bytes = Encoding.UTF8.GetBytes(csv.ToString());
             return File(bytes, "text/csv", $"users_export_{DateTime.UtcNow:yyyy-MM-dd}.csv");
         }
-        
+
         private string HashPassword(string password)
         {
             using (var sha256 = SHA256.Create())

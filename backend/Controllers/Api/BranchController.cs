@@ -239,17 +239,17 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 // Get all branches
                 var allBranches = await _branchService.GetAllBranchesAsync();
-                
+
                 // Get current user's branch assignments
                 var userBranches = await _context.UserBranches
                     .Where(ub => ub.UserId == GetUserId() && ub.IsActive)
                     .Select(ub => ub.BranchId)
                     .ToListAsync();
-                
+
                 // Filter branches based on user role and assignments
-                var accessibleBranches = allBranches.Where(b => 
+                var accessibleBranches = allBranches.Where(b =>
                     GetUserRole() == "TenantAdmin" || userBranches.Contains(b.Id)).ToList();
-                
+
                 var totalBranches = accessibleBranches.Count;
                 var activeBranches = accessibleBranches.Count(b => b.Status == "active");
                 var totalStaff = await _context.UserBranches
@@ -280,10 +280,10 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var branches = await _branchService.GetAllBranchesAsync();
                 var csv = new System.Text.StringBuilder();
-                
+
                 // CSV Header
                 csv.AppendLine("ID,Name,Address,City,Region,Phone,Email,ManagerName,ManagerPhone,OperatingHours,Status,MonthlyRevenue,StaffCount,CreatedAt");
-                
+
                 // CSV Data
                 foreach (var branch in branches)
                 {
@@ -302,7 +302,7 @@ namespace UmiHealthPOS.Controllers.Api
                                $"{branch.StaffCount}," +
                                $"{branch.CreatedAt:yyyy-MM-dd HH:mm:ss}");
                 }
-                
+
                 var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
                 return File(bytes, "text/csv", $"branches_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv");
             }
@@ -315,13 +315,13 @@ namespace UmiHealthPOS.Controllers.Api
         private async Task<bool> CanAccessBranch(int branchId)
         {
             var userRole = GetUserRole();
-            
+
             // Tenant admins can access all branches
             if (userRole == "TenantAdmin")
                 return true;
 
             var userId = GetUserId();
-            
+
             // Check if user is assigned to this branch
             return await _context.UserBranches
                 .AnyAsync(ub => ub.UserId == userId && ub.BranchId == branchId && ub.IsActive);

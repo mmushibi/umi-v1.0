@@ -150,8 +150,8 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var csvBytes = await _inventoryService.ExportInventoryToCsvAsync();
                 var fileName = $"inventory_export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
-                
-                Response.Headers.Add("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+
+                Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
                 return File(csvBytes, "text/csv", fileName);
             }
             catch (Exception ex)
@@ -169,10 +169,10 @@ namespace UmiHealthPOS.Controllers.Api
                 // Generate a simple CSV template
                 var template = "Inventory Item Name,Generic Name,Brand Name,Manufacture Date,Batch Number,License Number,Zambia REG Number,Packing Type,Quantity,Unit Price,Selling Price,Reorder Level\n" +
                               "Sample Item,Sample Generic,Sample Brand,2024-01-01,B001,LICENSE001,ZAMBIA001,Box,100,50.00,75.00,10\n";
-                
+
                 var fileName = "inventory_template.csv";
-                
-                Response.Headers.Add("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+
+                Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
                 return File(Encoding.UTF8.GetBytes(template), "text/csv", fileName);
             }
             catch (Exception ex)

@@ -1,0 +1,255 @@
+# Azure DevOps Pipeline for Umi Health POS
+
+trigger:
+  branches:
+    include:
+    - main
+    - develop
+    - staging
+  paths:
+    exclude:
+    - README.md
+    - docs/*
+
+pr:
+  branches:
+    include:
+    - main
+    - develop
+
+variables:
+  dotnetVersion: '8.0.x'
+  nodeVersion: '18'
+  buildConfiguration: 'Release'
+  vmImageName: 'ubuntu-latest'
+
+pool:
+  vmImage: $(vmImageName)
+
+stages:
+- stage: Build
+  displayName: 'Build and Test Stage'
+  jobs:
+  - job: BuildAndTest
+    displayName: 'Build and Test'
+    timeoutInMinutes: 60
+    
+    strategy:
+      matrix:
+        Linux:
+          imageName: 'ubuntu-latest'
+        Windows:
+          imageName: 'windows-latest'
+    
+    pool:
+      vmImage: $(imageName)
+    
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET $(dotnetVersion)'
+      inputs:
+        packageType: 'sdk'
+        version: '$(dotnetVersion)'
+        installationPath: $(Agent.ToolsDirectory)/dotnet
+    
+    - task: NodeTool@0
+      displayName: 'Use Node.js $(nodeVersion)'
+      inputs:
+        versionSpec: '$(nodeVersion)'
+    
+    - task: NuGetToolInstaller@1
+      displayName: 'Install NuGet'
+    
+    - task: NuGetCommand@2
+      displayName: 'Restore NuGet packages'
+      inputs:
+        command: 'restore'
+        restoreSolution: '**/*.csproj'
+        feedsToUse: 'select'
+    
+    - script: |
+        npm ci
+      displayName: 'Install Node.js dependencies'
+    
+    - script: |
+        npm run build-css-prod
+      displayName: 'Build CSS assets'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Build .NET application'
+      inputs:
+        command: 'build'
+        projects: 'backend/UmiHealthPOS.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Unit Tests'
+      inputs:
+        command: 'test'
+        projects: 'backend/UmiHealthPOS.Tests.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory $(Agent.TempDirectory)/TestResults --logger trx'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Integration Tests'
+      inputs:
+        command: 'test'
+        projects: 'backend/UmiHealthPOS.Tests.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-build --filter Category=Integration --verbosity normal --collect:"XPlat Code Coverage" --results-directory $(Agent.TempDirectory)/TestResults --logger trx'
+    
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      inputs:
+        testResultsFiles: '$(Agent.TempDirectory)/TestResults/**/*.trx'
+        mergeTestResults: true
+        testRunTitle: 'Umi Health POS Tests'
+    
+    - task: PublishCodeCoverageResults@2
+      displayName: 'Publish code coverage'
+      inputs:
+        summaryFileLocation: '$(Agent.TempDirectory)/TestResults/**/coverage.cobertura.xml'
+        codecoverageTool: 'Cobertura'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish .NET application'
+      inputs:
+        command: 'publish'
+        projects: 'backend/UmiHealthPOS.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/backend'
+        zipAfterPublish: false
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Backend Artifacts'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/backend'
+        ArtifactName: 'backend-app'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Frontend Artifacts'
+      inputs:
+        PathtoPublish: 'wwwroot'
+        ArtifactName: 'frontend-assets'
+
+- stage: SecurityScan
+  displayName: 'Security Scanning'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - job: SecurityScan
+    displayName: 'Security Vulnerability Scan'
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    - task: UseDotNet@2
+      displayName: 'Use .NET $(dotnetVersion)'
+      inputs:
+        packageType: 'sdk'
+        version: '$(dotnetVersion)'
+    
+    - script: |
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+        trivy fs --format sarif --output trivy-results.sarif .
+      displayName: 'Run Trivy Security Scan'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Security Scan Results'
+      inputs:
+        PathtoPublish: 'trivy-results.sarif'
+        ArtifactName: 'security-scan'
+
+- stage: DockerBuild
+  displayName: 'Docker Build and Push'
+  dependsOn: [Build, SecurityScan]
+  condition: and(succeeded(), or(eq(variables['Build.SourceBranch'], 'refs/heads/main'), eq(variables['Build.SourceBranch'], 'refs/heads/develop')))
+  jobs:
+  - job: DockerBuild
+    displayName: 'Build and Push Docker Images'
+    pool:
+      vmImage: 'ubuntu-latest'
+    
+    steps:
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download Backend Artifacts'
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'backend-app'
+        downloadPath: '$(System.ArtifactsDirectory)'
+    
+    - task: DownloadBuildArtifacts@0
+      displayName: 'Download Frontend Artifacts'
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'frontend-assets'
+        downloadPath: '$(System.ArtifactsDirectory)'
+    
+    - task: Docker@2
+      displayName: 'Build and Push Backend Image'
+      inputs:
+        containerRegistry: 'dockerhub'
+        repository: 'umihealthpos/backend'
+        command: 'buildAndPush'
+        Dockerfile: 'backend/Dockerfile'
+        buildContext: 'backend'
+        tags: |
+          $(Build.BuildNumber)
+          latest
+        addPipelineData: false
+    
+    - task: Docker@2
+      displayName: 'Build and Push Frontend Image'
+      inputs:
+        containerRegistry: 'dockerhub'
+        repository: 'umihealthpos/frontend'
+        command: 'buildAndPush'
+        Dockerfile: 'Dockerfile.frontend'
+        buildContext: '.'
+        tags: |
+          $(Build.BuildNumber)
+          latest
+        addPipelineData: false
+
+- stage: DeployStaging
+  displayName: 'Deploy to Staging'
+  dependsOn: DockerBuild
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/develop'))
+  jobs:
+  - deployment: DeployStaging
+    displayName: 'Deploy to Staging Environment'
+    environment: 'staging'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebApp@1
+            displayName: 'Deploy to Azure Web App - Staging'
+            inputs:
+              azureSubscription: 'AzureServiceConnection'
+              appType: 'webAppLinux'
+              appName: 'umi-health-pos-staging'
+              package: '$(Pipeline.Workspace)/backend-app/**/*.zip'
+              runtimeStack: 'DOTNETCORE|8.0'
+              startUpCommand: 'dotnet UmiHealthPOS.dll'
+
+- stage: DeployProduction
+  displayName: 'Deploy to Production'
+  dependsOn: DockerBuild
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - deployment: DeployProduction
+    displayName: 'Deploy to Production Environment'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureWebApp@1
+            displayName: 'Deploy to Azure Web App - Production'
+            inputs:
+              azureSubscription: 'AzureServiceConnection'
+              appType: 'webAppLinux'
+              appName: 'umi-health-pos-prod'
+              package: '$(Pipeline.Workspace)/backend-app/**/*.zip'
+              runtimeStack: 'DOTNETCORE|8.0'
+              startUpCommand: 'dotnet UmiHealthPOS.dll'

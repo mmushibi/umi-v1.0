@@ -146,7 +146,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 var prescription = await _prescriptionService.CreatePrescriptionAsync(request);
                 _logger.LogInformation("Prescription created successfully: {PrescriptionId} by user {UserId}", prescription.Id, userId);
-                
+
                 return CreatedAtAction(nameof(GetPrescriptions), new { id = prescription.Id }, prescription);
             }
             catch (Exception ex)
@@ -224,7 +224,7 @@ namespace UmiHealthPOS.Controllers.Api
                 };
 
                 var updatedPrescription = await _prescriptionService.UpdatePrescriptionAsync(prescriptionId, updateRequest);
-                
+
                 // Manually set status to "ready" since the service doesn't have a specific approve method
                 // This would be enhanced in a real implementation
                 _logger.LogInformation("Prescription {PrescriptionId} approved by user {UserId}", prescriptionId, userId);
@@ -301,7 +301,7 @@ namespace UmiHealthPOS.Controllers.Api
                 };
 
                 await _prescriptionService.UpdatePrescriptionAsync(prescriptionId, updateRequest);
-                
+
                 // Note: In a real implementation, we'd add a proper reject method to the service
                 // For now, we'll use the update method and handle the status change in the frontend
 
@@ -343,7 +343,7 @@ namespace UmiHealthPOS.Controllers.Api
                 // Apply filters
                 if (!string.IsNullOrEmpty(searchQuery))
                 {
-                    query = query.Where(s => 
+                    query = query.Where(s =>
                         s.ReceiptNumber.Contains(searchQuery) ||
                         (s.Customer != null && s.Customer.Name.Contains(searchQuery)));
                 }
@@ -486,7 +486,7 @@ namespace UmiHealthPOS.Controllers.Api
                 // Apply same filters as GetSales method
                 if (!string.IsNullOrEmpty(searchQuery))
                 {
-                    baseQuery = baseQuery.Where(s => 
+                    baseQuery = baseQuery.Where(s =>
                         s.ReceiptNumber.Contains(searchQuery) ||
                         (s.Customer != null && s.Customer.Name.Contains(searchQuery)));
                 }

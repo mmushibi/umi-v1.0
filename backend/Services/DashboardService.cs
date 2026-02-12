@@ -17,7 +17,7 @@ namespace UmiHealthPOS.Services
         {
             // Return empty stats - no mock data
             // When database is implemented, this will query real data
-            
+
             return new DashboardStats
             {
                 TotalPrescriptions = 0,
@@ -33,7 +33,7 @@ namespace UmiHealthPOS.Services
         {
             // Return empty list - no mock data
             // When database is implemented, this will query real activities
-            
+
             return new List<RecentActivity>();
         }
 
@@ -49,7 +49,7 @@ namespace UmiHealthPOS.Services
                 return $"{(int)timeSpan.TotalHours} hour{(timeSpan.TotalHours >= 2 ? "s" : "")} ago";
             if (timeSpan.TotalDays < 7)
                 return $"{(int)timeSpan.TotalDays} day{(timeSpan.TotalDays >= 2 ? "s" : "")} ago";
-            
+
             return dateTime.ToString("MMM dd, yyyy");
         }
     }

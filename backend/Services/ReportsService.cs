@@ -115,7 +115,7 @@ namespace UmiHealthPOS.Services
             // Calculate metrics
             var totalRevenue = sales.Sum(s => s.Total);
             var totalSales = sales.Count;
-            var newCustomers = sales.Where(s => s.Customer != null && 
+            var newCustomers = sales.Where(s => s.Customer != null &&
                 s.Customer.CreatedAt >= startDate && s.Customer.CreatedAt <= endDate)
                 .Select(s => s.CustomerId).Distinct().Count();
             var avgOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
@@ -416,7 +416,7 @@ namespace UmiHealthPOS.Services
         private string CalculateAgeGroup(DateTime? dateOfBirth)
         {
             if (!dateOfBirth.HasValue) return "Unknown";
-            
+
             var age = DateTime.Today.Year - dateOfBirth.Value.Year;
             if (dateOfBirth.Value > DateTime.Today.AddYears(-age)) age--;
 

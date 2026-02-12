@@ -22,7 +22,7 @@ namespace UmiHealthPOS.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             // Skip branch isolation for authentication endpoints and static files
-            if (context.Request.Path.StartsWithSegments("/api/auth") || 
+            if (context.Request.Path.StartsWithSegments("/api/auth") ||
                 context.Request.Path.StartsWithSegments("/connect") ||
                 context.Request.Path.StartsWithSegments("/.well-known") ||
                 context.Request.Path.StartsWithSegments("/swagger") ||
@@ -82,13 +82,13 @@ namespace UmiHealthPOS.Middleware
         public static IQueryable<T> ApplyBranchFilter<T>(this IQueryable<T> query, HttpContext context) where T : class
         {
             var userRole = context.User?.FindFirst(ClaimTypes.Role)?.Value;
-            
+
             // Tenant admins see all data
             if (userRole == "TenantAdmin")
                 return query;
 
             // Get user's branch IDs from middleware
-            if (context.Items.TryGetValue("UserBranchIds", out var branchIdsObj) && 
+            if (context.Items.TryGetValue("UserBranchIds", out var branchIdsObj) &&
                 branchIdsObj is System.Collections.Generic.List<int> branchIds)
             {
                 // Apply branch filter based on entity type
@@ -118,12 +118,12 @@ namespace UmiHealthPOS.Middleware
         public static bool HasBranchPermission(this HttpContext context, int branchId, string requiredPermission)
         {
             var userRole = context.User?.FindFirst(ClaimTypes.Role)?.Value;
-            
+
             // Tenant admins have all permissions
             if (userRole == "TenantAdmin")
                 return true;
 
-            if (context.Items.TryGetValue("UserPermissions", out var permissionsObj) && 
+            if (context.Items.TryGetValue("UserPermissions", out var permissionsObj) &&
                 permissionsObj is System.Collections.Generic.Dictionary<int, string> permissions)
             {
                 if (permissions.TryGetValue(branchId, out var userPermission))
@@ -143,7 +143,7 @@ namespace UmiHealthPOS.Middleware
 
         public static System.Collections.Generic.List<int> GetUserBranchIds(this HttpContext context)
         {
-            if (context.Items.TryGetValue("UserBranchIds", out var branchIdsObj) && 
+            if (context.Items.TryGetValue("UserBranchIds", out var branchIdsObj) &&
                 branchIdsObj is System.Collections.Generic.List<int> branchIds)
             {
                 return branchIds;

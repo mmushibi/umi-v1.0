@@ -1,0 +1,82 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using UmiHealthPOS.Data;
+using UmiHealthPOS.Models;
+
+namespace UmiHealthPOS.Tests
+{
+    public class NavigationPropertyTest
+    {
+        public static async Task TestNavigationPropertiesAsync(IServiceProvider serviceProvider)
+        {
+            using var scope = serviceProvider.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<NavigationPropertyTest>>();
+
+            try
+            {
+                logger.LogInformation("Testing navigation properties...");
+
+                // Test UserBranch navigation properties
+                var userBranches = await context.UserBranches
+                    .Include(ub => ub.User)
+                    .Include(ub => ub.Branch)
+                    .ToListAsync();
+
+                logger.LogInformation("Found {Count} UserBranch relationships", userBranches.Count);
+
+                foreach (var userBranch in userBranches)
+                {
+                    logger.LogInformation("UserBranch: User={UserName}, Branch={BranchName}, Role={UserRole}", 
+                        userBranch.User?.FirstName + " " + userBranch.User?.LastName,
+                        userBranch.Branch?.Name,
+                        userBranch.UserRole);
+                }
+
+                // Test Branch navigation properties
+                var branches = await context.Branches
+                    .Include(b => b.Users)
+                    .Include(b => b.UserBranches)
+                    .Include(b => b.InventoryItems)
+                    .ToListAsync();
+
+                logger.LogInformation("Found {Count} branches", branches.Count);
+
+                foreach (var branch in branches)
+                {
+                    logger.LogInformation("Branch: {BranchName}, Users={UserCount}, UserBranches={UserBranchCount}, InventoryItems={InventoryCount}",
+                        branch.Name,
+                        branch.Users?.Count ?? 0,
+                        branch.UserBranches?.Count ?? 0,
+                        branch.InventoryItems?.Count ?? 0);
+                }
+
+                // Test InventoryItem navigation properties
+                var inventoryItems = await context.InventoryItems
+                    .Include(ii => ii.Branch)
+                    .ToListAsync();
+
+                logger.LogInformation("Found {Count} inventory items", inventoryItems.Count);
+
+                foreach (var item in inventoryItems)
+                {
+                    logger.LogInformation("InventoryItem: {ItemName}, Branch={BranchName}",
+                        item.InventoryItemName,
+                        item.Branch?.Name);
+                }
+
+                logger.LogInformation("Navigation property test completed successfully");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Navigation property test failed");
+                throw;
+            }
+        }
+    }
+}

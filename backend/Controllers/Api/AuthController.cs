@@ -19,14 +19,14 @@ namespace UmiHealthPOS.Controllers.Api
         private readonly ApplicationDbContext _context;
         private readonly IJwtService _jwtService;
         private readonly IConfiguration _configuration;
-        
+
         public AuthController(ApplicationDbContext context, IJwtService jwtService, IConfiguration configuration)
         {
             _context = context;
             _jwtService = jwtService;
             _configuration = configuration;
         }
-        
+
         [HttpPost("signin")]
         public async Task<IActionResult> SignIn([FromBody] SignInRequest request)
         {
@@ -34,40 +34,40 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 return BadRequest(new { message = "Email and password are required" });
             }
-            
+
             var user = await _context.Users
                 .Include(u => u.UserBranches)
                 .ThenInclude(ub => ub.Branch)
                 .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
-            
+
             if (user == null)
             {
                 return Unauthorized(new { message = "Invalid email or password" });
             }
-            
+
             if (user.Status != "active")
             {
                 return Unauthorized(new { message = "Account is not active" });
             }
-            
+
             if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
                 return Unauthorized(new { message = "Invalid email or password" });
             }
-            
+
             // Update last login
             user.LastLogin = DateTime.UtcNow;
             await _context.SaveChangesAsync();
-            
+
             // Generate JWT token
             var accessToken = _jwtService.GenerateAccessToken(user);
             var refreshToken = _jwtService.GenerateRefreshToken();
-            
+
             // Store refresh token
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
             await _context.SaveChangesAsync();
-            
+
             var response = new SignInResponse
             {
                 UserId = user.Id,
@@ -80,10 +80,10 @@ namespace UmiHealthPOS.Controllers.Api
                 TokenType = "Bearer",
                 ExpiresIn = 3600 // 1 hour
             };
-            
+
             return Ok(response);
         }
-        
+
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
@@ -133,7 +133,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 // Get user ID from current user (from JWT token)
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                
+
                 if (!string.IsNullOrEmpty(userId))
                 {
                     var user = await _context.Users.FindAsync(userId);
@@ -160,7 +160,7 @@ namespace UmiHealthPOS.Controllers.Api
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                
+
                 if (string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { message = "User not authenticated" });
@@ -201,7 +201,7 @@ namespace UmiHealthPOS.Controllers.Api
                 return StatusCode(500, new { message = "Internal server error" });
             }
         }
-        
+
         [HttpPost("signup")]
         public async Task<IActionResult> Signup([FromBody] SignupRequest request)
         {
@@ -273,7 +273,7 @@ namespace UmiHealthPOS.Controllers.Api
                 };
 
                 _context.Pharmacies.Add(pharmacy);
-                
+
                 // Create 14-day trial subscription
                 var subscription = new Subscription
                 {
@@ -287,7 +287,7 @@ namespace UmiHealthPOS.Controllers.Api
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
-                
+
                 _context.Subscriptions.Add(subscription);
                 await _context.SaveChangesAsync();
 
@@ -340,7 +340,7 @@ namespace UmiHealthPOS.Controllers.Api
                     new Claim("branch", branch?.Name ?? string.Empty),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
                 };
-                
+
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
                     Subject = new ClaimsIdentity(claims),
@@ -403,13 +403,13 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 return BadRequest(new { message = "Invalid role. Must be admin, pharmacist, or cashier." });
             }
-            
+
             // Check if email already exists
             if (await _context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()))
             {
                 return BadRequest(new { message = "Email already exists." });
             }
-            
+
             var user = new User
             {
                 Id = Guid.NewGuid().ToString(),
@@ -424,15 +424,15 @@ namespace UmiHealthPOS.Controllers.Api
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            
+
             _context.Users.Add(user);
-            
+
             // Assign to branch if specified
             if (!string.IsNullOrEmpty(request.Branch))
             {
                 var branch = await _context.Branches
                     .FirstOrDefaultAsync(b => b.Name == request.Branch || b.Id.ToString() == request.Branch);
-                    
+
                 if (branch != null)
                 {
                     var userBranch = new UserBranch
@@ -447,9 +447,9 @@ namespace UmiHealthPOS.Controllers.Api
                     _context.UserBranches.Add(userBranch);
                 }
             }
-            
+
             await _context.SaveChangesAsync();
-            
+
             var response = new UserResponse
             {
                 Id = user.Id,
@@ -462,10 +462,10 @@ namespace UmiHealthPOS.Controllers.Api
                 LastLogin = user.LastLogin,
                 CreatedAt = user.CreatedAt
             };
-            
+
             return CreatedAtAction(nameof(GetUser), new { id = user.Id }, response);
         }
-        
+
         [HttpGet("users/{id}")]
         public async Task<ActionResult<UserResponse>> GetUser(string id)
         {
@@ -486,24 +486,24 @@ namespace UmiHealthPOS.Controllers.Api
                     CreatedAt = u.CreatedAt
                 })
                 .FirstOrDefaultAsync();
-                
+
             if (user == null)
             {
                 return NotFound();
             }
-            
+
             return Ok(user);
         }
-        
+
         private string GenerateJwtToken(User user)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
             var secretKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key not configured");
             var issuer = jwtSettings["Issuer"] ?? "UmiHealthPOS";
             var audience = jwtSettings["Audience"] ?? "UmiHealthPOS";
-            
+
             var key = Encoding.UTF8.GetBytes(secretKey);
-            
+
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
@@ -513,7 +513,7 @@ namespace UmiHealthPOS.Controllers.Api
                 new Claim("branch", user.UserBranches.FirstOrDefault()?.Branch.Name ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
-            
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
@@ -522,19 +522,19 @@ namespace UmiHealthPOS.Controllers.Api
                 Audience = audience,
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
             };
-            
+
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
-            
+
             return tokenHandler.WriteToken(token);
         }
-        
+
         private bool VerifyPassword(string password, string hash)
         {
             var computedHash = HashPassword(password);
             return computedHash == hash;
         }
-        
+
         private string HashPassword(string password)
         {
             using (var sha256 = SHA256.Create())
@@ -543,7 +543,7 @@ namespace UmiHealthPOS.Controllers.Api
                 return Convert.ToBase64String(hashedBytes);
             }
         }
-        
+
         private bool IsValidEmail(string email)
         {
             try
@@ -557,13 +557,13 @@ namespace UmiHealthPOS.Controllers.Api
             }
         }
     }
-    
+
     public class SignInRequest
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }
-    
+
     public class SignInResponse
     {
         public string UserId { get; set; } = string.Empty;
@@ -576,7 +576,7 @@ namespace UmiHealthPOS.Controllers.Api
         public string TokenType { get; set; } = string.Empty;
         public int ExpiresIn { get; set; }
     }
-    
+
     public class CreateUserRequest
     {
         public string Name { get; set; } = string.Empty;
@@ -586,7 +586,7 @@ namespace UmiHealthPOS.Controllers.Api
         public string Password { get; set; } = string.Empty;
         public string Branch { get; set; } = string.Empty;
     }
-    
+
     public class UserResponse
     {
         public string Id { get; set; } = string.Empty;
@@ -599,7 +599,7 @@ namespace UmiHealthPOS.Controllers.Api
         public DateTime? LastLogin { get; set; }
         public DateTime CreatedAt { get; set; }
     }
-    
+
     public class SignupRequest
     {
         public string OrganizationName { get; set; } = string.Empty;
@@ -611,7 +611,7 @@ namespace UmiHealthPOS.Controllers.Api
         public string Role { get; set; } = "admin";
         public string Password { get; set; } = string.Empty;
     }
-    
+
     public class RefreshTokenRequest
     {
         public string RefreshToken { get; set; } = string.Empty;

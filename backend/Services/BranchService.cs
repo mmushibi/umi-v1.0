@@ -196,14 +196,14 @@ namespace UmiHealthPOS.Services
                 .CountAsync(ii => ii.BranchId == branchId && ii.IsActive);
 
             var currentMonthSales = await _context.Sales
-                .Where(s => s.BranchId == branchId && 
+                .Where(s => s.BranchId == branchId &&
                            s.CreatedAt.Month == DateTime.UtcNow.Month &&
                            s.CreatedAt.Year == DateTime.UtcNow.Year &&
                            s.Status == "completed")
                 .SumAsync(s => s.Total);
 
             var currentMonthPrescriptions = await _context.Prescriptions
-                .CountAsync(p => p.BranchId == branchId && 
+                .CountAsync(p => p.BranchId == branchId &&
                                 p.CreatedAt.Month == DateTime.UtcNow.Month &&
                                 p.CreatedAt.Year == DateTime.UtcNow.Year);
 

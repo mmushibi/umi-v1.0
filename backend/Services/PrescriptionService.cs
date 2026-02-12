@@ -327,12 +327,12 @@ namespace UmiHealthPOS.Services
         public async Task<CsvImportResult> ImportPatientsFromCsvAsync(IFormFile file)
         {
             var result = new CsvImportResult();
-            
+
             try
             {
                 using var reader = new StreamReader(file.OpenReadStream());
                 var headerLine = await reader.ReadLineAsync();
-                
+
                 if (string.IsNullOrEmpty(headerLine))
                 {
                     result.Errors.Add("CSV file is empty");
@@ -344,7 +344,7 @@ namespace UmiHealthPOS.Services
                 {
                     lineCount++;
                     var line = await reader.ReadLineAsync();
-                    
+
                     if (string.IsNullOrWhiteSpace(line))
                         continue;
 
@@ -400,10 +400,10 @@ namespace UmiHealthPOS.Services
             {
                 var patients = await GetPatientsAsync();
                 var csv = new StringBuilder();
-                
+
                 // Header
                 csv.AppendLine("Name,ID Number,Phone,Email,Gender,Address,Allergies,Medical History,Date of Birth,Registration Date,Status");
-                
+
                 // Data rows
                 foreach (var patient in patients)
                 {
@@ -419,7 +419,7 @@ namespace UmiHealthPOS.Services
                                   $"{patient.CreatedAt:yyyy-MM-dd}," +
                                   $"{(patient.IsActive ? "Active" : "Inactive")}");
                 }
-                
+
                 return Encoding.UTF8.GetBytes(csv.ToString());
             }
             catch (Exception ex)
@@ -435,10 +435,10 @@ namespace UmiHealthPOS.Services
             {
                 var prescriptions = await GetPrescriptionsAsync();
                 var csv = new StringBuilder();
-                
+
                 // Header
                 csv.AppendLine("RX Number,Patient Name,Patient ID,Doctor Name,Medication,Dosage,Status,Prescription Date,Filled Date,Total Cost,Is Urgent");
-                
+
                 // Data rows
                 foreach (var prescription in prescriptions)
                 {
@@ -454,7 +454,7 @@ namespace UmiHealthPOS.Services
                                   $"ZMW{prescription.TotalCost:F2}," +
                                   $"{prescription.IsUrgent}");
                 }
-                
+
                 return Encoding.UTF8.GetBytes(csv.ToString());
             }
             catch (Exception ex)

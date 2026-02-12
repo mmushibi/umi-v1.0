@@ -21,7 +21,7 @@ namespace UmiHealthPOS.Services
         Task<SaleResult> ProcessSaleAsync(SaleRequest request);
         Task<bool> UpdateStockAsync(int productId, int newStock, string reason);
         Task<List<Product>> GetLowStockProductsAsync();
-        
+
         // New inventory item methods
         Task<List<InventoryItem>> GetInventoryItemsAsync();
         Task<InventoryItem> CreateInventoryItemAsync(CreateInventoryItemRequest request);
@@ -136,7 +136,7 @@ namespace UmiHealthPOS.Services
 
                 // Get or create customer
                 var customer = await GetOrCreateCustomerAsync(request.CustomerId);
-                
+
                 // Validate stock availability
                 var stockValidation = await ValidateStockAvailabilityAsync(request.Items);
                 if (!stockValidation.IsValid)
@@ -202,8 +202,8 @@ namespace UmiHealthPOS.Services
                     result.Success = true;
                     result.SaleId = createdSale.Id;
                     result.Message = "Sale processed successfully";
-                    
-                    _logger.LogInformation("Sale {SaleId} processed successfully with {ItemCount} items", 
+
+                    _logger.LogInformation("Sale {SaleId} processed successfully with {ItemCount} items",
                         createdSale.Id, request.Items.Count);
 
                     return result;
@@ -292,7 +292,7 @@ namespace UmiHealthPOS.Services
                 _context.InventoryItems.Add(inventoryItem);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Created new inventory item: {InventoryItemName} with batch: {BatchNumber}", 
+                _logger.LogInformation("Created new inventory item: {InventoryItemName} with batch: {BatchNumber}",
                     inventoryItem.InventoryItemName, inventoryItem.BatchNumber);
 
                 return inventoryItem;
@@ -331,7 +331,7 @@ namespace UmiHealthPOS.Services
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Updated inventory item: {InventoryItemName} with batch: {BatchNumber}", 
+                _logger.LogInformation("Updated inventory item: {InventoryItemName} with batch: {BatchNumber}",
                     inventoryItem.InventoryItemName, inventoryItem.BatchNumber);
 
                 return inventoryItem;
@@ -358,7 +358,7 @@ namespace UmiHealthPOS.Services
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Soft deleted inventory item: {InventoryItemName} with batch: {BatchNumber}", 
+                _logger.LogInformation("Soft deleted inventory item: {InventoryItemName} with batch: {BatchNumber}",
                     inventoryItem.InventoryItemName, inventoryItem.BatchNumber);
 
                 return true;
@@ -373,12 +373,12 @@ namespace UmiHealthPOS.Services
         public async Task<CsvImportResult> ImportInventoryFromCsvAsync(IFormFile file)
         {
             var result = new CsvImportResult();
-            
+
             try
             {
                 using var stream = file.OpenReadStream();
                 using var reader = new StreamReader(stream);
-                
+
                 var lines = new List<string>();
                 while (!reader.EndOfStream)
                 {
@@ -392,10 +392,10 @@ namespace UmiHealthPOS.Services
                 }
 
                 var header = lines[0].Split(',');
-                var expectedHeaders = new[] { 
-                    "InventoryItemName", "GenericName", "BrandName", "ManufactureDate", 
-                    "BatchNumber", "LicenseNumber", "ZambiaRegNumber", "PackingType", 
-                    "Quantity", "UnitPrice", "SellingPrice", "ReorderLevel" 
+                var expectedHeaders = new[] {
+                    "InventoryItemName", "GenericName", "BrandName", "ManufactureDate",
+                    "BatchNumber", "LicenseNumber", "ZambiaRegNumber", "PackingType",
+                    "Quantity", "UnitPrice", "SellingPrice", "ReorderLevel"
                 };
 
                 // Validate headers
@@ -445,7 +445,7 @@ namespace UmiHealthPOS.Services
                     }
                 }
 
-                _logger.LogInformation("CSV import completed. Imported: {ImportedCount}, Errors: {ErrorCount}", 
+                _logger.LogInformation("CSV import completed. Imported: {ImportedCount}, Errors: {ErrorCount}",
                     result.ImportedCount, result.Errors.Count);
 
                 return result;
@@ -463,20 +463,20 @@ namespace UmiHealthPOS.Services
             try
             {
                 var inventoryItems = await GetInventoryItemsAsync();
-                
+
                 using var output = new MemoryStream();
                 using var writer = new StreamWriter(output, System.Text.Encoding.UTF8);
-                
+
                 // Write header
                 await writer.WriteLineAsync("InventoryItemName,GenericName,BrandName,ManufactureDate,BatchNumber,LicenseNumber,ZambiaRegNumber,PackingType,Quantity,UnitPrice,SellingPrice,ReorderLevel,CreatedAt");
-                
+
                 // Write data rows
                 foreach (var item in inventoryItems)
                 {
                     var line = $"{EscapeCsvField(item.InventoryItemName)},{EscapeCsvField(item.GenericName)},{EscapeCsvField(item.BrandName)},{item.ManufactureDate:yyyy-MM-dd},{EscapeCsvField(item.BatchNumber)},{EscapeCsvField(item.LicenseNumber)},{EscapeCsvField(item.ZambiaRegNumber)},{EscapeCsvField(item.PackingType)},{item.Quantity},{item.UnitPrice},{item.SellingPrice},{item.ReorderLevel},{item.CreatedAt:yyyy-MM-dd HH:mm:ss}";
                     await writer.WriteLineAsync(line);
                 }
-                
+
                 await writer.FlushAsync();
                 return output.ToArray();
             }
@@ -491,12 +491,12 @@ namespace UmiHealthPOS.Services
         {
             if (string.IsNullOrEmpty(field))
                 return "";
-            
+
             if (field.Contains(',') || field.Contains('"') || field.Contains('\n') || field.Contains('\r'))
             {
                 return $"\"{field.Replace("\"", "\"\"")}\"";
             }
-            
+
             return field;
         }
 
@@ -527,7 +527,7 @@ namespace UmiHealthPOS.Services
                     Quantity = item.Quantity,
                     TotalPrice = item.TotalPrice
                 };
-                
+
                 // Add to database - this is a simplified approach
                 // In production, you'd use proper repository pattern
                 await Task.CompletedTask; // Placeholder for actual database operation

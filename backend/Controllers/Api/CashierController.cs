@@ -183,7 +183,7 @@ namespace UmiHealthPOS.Controllers.Api
                 // Apply filters
                 if (!string.IsNullOrEmpty(searchQuery))
                 {
-                    query = query.Where(s => 
+                    query = query.Where(s =>
                         s.ReceiptNumber.Contains(searchQuery) ||
                         (s.Customer != null && s.Customer.Name.Contains(searchQuery)));
                 }
@@ -326,7 +326,7 @@ namespace UmiHealthPOS.Controllers.Api
                 // Apply same filters as GetSales method
                 if (!string.IsNullOrEmpty(searchQuery))
                 {
-                    baseQuery = baseQuery.Where(s => 
+                    baseQuery = baseQuery.Where(s =>
                         s.ReceiptNumber.Contains(searchQuery) ||
                         (s.Customer != null && s.Customer.Name.Contains(searchQuery)));
                 }

@@ -18,6 +18,7 @@ namespace UmiHealthPOS.Controllers.Api
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "admin")]
     public class TenantAdminController : ControllerBase
     {
         private readonly IDashboardService _dashboardService;
@@ -77,14 +78,14 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 // Validate request - no mock data
                 // When database is implemented, this will create real staff records
-                
+
                 if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.FirstName))
                 {
                     return BadRequest(new { error = "Email and first name are required" });
                 }
-                
+
                 _logger.LogInformation("Staff member addition requested: {Email}", request.Email);
-                
+
                 // Return success - no actual creation until database is implemented
                 return Ok(new { success = true, message = "Staff member addition request received" });
             }
@@ -109,7 +110,7 @@ namespace UmiHealthPOS.Controllers.Api
                     TotalSales = 0,
                     TopProducts = new List<TopProduct>()
                 };
-                
+
                 return Ok(summary);
             }
             catch (Exception ex)
@@ -140,20 +141,22 @@ namespace UmiHealthPOS.Controllers.Api
             try
             {
                 var result = await _inventoryService.ProcessSaleAsync(request);
-                
+
                 if (result.Success)
                 {
-                    return Ok(new { 
-                        success = true, 
-                        message = result.Message, 
-                        saleId = result.SaleId 
+                    return Ok(new
+                    {
+                        success = true,
+                        message = result.Message,
+                        saleId = result.SaleId
                     });
                 }
                 else
                 {
-                    return BadRequest(new { 
-                        success = false, 
-                        error = result.ErrorMessage 
+                    return BadRequest(new
+                    {
+                        success = false,
+                        error = result.ErrorMessage
                     });
                 }
             }
@@ -310,8 +313,9 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 var result = await _inventoryService.ImportInventoryFromCsvAsync(file);
-                return Ok(new { 
-                    success = true, 
+                return Ok(new
+                {
+                    success = true,
                     message = $"Successfully imported {result.ImportedCount} inventory items",
                     errors = result.Errors
                 });
@@ -330,7 +334,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var csvContent = await _inventoryService.ExportInventoryToCsvAsync();
                 var fileName = $"inventory_export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
-                
+
                 Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
                 return File(csvContent, "text/csv", fileName);
             }
@@ -455,7 +459,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var csvContent = await _prescriptionService.ExportPrescriptionsToCsvAsync();
                 var fileName = $"prescriptions_export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
-                
+
                 Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
                 return File(csvContent, "text/csv", fileName);
             }
@@ -586,7 +590,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var csvContent = await _prescriptionService.ExportPatientsToCsvAsync();
                 var fileName = $"patients_{DateTime.Now:yyyyMMdd_HHmmss}.csv";
-                
+
                 Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
                 return File(csvContent, "text/csv", fileName);
             }
@@ -605,7 +609,7 @@ namespace UmiHealthPOS.Controllers.Api
                 // In a real implementation, this would fetch from user management system
                 // For now, return empty list as we don't have user management implemented
                 var doctors = new List<Doctor>();
-                
+
                 return Ok(doctors);
             }
             catch (Exception ex)
@@ -634,7 +638,7 @@ namespace UmiHealthPOS.Controllers.Api
                 // Apply filters
                 if (!string.IsNullOrEmpty(searchQuery))
                 {
-                    query = query.Where(s => 
+                    query = query.Where(s =>
                         s.ReceiptNumber.Contains(searchQuery) ||
                         (s.Customer != null && s.Customer.Name.Contains(searchQuery)));
                 }
@@ -816,7 +820,7 @@ namespace UmiHealthPOS.Controllers.Api
                 // Apply same filters as GetSales method
                 if (!string.IsNullOrEmpty(searchQuery))
                 {
-                    baseQuery = baseQuery.Where(s => 
+                    baseQuery = baseQuery.Where(s =>
                         s.ReceiptNumber.Contains(searchQuery) ||
                         (s.Customer != null && s.Customer.Name.Contains(searchQuery)));
                 }
@@ -943,7 +947,7 @@ namespace UmiHealthPOS.Controllers.Api
                     .ToListAsync();
 
                 var previousRevenue = previousSales.Where(s => s.Status == "completed").Sum(s => s.Total);
-                var monthlyGrowth = previousRevenue > 0 ? 
+                var monthlyGrowth = previousRevenue > 0 ?
                     ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
 
                 var report = new SalesReportDto
@@ -992,7 +996,7 @@ namespace UmiHealthPOS.Controllers.Api
                 // Generate PDF receipt
                 var pdfContent = GeneratePdfReceipt(sale);
                 var fileName = $"receipt_{sale.ReceiptNumber}.pdf";
-                
+
                 Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
                 return File(pdfContent, "application/pdf", fileName);
             }
@@ -1075,7 +1079,7 @@ namespace UmiHealthPOS.Controllers.Api
             // Convert HTML to bytes (simplified approach)
             // In production, use a proper HTML to PDF converter
             var bytes = Encoding.UTF8.GetBytes(htmlContent);
-            
+
             // For now, return as HTML file that can be printed as PDF
             // TODO: Implement proper PDF generation
             return bytes;

@@ -43,14 +43,14 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Cashier";
-                
+
                 if (string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized("User not authenticated");
                 }
 
                 var (start, end) = GetDateRange(dateRange, startDate, endDate);
-                
+
                 var reportData = reportType.ToLower() switch
                 {
                     "sales" => await _reportsService.GenerateSalesReportAsync(start, end, branch, new List<string> { "all" }),
@@ -88,7 +88,7 @@ namespace UmiHealthPOS.Controllers.Api
             try
             {
                 var (start, end) = GetDateRange(dateRange, startDate, endDate);
-                
+
                 var reportData = reportType.ToLower() switch
                 {
                     "sales" => await GenerateSalesReport(start, end, branch),
@@ -123,11 +123,12 @@ namespace UmiHealthPOS.Controllers.Api
             try
             {
                 // TODO: Implement report scheduling with database storage
-                _logger.LogInformation("Report scheduling requested: {ReportType}, Frequency: {Frequency}", 
+                _logger.LogInformation("Report scheduling requested: {ReportType}, Frequency: {Frequency}",
                     request.ReportType, request.Frequency);
 
-                return Ok(new { 
-                    success = true, 
+                return Ok(new
+                {
+                    success = true,
                     message = "Report scheduled successfully",
                     scheduleId = Guid.NewGuid().ToString()
                 });
@@ -146,16 +147,16 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value ?? "Cashier";
-                
+
                 if (string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized("User not authenticated");
                 }
 
                 var branches = await _reportsService.GetUserBranchesAsync(userId, userRole);
-                
-                var branchInfo = branches.Select(b => new BranchInfo 
-                { 
+
+                var branchInfo = branches.Select(b => new BranchInfo
+                {
                     Id = b.Id.ToString(),
                     Name = b.Name
                 }).ToList();
@@ -206,9 +207,9 @@ namespace UmiHealthPOS.Controllers.Api
             var previousSales = await _context.Sales
                 .Where(s => s.CreatedAt >= previousPeriodStart && s.CreatedAt < start)
                 .ToListAsync();
-            
+
             var previousRevenue = previousSales.Where(s => s.Status == "completed").Sum(s => s.Total);
-            var revenueGrowth = previousRevenue > 0 ? 
+            var revenueGrowth = previousRevenue > 0 ?
                 ((totalRevenue - previousRevenue) / previousRevenue) * 100 : 0;
 
             // Top products
@@ -271,7 +272,7 @@ namespace UmiHealthPOS.Controllers.Api
         private async Task<ReportData> GenerateInventoryReport(DateTime start, DateTime end, string branch)
         {
             var inventoryItems = await _inventoryService.GetInventoryItemsAsync();
-            
+
             // Apply branch filter if specified
             if (branch != "all")
             {
@@ -429,11 +430,11 @@ namespace UmiHealthPOS.Controllers.Api
         private (DateTime start, DateTime end) GetDateRange(string dateRange, string startDate, string endDate)
         {
             var now = DateTime.UtcNow;
-            
+
             if (!string.IsNullOrEmpty(startDate) && DateTime.TryParse(startDate, out var customStart))
             {
-                var customEnd = !string.IsNullOrEmpty(endDate) && DateTime.TryParse(endDate, out var end) 
-                    ? end 
+                var customEnd = !string.IsNullOrEmpty(endDate) && DateTime.TryParse(endDate, out var end)
+                    ? end
                     : now;
                 return (customStart, customEnd);
             }
@@ -452,7 +453,7 @@ namespace UmiHealthPOS.Controllers.Api
         private Task<IActionResult> ExportToExcel(ReportData data, string fileName)
         {
             var csv = new StringBuilder();
-            
+
             // Add metrics
             csv.AppendLine("Report Metrics");
             csv.AppendLine("Metric,Value");
@@ -476,7 +477,7 @@ namespace UmiHealthPOS.Controllers.Api
 
             var content = Encoding.UTF8.GetBytes(csv.ToString());
             fileName += ".csv";
-            
+
             Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
             return Task.FromResult((IActionResult)File(content, "text/csv", fileName));
         }

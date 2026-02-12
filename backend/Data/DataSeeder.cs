@@ -156,7 +156,7 @@ namespace UmiHealthPOS.Data
                 {
                     var users = await context.Users.ToListAsync();
                     var branches = await context.Branches.ToListAsync();
-                    
+
                     var userBranches = new[]
                     {
                         new UserBranch

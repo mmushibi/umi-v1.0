@@ -949,44 +949,91 @@
         async loadUserData() {
           this.loading = true;
           try {
-            const token = localStorage.getItem('authToken');
-            const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-            
-            // Temporarily remove auth requirement for testing
-            const profileResponse = await fetch('/api/account/profile', { headers });
-            
-            if (profileResponse.ok) {
-              const profileData = await profileResponse.json();
-              this.user = profileData.user;
-              this.pharmacy = profileData.pharmacy || this.pharmacy;
-            }
-            
-            // Load subscription data
-            const subscriptionResponse = await fetch('/api/account/subscription', { headers });
-            
-            if (subscriptionResponse.ok) {
-              this.subscription = await subscriptionResponse.json();
-            }
-            
-            // Load managed users
-            const usersResponse = await fetch('/api/account/users', { headers });
-            
-            if (usersResponse.ok) {
-              this.managedUsers = await usersResponse.json();
-            }
-            
-            // Load activity log
-            const activityResponse = await fetch('/api/account/activity', { headers });
-            
-            if (activityResponse.ok) {
-              this.recentActivities = await activityResponse.json();
-            }
-            
-            // Load active sessions
-            const sessionsResponse = await fetch('/api/account/sessions', { headers });
-            
-            if (sessionsResponse.ok) {
-              this.activeSessions = await sessionsResponse.json();
+            // First try to load from session storage (data from signup)
+            const sessionData = sessionStorage.getItem('umihealth_user_session');
+            if (sessionData) {
+              const parsedSession = JSON.parse(sessionData);
+              
+              // Populate user data from session
+              this.user = {
+                name: parsedSession.name || sessionStorage.getItem('userName') || '',
+                email: parsedSession.email || sessionStorage.getItem('userEmail') || '',
+                phone: '', // Phone not collected during signup
+                role: parsedSession.role || sessionStorage.getItem('userRole') || 'admin',
+                department: 'Management', // Default department
+                twoFactorEnabled: false
+              };
+              
+              // Populate pharmacy data from session
+              this.pharmacy = {
+                name: parsedSession.tenantName || sessionStorage.getItem('umihealthTenantName') || '',
+                licenseNumber: '', // Will be filled later
+                address: '', // Will be filled later
+                city: '', // Will be filled later
+                province: '', // Will be filled later
+                postalCode: '', // Will be filled later
+                phone: '', // Will be filled later
+                email: parsedSession.email || sessionStorage.getItem('userEmail') || ''
+              };
+              
+              // Populate subscription data
+              this.subscription = {
+                plan: parsedSession.plan || 'starter',
+                price: '500',
+                nextBilling: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+                usersUsed: 1,
+                usersLimit: 5,
+                branchesUsed: 0,
+                branchesLimit: 1,
+                storageUsed: 0,
+                storageLimit: 10,
+                isTrial: parsedSession.isTrial || false,
+                trialEndDate: parsedSession.trialEndDate || null
+              };
+              
+              console.log('Loaded user data from session storage:', this.user);
+              console.log('Loaded pharmacy data from session storage:', this.pharmacy);
+            } else {
+              // Fallback to API calls if no session data
+              const token = localStorage.getItem('authToken');
+              const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+              
+              // Temporarily remove auth requirement for testing
+              const profileResponse = await fetch('/api/account/profile', { headers });
+              
+              if (profileResponse.ok) {
+                const profileData = await profileResponse.json();
+                this.user = profileData.user;
+                this.pharmacy = profileData.pharmacy || this.pharmacy;
+              }
+              
+              // Load subscription data
+              const subscriptionResponse = await fetch('/api/account/subscription', { headers });
+              
+              if (subscriptionResponse.ok) {
+                this.subscription = await subscriptionResponse.json();
+              }
+              
+              // Load managed users
+              const usersResponse = await fetch('/api/account/users', { headers });
+              
+              if (usersResponse.ok) {
+                this.managedUsers = await usersResponse.json();
+              }
+              
+              // Load activity log
+              const activityResponse = await fetch('/api/account/activity', { headers });
+              
+              if (activityResponse.ok) {
+                this.recentActivities = await activityResponse.json();
+              }
+              
+              // Load active sessions
+              const sessionsResponse = await fetch('/api/account/sessions', { headers });
+              
+              if (sessionsResponse.ok) {
+                this.activeSessions = await sessionsResponse.json();
+              }
             }
             
           } catch (error) {

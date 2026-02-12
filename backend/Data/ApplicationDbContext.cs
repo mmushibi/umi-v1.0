@@ -76,12 +76,12 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.PaymentDetails).HasMaxLength(100);
                 entity.Property(e => e.Status).IsRequired().HasMaxLength(20);
                 entity.Property(e => e.RefundReason).HasMaxLength(500);
-                
+
                 entity.HasOne(e => e.Customer)
                       .WithMany(c => c.Sales)
                       .HasForeignKey(e => e.CustomerId)
                       .OnDelete(DeleteBehavior.Restrict);
-                      
+
                 entity.HasIndex(e => e.ReceiptNumber).IsUnique();
                 entity.HasIndex(e => e.CreatedAt);
                 entity.HasIndex(e => e.Status);
@@ -93,12 +93,12 @@ namespace UmiHealthPOS.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.UnitPrice).HasPrecision(10, 2);
                 entity.Property(e => e.TotalPrice).HasPrecision(10, 2);
-                
+
                 entity.HasOne(e => e.Sale)
                       .WithMany(s => s.SaleItems)
                       .HasForeignKey(e => e.SaleId)
                       .OnDelete(DeleteBehavior.Cascade);
-                
+
                 entity.HasOne(e => e.Product)
                       .WithMany(p => p.SaleItems)
                       .HasForeignKey(e => e.ProductId)
@@ -111,12 +111,12 @@ namespace UmiHealthPOS.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.TransactionType).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Reason).HasMaxLength(200);
-                
+
                 entity.HasOne(e => e.Product)
                       .WithMany(p => p.StockTransactions)
                       .HasForeignKey(e => e.ProductId)
                       .OnDelete(DeleteBehavior.Cascade);
-                
+
                 entity.HasIndex(e => new { e.ProductId, e.CreatedAt });
             });
 
@@ -134,12 +134,12 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.UnitPrice).HasPrecision(10, 2);
                 entity.Property(e => e.SellingPrice).HasPrecision(10, 2);
                 entity.Property(e => e.ManufactureDate).HasColumnType("date");
-                
+
                 entity.HasOne(e => e.Branch)
                       .WithMany(b => b.InventoryItems)
                       .HasForeignKey(e => e.BranchId)
                       .OnDelete(DeleteBehavior.SetNull);
-                
+
                 entity.HasIndex(e => e.BatchNumber).IsUnique();
                 entity.HasIndex(e => e.ZambiaRegNumber);
                 entity.HasIndex(e => e.InventoryItemName);
@@ -163,12 +163,12 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.ExpiryDate).HasColumnType("date");
                 entity.Property(e => e.FilledDate).HasColumnType("date");
                 entity.Property(e => e.Notes).HasMaxLength(500);
-                
+
                 entity.HasIndex(e => e.RxNumber).IsUnique();
                 entity.HasIndex(e => e.PatientId);
                 entity.HasIndex(e => e.Status);
                 entity.HasIndex(e => e.PrescriptionDate);
-                
+
                 entity.HasOne(e => e.Patient)
                       .WithMany()
                       .HasForeignKey(e => e.PatientId)
@@ -188,7 +188,7 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.Address).HasMaxLength(200);
                 entity.Property(e => e.Allergies).HasMaxLength(100);
                 entity.Property(e => e.MedicalHistory).HasMaxLength(500);
-                
+
                 entity.HasIndex(e => e.IdNumber).IsUnique();
                 entity.HasIndex(e => e.Name);
             });
@@ -202,12 +202,12 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.Instructions).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.UnitPrice).HasPrecision(10, 2);
                 entity.Property(e => e.TotalPrice).HasPrecision(10, 2);
-                
+
                 entity.HasOne(e => e.Prescription)
                       .WithMany(p => p.PrescriptionItems)
                       .HasForeignKey(e => e.PrescriptionId)
                       .OnDelete(DeleteBehavior.Cascade);
-                
+
                 entity.HasOne(e => e.InventoryItem)
                       .WithMany()
                       .HasForeignKey(e => e.InventoryItemId)
@@ -225,12 +225,12 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.RecipientEmail).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.CreatedBy).IsRequired().HasMaxLength(450);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                
+
                 entity.HasOne(e => e.Branch)
                       .WithMany()
                       .HasForeignKey(e => e.BranchId)
                       .OnDelete(DeleteBehavior.Restrict);
-                      
+
                 entity.HasIndex(e => e.ReportType);
                 entity.HasIndex(e => e.NextRunAt);
                 entity.HasIndex(e => e.CreatedBy);
@@ -255,12 +255,12 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.RegistrationNumber).HasMaxLength(100);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                
+
                 entity.HasOne(e => e.Branch)
                       .WithMany(b => b.Users)
                       .HasForeignKey(e => e.BranchId)
                       .OnDelete(DeleteBehavior.Restrict);
-                      
+
                 entity.HasIndex(e => e.Email).IsUnique();
                 entity.HasIndex(e => e.NormalizedEmail);
                 entity.HasIndex(e => e.Role);
@@ -284,7 +284,7 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.Website).HasMaxLength(200);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                
+
                 entity.HasIndex(e => e.Name);
                 entity.HasIndex(e => e.IsActive);
             });
@@ -298,7 +298,7 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.Features).HasMaxLength(500);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                
+
                 entity.HasIndex(e => e.Name);
                 entity.HasIndex(e => e.IsActive);
             });
@@ -311,17 +311,17 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.Status).IsRequired().HasMaxLength(20).HasDefaultValue("active");
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                
+
                 entity.HasOne(e => e.Plan)
                       .WithMany(p => p.Subscriptions)
                       .HasForeignKey(e => e.PlanId)
                       .OnDelete(DeleteBehavior.Restrict);
-                      
+
                 entity.HasOne(e => e.Pharmacy)
                       .WithMany()
                       .HasForeignKey(e => e.PharmacyId)
                       .OnDelete(DeleteBehavior.Cascade);
-                      
+
                 entity.HasIndex(e => e.PharmacyId);
                 entity.HasIndex(e => e.Status);
                 entity.HasIndex(e => e.StartDate);
@@ -338,12 +338,12 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.IpAddress).HasMaxLength(100);
                 entity.Property(e => e.UserAgent).HasMaxLength(500);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                
+
                 entity.HasOne(e => e.User)
                       .WithMany()
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
-                      
+
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.Type);
                 entity.HasIndex(e => e.Status);
@@ -360,12 +360,12 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.IpAddress).HasMaxLength(45);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
-                
+
                 entity.HasOne(e => e.User)
                       .WithMany()
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
-                      
+
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.Token);
                 entity.HasIndex(e => e.ExpiresAt);
@@ -393,7 +393,7 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                
+
                 entity.HasIndex(e => e.Name);
                 entity.HasIndex(e => e.Region);
                 entity.HasIndex(e => e.Status);
@@ -410,17 +410,17 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.Permission).IsRequired().HasMaxLength(20).HasDefaultValue("read");
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
                 entity.Property(e => e.AssignedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                
+
                 entity.HasOne(e => e.Branch)
                       .WithMany(b => b.UserBranches)
                       .HasForeignKey(e => e.BranchId)
                       .OnDelete(DeleteBehavior.Cascade);
-                      
+
                 entity.HasOne(e => e.User)
                       .WithMany(u => u.UserBranches)
                       .HasForeignKey(e => e.UserId)
                       .OnDelete(DeleteBehavior.Cascade);
-                      
+
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.BranchId);
                 entity.HasIndex(e => e.UserRole);

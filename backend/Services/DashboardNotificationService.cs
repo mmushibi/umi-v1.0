@@ -40,7 +40,7 @@ namespace UmiHealthPOS.Services
                         payload = stats,
                         timestamp = DateTime.UtcNow
                     });
-                
+
                 _logger.LogInformation($"Stats update sent to tenant {tenantId}");
             }
             catch (Exception ex)
@@ -60,7 +60,7 @@ namespace UmiHealthPOS.Services
                         payload = activity,
                         timestamp = DateTime.UtcNow
                     });
-                
+
                 _logger.LogInformation($"Activity update sent to tenant {tenantId}: {activity.Message}");
             }
             catch (Exception ex)
@@ -83,7 +83,7 @@ namespace UmiHealthPOS.Services
                 };
 
                 await NotifyActivityUpdate(tenantId, activity);
-                
+
                 _logger.LogInformation($"Low stock alert sent to tenant {tenantId} for product {productName}");
             }
             catch (Exception ex)
@@ -106,7 +106,7 @@ namespace UmiHealthPOS.Services
                 };
 
                 await NotifyActivityUpdate(tenantId, activity);
-                
+
                 _logger.LogInformation($"New sale notification sent to tenant {tenantId}: {saleId}");
             }
             catch (Exception ex)
@@ -129,7 +129,7 @@ namespace UmiHealthPOS.Services
                 };
 
                 await NotifyActivityUpdate(tenantId, activity);
-                
+
                 _logger.LogInformation($"New prescription notification sent to tenant {tenantId}: {prescriptionId}");
             }
             catch (Exception ex)
