@@ -91,6 +91,9 @@ if (app.Environment.IsDevelopment())
 
 app.Run();
 
+// Make Program accessible for testing
+public partial class Program { }
+
 // Extension method for inactivity middleware
 public static class InactivityMiddlewareExtensions
 {
