@@ -89,6 +89,8 @@ if (app.Environment.IsDevelopment())
     await DataSeeder.SeedDataAsync(app.Services);
 }
 
+app.Run();
+
 // Extension method for inactivity middleware
 public static class InactivityMiddlewareExtensions
 {
@@ -97,5 +99,3 @@ public static class InactivityMiddlewareExtensions
         return builder.UseMiddleware<InactivityMiddleware>();
     }
 }
-
-app.Run();

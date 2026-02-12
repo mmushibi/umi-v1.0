@@ -29,6 +29,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="../../wwwroot/js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -463,6 +464,7 @@
         recentPrescriptions: [],
         
         init() {
+          this.checkAuth();
           this.loadDashboardData();
           this.startRealTimeUpdates();
         },
@@ -731,6 +733,20 @@
           window.location.href = `${page}.html`;
         },
         
+        checkAuth() {
+          // Use the auth module to validate access
+          return window.umiAuth.initPageAuth('pharmacist');
+        },
+        
+        clearAuthData() {
+          sessionStorage.removeItem('umihealthUserRole');
+          sessionStorage.removeItem('umihealth_auth_token');
+          sessionStorage.removeItem('umihealth_refresh_token');
+          localStorage.removeItem('umihealthUserRole');
+          localStorage.removeItem('umihealth_auth_token');
+          localStorage.removeItem('umihealth_refresh_token');
+        },
+        
         logout() {
           if (this.updateInterval) {
             clearInterval(this.updateInterval);
@@ -740,12 +756,8 @@
             this.connection.stop().catch(err => console.error('Error stopping SignalR connection:', err));
           }
           
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('tenantId');
-          sessionStorage.removeItem('authToken');
-          sessionStorage.removeItem('tenantId');
-          
-          window.location.href = '../../index.html';
+          // Use auth module for logout
+          window.umiAuth.logout();
         }
       }
     }

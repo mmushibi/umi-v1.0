@@ -29,6 +29,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="../../wwwroot/js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -477,6 +478,7 @@
         recentActivity: [],
         
         init() {
+          this.checkAuth();
           this.loadDashboardData();
           this.startRealTimeUpdates();
         },
@@ -704,21 +706,8 @@
         
         async makeApiRequest(url, options = {}) {
           try {
-            const response = await fetch(`${this.getApiBaseUrl()}${url}`, {
-              ...options,
-              headers: {
-                ...this.getAuthHeaders(),
-                ...options.headers
-              }
-            });
-            
-            // Handle unauthorized responses
-            if (response.status === 401) {
-              this.handleUnauthorized();
-              return null;
-            }
-            
-            return response;
+            // Use the auth module for authenticated requests
+            return await window.umiAuth.apiRequest(`${this.getApiBaseUrl()}${url}`, options);
           } catch (error) {
             console.error('API request failed:', error);
             this.showError('Network error. Please check your connection.');
@@ -798,6 +787,20 @@
           return icons[type] || icons.system;
         },
         
+        checkAuth() {
+          // Use the auth module to validate access
+          return window.umiAuth.initPageAuth('admin');
+        },
+        
+        clearAuthData() {
+          sessionStorage.removeItem('umihealthUserRole');
+          sessionStorage.removeItem('umihealth_auth_token');
+          sessionStorage.removeItem('umihealth_refresh_token');
+          localStorage.removeItem('umihealthUserRole');
+          localStorage.removeItem('umihealth_auth_token');
+          localStorage.removeItem('umihealth_refresh_token');
+        },
+        
         logout() {
           // Clear real-time updates
           if (this.updateInterval) {
@@ -809,14 +812,8 @@
             this.connection.stop().catch(err => console.error('Error stopping SignalR connection:', err));
           }
           
-          // Clear any stored authentication tokens
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('tenantId');
-          sessionStorage.removeItem('authToken');
-          sessionStorage.removeItem('tenantId');
-          
-          // Redirect to login page or home
-          window.location.href = '../../index.html';
+          // Use auth module for logout
+          window.umiAuth.logout();
         },
         
         // Cleanup function when component is destroyed

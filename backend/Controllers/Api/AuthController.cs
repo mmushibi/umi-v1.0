@@ -2,11 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
+using UmiHealthPOS.Services;
 using System.Security.Cryptography;
 using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using BCrypt.Net;
 
 namespace UmiHealthPOS.Controllers.Api
 {
@@ -15,11 +17,13 @@ namespace UmiHealthPOS.Controllers.Api
     public class AuthController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly IJwtService _jwtService;
         private readonly IConfiguration _configuration;
         
-        public AuthController(ApplicationDbContext context, IConfiguration configuration)
+        public AuthController(ApplicationDbContext context, IJwtService jwtService, IConfiguration configuration)
         {
             _context = context;
+            _jwtService = jwtService;
             _configuration = configuration;
         }
         
@@ -46,7 +50,7 @@ namespace UmiHealthPOS.Controllers.Api
                 return Unauthorized(new { message = "Account is not active" });
             }
             
-            if (!VerifyPassword(request.Password, user.PasswordHash))
+            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             {
                 return Unauthorized(new { message = "Invalid email or password" });
             }
@@ -56,7 +60,13 @@ namespace UmiHealthPOS.Controllers.Api
             await _context.SaveChangesAsync();
             
             // Generate JWT token
-            var token = GenerateJwtToken(user);
+            var accessToken = _jwtService.GenerateAccessToken(user);
+            var refreshToken = _jwtService.GenerateRefreshToken();
+            
+            // Store refresh token
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            await _context.SaveChangesAsync();
             
             var response = new SignInResponse
             {
@@ -65,11 +75,131 @@ namespace UmiHealthPOS.Controllers.Api
                 Name = $"{user.FirstName} {user.LastName}",
                 Role = user.Role,
                 Branch = user.UserBranches.FirstOrDefault()?.Branch.Name,
-                AccessToken = token,
-                TokenType = "Bearer"
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                TokenType = "Bearer",
+                ExpiresIn = 3600 // 1 hour
             };
             
             return Ok(response);
+        }
+        
+        [HttpPost("refresh-token")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.RefreshToken))
+                {
+                    return BadRequest(new { message = "Refresh token is required" });
+                }
+
+                // Find user with this refresh token
+                var user = await _context.Users.FirstOrDefaultAsync(u => u.RefreshToken == request.RefreshToken);
+
+                if (user == null || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+                {
+                    return Unauthorized(new { message = "Invalid or expired refresh token" });
+                }
+
+                // Generate new tokens
+                var accessToken = _jwtService.GenerateAccessToken(user);
+                var newRefreshToken = _jwtService.GenerateRefreshToken();
+
+                // Update refresh token
+                user.RefreshToken = newRefreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                await _context.SaveChangesAsync();
+
+                var response = new RefreshTokenResponse
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = newRefreshToken,
+                    ExpiresIn = 3600
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error during token refresh" });
+            }
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        {
+            try
+            {
+                // Get user ID from current user (from JWT token)
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var user = await _context.Users.FindAsync(userId);
+                    if (user != null)
+                    {
+                        // Invalidate refresh token
+                        user.RefreshToken = null;
+                        user.RefreshTokenExpiryTime = null;
+                        await _context.SaveChangesAsync();
+                    }
+                }
+
+                return Ok(new { message = "Logged out successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error during logout" });
+            }
+        }
+
+        [HttpGet("me")]
+        public async Task<IActionResult> GetCurrentUser()
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { message = "User not authenticated" });
+                }
+
+                var user = await _context.Users
+                    .Include(u => u.UserBranches)
+                    .ThenInclude(ub => ub.Branch)
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+
+                if (user == null)
+                {
+                    return NotFound(new { message = "User not found" });
+                }
+
+                var tenant = await _context.Pharmacies
+                .Include(p => p.Subscriptions)
+                .ThenInclude(s => s.Plan)
+                .FirstOrDefaultAsync(p => p.Id == user.TenantId);
+
+                var response = new
+                {
+                    userId = user.Id,
+                    email = user.Email,
+                    name = $"{user.FirstName} {user.LastName}",
+                    role = user.Role,
+                    tenantId = user.TenantId,
+                    tenantName = tenant?.Name,
+                    plan = tenant?.Subscriptions.FirstOrDefault()?.Plan?.Name ?? "starter",
+                    lastLogin = user.LastLogin,
+                    createdAt = user.CreatedAt
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Internal server error" });
+            }
         }
         
         [HttpPost("signup")]
@@ -117,7 +247,7 @@ namespace UmiHealthPOS.Controllers.Api
                     Role = request.Role ?? "admin",
                     Department = "Management",
                     Status = "active",
-                    PasswordHash = HashPassword(request.Password),
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     EmailConfirmed = false,
@@ -201,9 +331,19 @@ namespace UmiHealthPOS.Controllers.Api
                 await _context.SaveChangesAsync();
 
                 // Generate JWT tokens
+                var claims = new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id),
+                    new Claim(ClaimTypes.Email, user.Email),
+                    new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
+                    new Claim(ClaimTypes.Role, user.Role),
+                    new Claim("branch", branch?.Name ?? string.Empty),
+                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+                };
+                
                 var tokenDescriptor = new SecurityTokenDescriptor
                 {
-                    Subject = user.Id,
+                    Subject = new ClaimsIdentity(claims),
                     Expires = DateTime.UtcNow.AddMinutes(30), // 30 minutes inactivity timeout
                     Issuer = _configuration["Jwt:Issuer"],
                     Audience = _configuration["Jwt:Audience"],
@@ -280,7 +420,7 @@ namespace UmiHealthPOS.Controllers.Api
                 PhoneNumber = request.Phone,
                 Role = request.Role,
                 Status = "active",
-                PasswordHash = HashPassword(request.Password),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -403,24 +543,25 @@ namespace UmiHealthPOS.Controllers.Api
                 return Convert.ToBase64String(hashedBytes);
             }
         }
+        
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+    }
     
     public class SignInRequest
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
-    }
-    
-    private bool IsValidEmail(string email)
-    {
-        try
-        {
-            var addr = new System.Net.Mail.MailAddress(email);
-            return addr.Address == email;
-        }
-        catch
-        {
-            return false;
-        }
     }
     
     public class SignInResponse
@@ -431,6 +572,60 @@ namespace UmiHealthPOS.Controllers.Api
         public string Role { get; set; } = string.Empty;
         public string? Branch { get; set; }
         public string AccessToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
         public string TokenType { get; set; } = string.Empty;
+        public int ExpiresIn { get; set; }
+    }
+    
+    public class CreateUserRequest
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string Branch { get; set; } = string.Empty;
+    }
+    
+    public class UserResponse
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string? Branch { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public DateTime? LastLogin { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+    
+    public class SignupRequest
+    {
+        public string OrganizationName { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string PhoneNumber { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Role { get; set; } = "admin";
+        public string Password { get; set; } = string.Empty;
+    }
+    
+    public class RefreshTokenRequest
+    {
+        public string RefreshToken { get; set; } = string.Empty;
+    }
+
+    public class RefreshTokenResponse
+    {
+        public string AccessToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = string.Empty;
+        public int ExpiresIn { get; set; }
+    }
+
+    public class LogoutRequest
+    {
+        public string RefreshToken { get; set; } = string.Empty;
     }
 }
