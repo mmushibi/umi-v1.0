@@ -112,10 +112,10 @@ jobs:
           ${{ runner.os }}-nuget-
     
     - name: Restore dependencies
-      run: dotnet restore backend/UmiHealthPOS.csproj
+      run: dotnet restore backend/UmiHealthPOS.csproj && dotnet restore backend/UmiHealthPOS.Tests.csproj
     
     - name: Build application
-      run: dotnet build backend/UmiHealthPOS.csproj --no-restore --configuration Release
+      run: dotnet build backend/UmiHealthPOS.csproj --no-restore --configuration Release && dotnet build backend/UmiHealthPOS.Tests.csproj --no-restore --configuration Release
     
     - name: Run unit tests
       run: dotnet test backend/UmiHealthPOS.Tests.csproj --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
