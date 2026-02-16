@@ -63,7 +63,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 if (!string.IsNullOrEmpty(search))
                 {
-                    query = query.Where(s => 
+                    query = query.Where(s =>
                         s.BusinessName.Contains(search) ||
                         (s.TradeName != null && s.TradeName.Contains(search)) ||
                         (s.ContactPerson != null && s.ContactPerson.Contains(search)) ||
@@ -147,7 +147,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var tenantId = GetCurrentTenantId();
                 var userId = GetCurrentUserId();
-                
+
                 if (string.IsNullOrEmpty(tenantId) || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { error = "User not authenticated" });
@@ -160,7 +160,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Check for duplicate supplier code or registration number
                 var existingSupplier = await _context.Suppliers
-                    .FirstOrDefaultAsync(s => 
+                    .FirstOrDefaultAsync(s =>
                         (s.SupplierCode == request.SupplierCode && s.TenantId == tenantId) ||
                         (s.RegistrationNumber == request.RegistrationNumber && s.TenantId == tenantId && !string.IsNullOrEmpty(request.RegistrationNumber)));
 
@@ -170,7 +170,7 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 // Generate supplier code if not provided
-                var supplierCode = !string.IsNullOrEmpty(request.SupplierCode) 
+                var supplierCode = !string.IsNullOrEmpty(request.SupplierCode)
                     ? await GenerateSupplierCode(tenantId)
                     : request.SupplierCode;
 
@@ -257,7 +257,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                         _context.SupplierContacts.Add(contact);
                     }
-                    
+
                     await _context.SaveChangesAsync();
                 }
 
@@ -279,7 +279,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var tenantId = GetCurrentTenantId();
                 var userId = GetCurrentUserId();
-                
+
                 if (string.IsNullOrEmpty(tenantId) || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { error = "User not authenticated" });
@@ -301,7 +301,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Check for duplicate supplier code or registration number (excluding current supplier)
                 var duplicateSupplier = await _context.Suppliers
-                    .FirstOrDefaultAsync(s => 
+                    .FirstOrDefaultAsync(s =>
                         s.Id != id &&
                         s.TenantId == tenantId &&
                         ((s.SupplierCode == request.SupplierCode) ||
@@ -344,19 +344,19 @@ namespace UmiHealthPOS.Controllers.Api
                 supplier.BankCode = request.BankCode;
                 supplier.SwiftCode = request.SwiftCode;
                 supplier.PaymentTerms = request.PaymentTerms;
-                supplier.CreditLimit = request.CreditLimit;
-                supplier.CreditPeriod = request.CreditPeriod;
-                supplier.DiscountTerms = request.DiscountTerms;
-                supplier.EarlyPaymentDiscount = request.EarlyPaymentDiscount;
+                supplier.CreditLimit = request.CreditLimit ?? 0;
+                supplier.CreditPeriod = request.CreditPeriod ?? 0;
+                supplier.DiscountTerms = request.DiscountTerms ?? 0;
+                supplier.EarlyPaymentDiscount = request.EarlyPaymentDiscount ?? 0;
                 supplier.SupplierCategory = request.SupplierCategory;
                 supplier.SupplierStatus = request.SupplierStatus;
                 supplier.PriorityLevel = request.PriorityLevel;
-                supplier.IsPreferred = request.IsPreferred;
-                supplier.IsBlacklisted = request.IsBlacklisted;
-                supplier.BlacklistReason = request.IsBlacklisted ? request.BlacklistReason : null;
-                supplier.ZambianRegistered = request.ZambianRegistered;
-                supplier.GmpCertified = request.GmpCertified;
-                supplier.IsoCertified = request.IsoCertified;
+                supplier.IsPreferred = request.IsPreferred ?? false;
+                supplier.IsBlacklisted = request.IsBlacklisted ?? false;
+                supplier.BlacklistReason = (request.IsBlacklisted ?? false) ? request.BlacklistReason : null;
+                supplier.ZambianRegistered = request.ZambianRegistered ?? false;
+                supplier.GmpCertified = request.GmpCertified ?? false;
+                supplier.IsoCertified = request.IsoCertified ?? false;
                 supplier.CertificationExpiryDate = request.CertificationExpiryDate;
                 supplier.RegulatoryComplianceStatus = request.RegulatoryComplianceStatus;
                 supplier.UpdatedAt = DateTime.UtcNow;
@@ -381,7 +381,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var tenantId = GetCurrentTenantId();
                 var userId = GetCurrentUserId();
-                
+
                 if (string.IsNullOrEmpty(tenantId) || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { error = "User not authenticated" });
@@ -466,7 +466,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var tenantId = GetCurrentTenantId();
                 var userId = GetCurrentUserId();
-                
+
                 if (string.IsNullOrEmpty(tenantId) || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { error = "User not authenticated" });
@@ -520,7 +520,7 @@ namespace UmiHealthPOS.Controllers.Api
                 _context.SupplierProducts.Add(supplierProduct);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Supplier product {ProductId} added to supplier {SupplierId} by user {UserId}", 
+                _logger.LogInformation("Supplier product {ProductId} added to supplier {SupplierId} by user {UserId}",
                     supplierProduct.Id, id, userId);
 
                 return CreatedAtAction(nameof(GetSupplierProducts), new { id = id }, supplierProduct);
@@ -550,8 +550,8 @@ namespace UmiHealthPOS.Controllers.Api
 
                 var suppliers = await _context.Suppliers
                     .AsNoTracking()
-                    .Where(s => 
-                        s.TenantId == tenantId && 
+                    .Where(s =>
+                        s.TenantId == tenantId &&
                         s.IsActive &&
                         (s.BusinessName.Contains(query) ||
                          (s.TradeName != null && s.TradeName.Contains(query)) ||
@@ -576,7 +576,7 @@ namespace UmiHealthPOS.Controllers.Api
             var datePrefix = DateTime.UtcNow.ToString("yyyyMMdd");
             var count = await _context.Suppliers
                 .CountAsync(s => s.TenantId == tenantId && s.SupplierCode.StartsWith(datePrefix));
-            
+
             return $"SUP{datePrefix}{(count + 1):D3}";
         }
     }

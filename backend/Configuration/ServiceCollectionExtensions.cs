@@ -20,6 +20,10 @@ namespace UmiHealthPOS.Configuration
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IPasswordService, PasswordService>();
+            services.AddScoped<IWebSearchService, WebSearchService>();
+            services.AddScoped<ISepioAIService, SepioAIService>();
+            services.AddScoped<ISessionTimeoutService, SessionTimeoutService>();
+            services.AddScoped<IZambianComplianceService, ZambianComplianceService>();
 
             // Add SignalR
             services.AddSignalR();

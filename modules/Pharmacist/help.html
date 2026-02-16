@@ -285,7 +285,7 @@
 
         <!-- Quick Help Categories -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-          <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
+          <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer" @click="showSection = 'userGuides'">
             <div class="flex items-center mb-4">
               <div class="flex-shrink-0 bg-blue-100 rounded-lg p-3">
                 <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -294,10 +294,11 @@
               </div>
               <h3 class="ml-3 text-lg font-semibold text-gray-900">User Guides</h3>
             </div>
-            <p class="text-gray-600">Step-by-step guides for all system features and workflows.</p>
+            <p class="text-gray-600">Comprehensive guides for inventory management, prescriptions, patient records, and compliance procedures.</p>
+            <div class="mt-3 text-sm text-blue-600">15 guides available</div>
           </div>
 
-          <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
+          <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer" @click="showSection = 'videoTutorials'">
             <div class="flex items-center mb-4">
               <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
                 <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -307,10 +308,11 @@
               </div>
               <h3 class="ml-3 text-lg font-semibold text-gray-900">Video Tutorials</h3>
             </div>
-            <p class="text-gray-600">Watch video tutorials for common tasks and advanced features.</p>
+            <p class="text-gray-600">Step-by-step video demonstrations for prescription processing, inventory updates, and clinical workflows.</p>
+            <div class="mt-3 text-sm text-green-600">8 video tutorials</div>
           </div>
 
-          <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer">
+          <div class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow cursor-pointer" @click="showSection = 'faqs'">
             <div class="flex items-center mb-4">
               <div class="flex-shrink-0 bg-purple-100 rounded-lg p-3">
                 <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -319,39 +321,376 @@
               </div>
               <h3 class="ml-3 text-lg font-semibold text-gray-900">FAQs</h3>
             </div>
-            <p class="text-gray-600">Frequently asked questions and quick answers to common issues.</p>
+            <p class="text-gray-600">Quick answers to common questions about Zambia regulations, system features, and troubleshooting.</p>
+            <div class="mt-3 text-sm text-purple-600">25+ frequently asked questions</div>
+          </div>
+        </div>
+
+        <!-- Dynamic Content Sections -->
+        <div x-show="showSection === 'userGuides'" class="bg-white rounded-lg shadow mb-6">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Pharmacist User Guides</h2>
+          </div>
+          <div class="p-6">
+            <div class="space-y-4">
+              <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">📋 Prescription Management Guide</h3>
+                <p class="text-gray-600 mb-3">Learn how to create, process, and manage patient prescriptions efficiently.</p>
+                <ul class="text-sm text-gray-600 space-y-1 mb-3">
+                  <li>• Creating new prescriptions</li>
+                  <li>• Processing prescription refills</li>
+                  <li>• Checking drug interactions</li>
+                  <li>• Managing prescription history</li>
+                </ul>
+                <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Read Full Guide →</button>
+              </div>
+
+              <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">💊 Inventory Management Complete Guide</h3>
+                <p class="text-gray-600 mb-3">Master inventory control, stock management, and Zambia regulatory compliance.</p>
+                <ul class="text-sm text-gray-600 space-y-1 mb-3">
+                  <li>• Adding new medications to inventory</li>
+                  <li>• Updating stock levels and batch numbers</li>
+                  <li>• Managing expiry dates</li>
+                  <li>• Zambia Regulatory Number (ZAMBIA REG) requirements</li>
+                  <li>• License number management</li>
+                  <li>• Reorder level notifications</li>
+                </ul>
+                <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Read Full Guide →</button>
+              </div>
+
+              <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">👥 Patient Records Management</h3>
+                <p class="text-gray-600 mb-3">Complete guide to managing patient profiles, medical history, and prescription records.</p>
+                <ul class="text-sm text-gray-600 space-y-1 mb-3">
+                  <li>• Creating new patient profiles</li>
+                  <li>• Updating patient information</li>
+                  <li>• Viewing prescription history</li>
+                  <li>• Managing allergies and medical conditions</li>
+                </ul>
+                <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Read Full Guide →</button>
+              </div>
+
+              <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">🔬 Clinical Decision Support</h3>
+                <p class="text-gray-600 mb-3">Using clinical tools for drug interaction checks, dosage calculations, and therapeutic guidelines.</p>
+                <ul class="text-sm text-gray-600 space-y-1 mb-3">
+                  <li>• Drug-drug interaction checking</li>
+                  <li>• Allergy cross-referencing</li>
+                  <li>• Dosage calculation tools</li>
+                  <li>• Therapeutic guidelines access</li>
+                </ul>
+                <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Read Full Guide →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div x-show="showSection === 'videoTutorials'" class="bg-white rounded-lg shadow mb-6">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Video Tutorials</h2>
+          </div>
+          <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="border border-gray-200 rounded-lg p-4">
+                <div class="aspect-w-16 aspect-h-9 bg-gray-200 rounded mb-3 flex items-center justify-center">
+                  <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Processing Your First Prescription</h3>
+                <p class="text-gray-600 text-sm mb-3">Duration: 5:30 minutes</p>
+                <p class="text-gray-600 mb-3">Learn the complete workflow from patient selection to prescription finalization.</p>
+                <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Watch Now →</button>
+              </div>
+
+              <div class="border border-gray-200 rounded-lg p-4">
+                <div class="aspect-w-16 aspect-h-9 bg-gray-200 rounded mb-3 flex items-center justify-center">
+                  <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Inventory Management Essentials</h3>
+                <p class="text-gray-600 text-sm mb-3">Duration: 8:45 minutes</p>
+                <p class="text-gray-600 mb-3">Complete guide to adding medications, managing stock, and compliance requirements.</p>
+                <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Watch Now →</button>
+              </div>
+
+              <div class="border border-gray-200 rounded-lg p-4">
+                <div class="aspect-w-16 aspect-h-9 bg-gray-200 rounded mb-3 flex items-center justify-center">
+                  <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Zambia Regulatory Compliance</h3>
+                <p class="text-gray-600 text-sm mb-3">Duration: 12:20 minutes</p>
+                <p class="text-gray-600 mb-3">Understanding Zambia Pharmaceutical Authority requirements and documentation.</p>
+                <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Watch Now →</button>
+              </div>
+
+              <div class="border border-gray-200 rounded-lg p-4">
+                <div class="aspect-w-16 aspect-h-9 bg-gray-200 rounded mb-3 flex items-center justify-center">
+                  <svg class="h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">Clinical Decision Support Tools</h3>
+                <p class="text-gray-600 text-sm mb-3">Duration: 6:15 minutes</p>
+                <p class="text-gray-600 mb-3">Using drug interaction checks and clinical guidelines in daily practice.</p>
+                <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Watch Now →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div x-show="showSection === 'faqs'" class="bg-white rounded-lg shadow mb-6">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Frequently Asked Questions</h2>
+          </div>
+          <div class="p-6">
+            <div class="space-y-4">
+              <div class="border border-gray-200 rounded-lg p-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">How do I add a new medication to inventory?</h3>
+                <p class="text-gray-600 mb-2">Navigate to Inventory → Add Product. Fill in all required fields including Zambia REG Number, License Number, batch information, and expiry dates. Ensure all regulatory information is accurate before saving.</p>
+                <div class="text-sm text-ocean-600">Category: Inventory Management</div>
+              </div>
+
+              <div class="border border-gray-200 rounded-lg p-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">What is required for Zambia regulatory compliance?</h3>
+                <p class="text-gray-600 mb-2">All medications must have a valid Zambia Regulatory Number (ZAMBIA REG), proper license numbers, batch tracking, expiry date monitoring, and supplier information. Regular audits are performed to ensure compliance.</p>
+                <div class="text-sm text-ocean-600">Category: Compliance</div>
+              </div>
+
+              <div class="border border-gray-200 rounded-lg p-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">How do I handle prescription refills?</h3>
+                <p class="text-gray-600 mb-2">Go to Prescriptions → Search patient → View prescription history → Select prescription for refill → Verify refill eligibility → Process refill with updated quantities and dates. Always check for drug interactions before refilling.</p>
+                <div class="text-sm text-ocean-600">Category: Prescriptions</div>
+              </div>
+
+              <div class="border border-gray-200 rounded-lg p-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">What should I do if a medication is expired?</h3>
+                <p class="text-gray-600 mb-2">Immediately mark the medication as expired in the system, remove it from available inventory, document the disposal process according to Zambia Pharmaceutical Authority guidelines, and notify your supervisor. Follow proper waste disposal procedures.</p>
+                <div class="text-sm text-ocean-600">Category: Inventory Management</div>
+              </div>
+
+              <div class="border border-gray-200 rounded-lg p-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">How do I check for drug interactions?</h3>
+                <p class="text-gray-600 mb-2">The system automatically checks for drug interactions when adding medications to prescriptions. Review the interaction alerts, assess severity levels, and consult clinical guidelines. Document any decisions to override alerts with appropriate justification.</p>
+                <div class="text-sm text-ocean-600">Category: Clinical</div>
+              </div>
+
+              <div class="border border-gray-200 rounded-lg p-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-2">How do I export inventory reports?</h3>
+                <p class="text-gray-600 mb-2">Navigate to Inventory → Export CSV. Choose your preferred date range and data fields. The system generates a comprehensive report including stock levels, expiry dates, and regulatory information for compliance reporting.</p>
+                <div class="text-sm text-ocean-600">Category: Reports</div>
+              </div>
+            </div>
           </div>
         </div>
 
         <!-- Training Resources -->
         <div class="bg-white rounded-lg shadow">
           <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-900">Training Resources</h2>
+            <h2 class="text-lg font-semibold text-gray-900">Training Resources & Professional Development</h2>
           </div>
           <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div class="border border-gray-200 rounded-lg p-4">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Getting Started</h3>
-                <p class="text-gray-600 mb-4">Learn the basics of the Umi Health POS system.</p>
-                <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Start Training →</button>
+              <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div class="flex items-center mb-3">
+                  <div class="flex-shrink-0 bg-blue-100 rounded-lg p-2 mr-3">
+                    <svg class="h-5 w-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                  </div>
+                  <h3 class="text-lg font-medium text-gray-900">Getting Started</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Essential training for new pharmacists joining Umi Health POS system.</p>
+                <ul class="text-sm text-gray-600 space-y-1 mb-4">
+                  <li>• System navigation and interface overview</li>
+                  <li>• Basic prescription processing workflow</li>
+                  <li>• Patient registration and management</li>
+                  <li>• Inventory fundamentals</li>
+                  <li>• Security and login procedures</li>
+                </ul>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-500">Duration: 2 hours</span>
+                  <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Start Training →</button>
+                </div>
               </div>
 
-              <div class="border border-gray-200 rounded-lg p-4">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Advanced Features</h3>
-                <p class="text-gray-600 mb-4">Master advanced features and optimize your workflow.</p>
-                <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">View Courses →</button>
+              <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div class="flex items-center mb-3">
+                  <div class="flex-shrink-0 bg-green-100 rounded-lg p-2 mr-3">
+                    <svg class="h-5 w-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                  </div>
+                  <h3 class="text-lg font-medium text-gray-900">Advanced Features</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Master advanced system capabilities and optimize your workflow efficiency.</p>
+                <ul class="text-sm text-gray-600 space-y-1 mb-4">
+                  <li>• Advanced drug interaction checking</li>
+                  <li>• Batch prescription processing</li>
+                  <li>• Automated reorder management</li>
+                  <li>• Custom reporting and analytics</li>
+                  <li>• Integration with external systems</li>
+                </ul>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-500">Duration: 3 hours</span>
+                  <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">View Courses →</button>
+                </div>
               </div>
 
-              <div class="border border-gray-200 rounded-lg p-4">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Compliance Training</h3>
-                <p class="text-gray-600 mb-4">Stay compliant with regulations and best practices.</p>
-                <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Enroll Now →</button>
+              <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div class="flex items-center mb-3">
+                  <div class="flex-shrink-0 bg-purple-100 rounded-lg p-2 mr-3">
+                    <svg class="h-5 w-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                  </div>
+                  <h3 class="text-lg font-medium text-gray-900">Zambia Compliance Training</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Comprehensive training on Zambia Pharmaceutical Authority regulations and compliance.</p>
+                <ul class="text-sm text-gray-600 space-y-1 mb-4">
+                  <li>• Zambia Pharmaceutical Authority guidelines</li>
+                  <li>• Regulatory number requirements (ZAMBIA REG)</li>
+                  <li>• License and permit management</li>
+                  <li>• Inspection and audit procedures</li>
+                  <li>• Documentation and record-keeping</li>
+                </ul>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-500">Duration: 4 hours</span>
+                  <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Enroll Now →</button>
+                </div>
               </div>
 
-              <div class="border border-gray-200 rounded-lg p-4">
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Support Center</h3>
-                <p class="text-gray-600 mb-4">Get help from our support team and community.</p>
-                <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Contact Support →</button>
+              <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                <div class="flex items-center mb-3">
+                  <div class="flex-shrink-0 bg-orange-100 rounded-lg p-2 mr-3">
+                    <svg class="h-5 w-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                  </div>
+                  <h3 class="text-lg font-medium text-gray-900">Support Center</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Get help from our support team and access community resources.</p>
+                <ul class="text-sm text-gray-600 space-y-1 mb-4">
+                  <li>• 24/7 technical support hotline</li>
+                  <li>• Live chat with system experts</li>
+                  <li>• Community forum and knowledge base</li>
+                  <li>• Regular system updates and webinars</li>
+                  <li>• One-on-one training sessions</li>
+                </ul>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm text-gray-500">Available 24/7</span>
+                  <button class="text-ocean-600 hover:text-ocean-700 font-medium text-sm">Contact Support →</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Additional Training Resources -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+              <h3 class="text-lg font-medium text-gray-900 mb-4">Additional Learning Resources</h3>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="text-center p-4 bg-gray-50 rounded-lg">
+                  <div class="bg-blue-100 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                    </svg>
+                  </div>
+                  <h4 class="font-medium text-gray-900 mb-2">Quick Reference Guides</h4>
+                  <p class="text-sm text-gray-600">Downloadable PDF guides for common tasks and procedures</p>
+                </div>
+
+                <div class="text-center p-4 bg-gray-50 rounded-lg">
+                  <div class="bg-green-100 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                    <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                  </div>
+                  <h4 class="font-medium text-gray-900 mb-2">Monthly Webinars</h4>
+                  <p class="text-sm text-gray-600">Live training sessions on new features and best practices</p>
+                </div>
+
+                <div class="text-center p-4 bg-gray-50 rounded-lg">
+                  <div class="bg-purple-100 rounded-full p-3 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                    <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                    </svg>
+                  </div>
+                  <h4 class="font-medium text-gray-900 mb-2">Certification Program</h4>
+                  <p class="text-sm text-gray-600">Get certified in Umi Health POS system proficiency</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact Information -->
+        <div class="bg-white rounded-lg shadow mt-6">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Contact & Support Information</h2>
+          </div>
+          <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div>
+                <div class="flex items-center mb-3">
+                  <svg class="h-5 w-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                  </svg>
+                  <h3 class="font-medium text-gray-900">Technical Support</h3>
+                </div>
+                <ul class="space-y-2 text-sm text-gray-600">
+                  <li>Hotline: +260 976 735481</li>
+                  <li>Email: support@umihealth.com</li>
+                  <li>Available: 24/7</li>
+                </ul>
+              </div>
+              
+              <div>
+                <div class="flex items-center mb-3">
+                  <svg class="h-5 w-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                  </svg>
+                  <h3 class="font-medium text-gray-900">Pharmacy Support</h3>
+                </div>
+                <ul class="space-y-2 text-sm text-gray-600">
+                  <li>Phone: +260 977 994057</li>
+                  <li>Email: pharmacy@umihealth.com</li>
+                  <li>Hours: Mon-Fri 8AM-6PM</li>
+                </ul>
+              </div>
+              
+              <div>
+                <div class="flex items-center mb-3">
+                  <svg class="h-5 w-5 text-purple-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                  </svg>
+                  <h3 class="font-medium text-gray-900">Training Department</h3>
+                </div>
+                <ul class="space-y-2 text-sm text-gray-600">
+                  <li>Phone: +260 976 414883</li>
+                  <li>Email: training@umihealth.com</li>
+                  <li>Hours: Mon-Fri 8AM-5PM</li>
+                </ul>
+              </div>
+              
+              <div>
+                <div class="flex items-center mb-3">
+                  <svg class="h-5 w-5 text-orange-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                  </svg>
+                  <h3 class="font-medium text-gray-900">Compliance Office</h3>
+                </div>
+                <ul class="space-y-2 text-sm text-gray-600">
+                  <li>Phone: +260 977 810082</li>
+                  <li>Email: compliance@umihealth.com</li>
+                  <li>Hours: Mon-Fri 9AM-4PM</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -364,6 +703,7 @@
     function pharmacistHelp() {
       return {
         mobileMenuOpen: false,
+        showSection: null,
         
         init() {
           // Initialize page

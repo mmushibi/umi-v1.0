@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
+using UmiHealthPOS.Services;
 
 namespace UmiHealthPOS.Middleware
 {
@@ -13,12 +14,14 @@ namespace UmiHealthPOS.Middleware
         private readonly RequestDelegate _next;
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<InactivityMiddleware> _logger;
+        private readonly ISessionTimeoutService _sessionTimeoutService;
 
-        public InactivityMiddleware(RequestDelegate next, IServiceProvider serviceProvider, ILogger<InactivityMiddleware> logger)
+        public InactivityMiddleware(RequestDelegate next, IServiceProvider serviceProvider, ILogger<InactivityMiddleware> logger, ISessionTimeoutService sessionTimeoutService)
         {
             _next = next;
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _sessionTimeoutService = sessionTimeoutService;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -64,43 +67,31 @@ namespace UmiHealthPOS.Middleware
                 if (principal != null)
                 {
                     var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    var tenantId = principal.FindFirst("TenantId")?.Value;
 
-                    if (!string.IsNullOrEmpty(userId))
+                    if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(tenantId))
                     {
-                        using var scope = _serviceProvider.CreateScope();
-                        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                        // Check if session has expired using user-specific timeout
+                        var isExpired = await _sessionTimeoutService.IsSessionExpiredAsync(userId, tenantId, token);
 
-                        // Check user session for inactivity
-                        var session = await dbContext.UserSessions
-                            .FirstOrDefaultAsync(s => s.UserId == userId && s.Token == token && s.IsActive);
-
-                        if (session != null)
+                        if (isExpired)
                         {
-                            // Check if session has expired due to inactivity (30 minutes)
-                            if (DateTime.UtcNow > session.ExpiresAt)
+                            _logger.LogInformation($"User {userId} session expired due to inactivity");
+
+                            // Return 401 Unauthorized to trigger logout
+                            context.Response.StatusCode = 401;
+                            context.Response.ContentType = "application/json";
+                            var response = new
                             {
-                                _logger.LogInformation($"User {userId} session expired due to inactivity");
-
-                                // Deactivate the session
-                                session.IsActive = false;
-                                await dbContext.SaveChangesAsync();
-
-                                // Return 401 Unauthorized to trigger logout
-                                context.Response.StatusCode = 401;
-                                context.Response.ContentType = "application/json";
-                                var response = new
-                                {
-                                    message = "Session expired due to inactivity. Please log in again.",
-                                    code = "INACTIVITY_LOGOUT"
-                                };
-                                await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
-                                return;
-                            }
-
-                            // Update last access time for active sessions
-                            session.LastAccessAt = DateTime.UtcNow;
-                            await dbContext.SaveChangesAsync();
+                                message = "Session expired due to inactivity. Please log in again.",
+                                code = "INACTIVITY_LOGOUT"
+                            };
+                            await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
+                            return;
                         }
+
+                        // Update last access time for active sessions
+                        await _sessionTimeoutService.UpdateUserLastActivityAsync(userId, tenantId);
                     }
                 }
             }

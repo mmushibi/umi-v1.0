@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
@@ -71,7 +71,7 @@ namespace UmiHealthPOS.Controllers.Api
 
             var response = new SignInResponse
             {
-                UserId = user.Id,
+                UserId = user.Id.ToString(),
                 Email = user.Email,
                 Name = $"{user.FirstName} {user.LastName}",
                 Role = user.Role,
@@ -137,7 +137,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 if (!string.IsNullOrEmpty(userId))
                 {
-                    var user = await _context.Users.FindAsync(userId);
+                    var user = await _context.Users.FindAsync(int.Parse(userId));
                     if (user != null)
                     {
                         // Invalidate refresh token
@@ -170,7 +170,7 @@ namespace UmiHealthPOS.Controllers.Api
                 var user = await _context.Users
                     .Include(u => u.UserBranches)
                     .ThenInclude(ub => ub.Branch)
-                    .FirstOrDefaultAsync(u => u.Id == userId);
+                    .FirstOrDefaultAsync(u => u.Id == int.Parse(userId));
 
                 if (user == null)
                 {
@@ -178,19 +178,19 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 var tenant = await _context.Pharmacies
-                .Include(p => p.Subscriptions)
-                .ThenInclude(s => s.Plan)
-                .FirstOrDefaultAsync(p => p.Id == user.TenantId);
+                    .Include(p => p.Subscription)
+                    .ThenInclude(s => s.Plan)
+                    .FirstOrDefaultAsync(p => p.Id == user.BranchId);
 
                 var response = new
                 {
-                    userId = user.Id,
+                    UserId = user.Id.ToString(),
                     email = user.Email,
                     name = $"{user.FirstName} {user.LastName}",
                     role = user.Role,
-                    tenantId = user.TenantId,
+                    tenantId = user.BranchId.ToString(),
                     tenantName = tenant?.Name,
-                    plan = tenant?.Subscriptions.FirstOrDefault()?.Plan?.Name ?? "starter",
+                    plan = tenant?.Subscription?.Plan?.Name ?? "starter",
                     lastLogin = user.LastLogin,
                     createdAt = user.CreatedAt
                 };
@@ -283,8 +283,6 @@ namespace UmiHealthPOS.Controllers.Api
                     Status = "trial",
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.AddDays(14),
-                    AutoRenew = false,
-                    TrialUsed = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -318,13 +316,13 @@ namespace UmiHealthPOS.Controllers.Api
                 // Create user-branch relationship
                 var userBranch = new UserBranch
                 {
-                    UserId = user.Id,
+                    UserId = user.Id.ToString(),
                     BranchId = branch.Id,
                     UserRole = user.Role,
                     Permission = user.Role == "admin" ? "admin" : "write",
                     IsActive = true,
                     AssignedAt = DateTime.UtcNow,
-                    User = user,
+                    User = null, // Remove User property assignment
                     Branch = branch
                 };
 
@@ -334,7 +332,7 @@ namespace UmiHealthPOS.Controllers.Api
                 // Generate JWT tokens
                 var claims = new[]
                 {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                     new Claim(ClaimTypes.Email, user.Email),
                     new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
                     new Claim(ClaimTypes.Role, user.Role),
@@ -362,13 +360,13 @@ namespace UmiHealthPOS.Controllers.Api
                 // Store refresh token with inactivity tracking
                 var userSession = new UserSession
                 {
-                    UserId = user.Id,
+                    UserId = user.Id.ToString(),
                     Token = refreshToken,
                     DeviceInfo = "Web Browser",
                     Browser = "Unknown",
                     IpAddress = "127.0.0.1",
                     ExpiresAt = DateTime.UtcNow.AddMinutes(30), // 30 minutes inactivity
-                    LastAccessAt = DateTime.UtcNow, // Track last activity
+                    LastAccessAt = DateTime.UtcNow,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -380,7 +378,7 @@ namespace UmiHealthPOS.Controllers.Api
                 return Ok(new
                 {
                     tenantId = pharmacy.Id.ToString(),
-                    userId = user.Id,
+                    UserId = user.Id.ToString(),
                     accessToken = tokenString,
                     refreshToken = refreshToken,
                     plan = "trial", // Always start with trial plan
@@ -438,12 +436,11 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     var userBranch = new UserBranch
                     {
-                        UserId = user.Id,
+                        UserId = user.Id.ToString(),
                         BranchId = branch.Id,
                         UserRole = request.Role,
                         IsActive = true,
-                        AssignedAt = DateTime.UtcNow,
-                        User = user
+                        AssignedAt = DateTime.UtcNow
                     };
                     _context.UserBranches.Add(userBranch);
                 }
@@ -453,7 +450,7 @@ namespace UmiHealthPOS.Controllers.Api
 
             var response = new UserResponse
             {
-                Id = user.Id,
+                Id = int.Parse(user.Id),
                 Name = $"{user.FirstName} {user.LastName}",
                 Email = user.Email,
                 Phone = user.PhoneNumber,
@@ -473,10 +470,10 @@ namespace UmiHealthPOS.Controllers.Api
             var user = await _context.Users
                 .Include(u => u.UserBranches)
                 .ThenInclude(ub => ub.Branch)
-                .Where(u => u.Id == id)
+                .Where(u => u.Id.ToString() == id)
                 .Select(u => new UserResponse
                 {
-                    Id = u.Id,
+                    Id = u.Id.ToString(),
                     Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
                     Phone = u.PhoneNumber,
@@ -507,7 +504,7 @@ namespace UmiHealthPOS.Controllers.Api
 
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, $"{user.FirstName} {user.LastName}"),
                 new Claim(ClaimTypes.Role, user.Role),
@@ -630,3 +627,12 @@ namespace UmiHealthPOS.Controllers.Api
         public string RefreshToken { get; set; } = string.Empty;
     }
 }
+
+
+
+
+
+
+
+
+

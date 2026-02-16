@@ -14,10 +14,10 @@ namespace UmiHealthPOS.Services
         Task<Branch> CreateBranchAsync(Branch branch);
         Task<Branch> UpdateBranchAsync(int id, Branch branch);
         Task<bool> DeleteBranchAsync(int id);
-        Task<IEnumerable<User>> GetBranchUsersAsync(int branchId);
+        Task<IEnumerable<UserAccount>> GetBranchUsersAsync(int branchId);
         Task<bool> AssignUserToBranchAsync(string userId, int branchId, string permission = "read");
         Task<bool> RemoveUserFromBranchAsync(string userId, int branchId);
-        Task<IEnumerable<User>> GetUsersNotInBranchAsync(int branchId);
+        Task<IEnumerable<UserAccount>> GetUsersNotInBranchAsync(int branchId);
         Task<BranchStatistics> GetBranchStatisticsAsync(int branchId);
     }
 
@@ -104,7 +104,7 @@ namespace UmiHealthPOS.Services
             return true;
         }
 
-        public async Task<IEnumerable<User>> GetBranchUsersAsync(int branchId)
+        public async Task<IEnumerable<UserAccount>> GetBranchUsersAsync(int branchId)
         {
             return await _context.UserBranches
                 .Where(ub => ub.BranchId == branchId && ub.IsActive)
@@ -134,7 +134,6 @@ namespace UmiHealthPOS.Services
             {
                 // Reactivate existing assignment
                 existingAssignment.IsActive = true;
-                existingAssignment.Permission = permission;
             }
             else
             {
@@ -143,8 +142,6 @@ namespace UmiHealthPOS.Services
                 {
                     UserId = userId,
                     BranchId = branchId,
-                    UserRole = user.Role,
-                    Permission = permission,
                     IsActive = true,
                     AssignedAt = DateTime.UtcNow,
                     User = user
@@ -171,7 +168,7 @@ namespace UmiHealthPOS.Services
             return true;
         }
 
-        public async Task<IEnumerable<User>> GetUsersNotInBranchAsync(int branchId)
+        public async Task<IEnumerable<UserAccount>> GetUsersNotInBranchAsync(int branchId)
         {
             var branchUserIds = await _context.UserBranches
                 .Where(ub => ub.BranchId == branchId && ub.IsActive)
@@ -179,7 +176,7 @@ namespace UmiHealthPOS.Services
                 .ToListAsync();
 
             return await _context.Users
-                .Where(u => u.IsActive && !branchUserIds.Contains(u.Id))
+                .Where(u => u.IsActive && !branchUserIds.Contains(u.UserId))
                 .ToListAsync();
         }
 

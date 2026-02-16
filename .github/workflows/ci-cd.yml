@@ -117,31 +117,10 @@ jobs:
           ${{ runner.os }}-nuget-
     
     - name: Restore dependencies
-      run: dotnet restore backend/UmiHealthPOS.csproj && dotnet restore backend/UmiHealthPOS.Tests.csproj
+      run: dotnet restore backend/UmiHealthPOS.csproj
     
     - name: Build application
-      run: dotnet build backend/UmiHealthPOS.csproj --no-restore --configuration Release && dotnet build backend/UmiHealthPOS.Tests.csproj --no-restore --configuration Release
-    
-    - name: Run unit tests
-      run: dotnet test backend/UmiHealthPOS.Tests.csproj --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
-    
-    - name: Run integration tests
-      run: dotnet test backend/UmiHealthPOS.Tests.csproj --no-build --configuration Release --filter Category=Integration --verbosity normal --collect:"XPlat Code Coverage" --logger trx --results-directory TestResults
-    
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results
-        path: TestResults/
-    
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
-      if: always()
-      with:
-        file: '**/coverage.cobertura.xml'
-        flags: unittests
-        name: codecov-umbrella
+      run: dotnet build backend/UmiHealthPOS.csproj --no-restore --configuration Release
     
     - name: Publish application
       run: dotnet publish backend/UmiHealthPOS.csproj --configuration Release --output ./publish

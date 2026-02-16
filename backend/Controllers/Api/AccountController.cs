@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
@@ -29,14 +29,14 @@ namespace UmiHealthPOS.Controllers.Api
             var user = await _context.Users
                 .Include(u => u.UserBranches)
                 .ThenInclude(ub => ub.Branch)
-                .FirstOrDefaultAsync(u => u.Id == userId);
+                .FirstOrDefaultAsync(u => u.Id.ToString() == userId.ToString());
 
             if (user == null)
             {
                 // Return default user for testing
                 user = new Models.User
                 {
-                    Id = "test-user-id",
+                    Id = 1,
                     FirstName = "Test",
                     LastName = "User",
                     Email = "test@example.com",
@@ -102,14 +102,13 @@ namespace UmiHealthPOS.Controllers.Api
                 // Return default trial subscription for testing
                 subscription = new Subscription
                 {
-                    Id = Guid.NewGuid().ToString(),
+                    Id = 1,
                     PlanId = 1,
-                    PharmacyId = "1",
+                    PharmacyId = 1,
                     StartDate = DateTime.UtcNow,
                     EndDate = DateTime.UtcNow.AddDays(14),
                     Amount = 0,
                     Status = "trial",
-                    TrialUsed = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -125,7 +124,7 @@ namespace UmiHealthPOS.Controllers.Api
             var user = await _context.Users
                 .Include(u => u.UserBranches)
                 .ThenInclude(ub => ub.Branch)
-                .FirstOrDefaultAsync(u => u.Id == userId);
+                .FirstOrDefaultAsync(u => u.Id.ToString() == userId.ToString());
 
             if (user == null || user.Role != "admin")
             {
@@ -186,7 +185,7 @@ namespace UmiHealthPOS.Controllers.Api
             var user = await _context.Users
                 .Include(u => u.UserBranches)
                 .ThenInclude(ub => ub.Branch)
-                .FirstOrDefaultAsync(u => u.Id == userId);
+                .FirstOrDefaultAsync(u => u.Id.ToString() == userId.ToString());
 
             if (user == null || user.Role != "admin")
             {
@@ -195,14 +194,14 @@ namespace UmiHealthPOS.Controllers.Api
 
             // Get pharmacy ID from user's branch
             var branchId = user.UserBranches.FirstOrDefault()?.BranchId;
-            if (branchId == null || branchId == 0)
+            if (!branchId.HasValue || branchId.Value == 0)
             {
                 return BadRequest(new { message = "User is not associated with any pharmacy" });
             }
 
             // Get pharmacy to find subscription
             var pharmacy = await _context.Pharmacies
-                .FirstOrDefaultAsync(p => p.Id == branchId.ToString());
+                .FirstOrDefaultAsync(p => p.Id == branchId);
 
             if (pharmacy == null)
             {
@@ -240,7 +239,7 @@ namespace UmiHealthPOS.Controllers.Api
             var user = await _context.Users
                 .Include(u => u.UserBranches)
                 .ThenInclude(ub => ub.Branch)
-                .FirstOrDefaultAsync(u => u.Id == userId);
+                .FirstOrDefaultAsync(u => u.Id.ToString() == userId.ToString());
 
             if (user == null || user.Role != "admin")
             {
@@ -249,14 +248,14 @@ namespace UmiHealthPOS.Controllers.Api
 
             // Get pharmacy ID from user's branch
             var branchId = user.UserBranches.FirstOrDefault()?.BranchId;
-            if (branchId == null || branchId == 0)
+            if (!branchId.HasValue || branchId.Value == 0)
             {
                 return BadRequest(new { message = "User is not associated with any pharmacy" });
             }
 
             // Get pharmacy to find subscription
             var pharmacy = await _context.Pharmacies
-                .FirstOrDefaultAsync(p => p.Id == branchId.ToString());
+                .FirstOrDefaultAsync(p => p.Id == branchId);
 
             if (pharmacy == null)
             {
@@ -274,7 +273,6 @@ namespace UmiHealthPOS.Controllers.Api
 
             // Cancel subscription (set to expire at end of current period)
             currentSubscription.Status = "cancelled";
-            currentSubscription.AutoRenew = false;
             currentSubscription.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -291,7 +289,7 @@ namespace UmiHealthPOS.Controllers.Api
         {
             var userId = GetUserId();
             var activities = await _context.ActivityLogs
-                .Where(a => a.UserId == userId)
+                .Where(a => a.UserId == userId.ToString())
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(50)
                 .Select(a => new
@@ -313,7 +311,7 @@ namespace UmiHealthPOS.Controllers.Api
         {
             var userId = GetUserId();
             var sessions = await _context.UserSessions
-                .Where(s => s.UserId == userId && s.IsActive)
+                .Where(s => s.UserId == userId.ToString() && s.IsActive)
                 .OrderByDescending(s => s.CreatedAt)
                 .Select(s => new
                 {
@@ -335,7 +333,7 @@ namespace UmiHealthPOS.Controllers.Api
         {
             var userId = GetUserId();
             var session = await _context.UserSessions
-                .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == userId);
+                .FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == userId.ToString());
 
             if (session == null)
             {
@@ -430,7 +428,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 user.FirstName = request.FirstName;
                 user.LastName = request.LastName;
-                user.PhoneNumber = request.PhoneNumber;
+                user.PhoneNumber = request.PhoneNumber ?? "";
                 user.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
@@ -532,7 +530,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPost("users/{targetUserId}/toggle-status")]
-        public async Task<IActionResult> ToggleUserStatus(string targetUserId, [FromBody] ToggleUserStatusRequest request)
+        public async Task<IActionResult> ToggleUserStatus(int targetUserId, [FromBody] ToggleUserStatusRequest request)
         {
             try
             {
@@ -588,11 +586,11 @@ namespace UmiHealthPOS.Controllers.Api
             return Ok(users);
         }
 
-        private string GetUserId()
+        private int GetUserId()
         {
             // This would normally extract from JWT token
             // For now, return a test user ID
-            return "test-user-id";
+            return 1;
         }
 
         private bool IsValidEmail(string email)
@@ -701,3 +699,11 @@ namespace UmiHealthPOS.Controllers.Api
         public string? PlanId { get; set; }
     }
 }
+
+
+
+
+
+
+
+

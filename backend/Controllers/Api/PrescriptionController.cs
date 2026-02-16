@@ -221,7 +221,7 @@ namespace UmiHealthPOS.Controllers.Api
                         var prescriptionItem = new PrescriptionItem
                         {
                             PrescriptionId = prescription.Id,
-                            ProductId = itemRequest.ProductId,
+                            ProductId = itemRequest.ProductId ?? 0,
                             InventoryItemId = itemRequest.InventoryItemId,
                             Quantity = itemRequest.Quantity,
                             UnitPrice = itemRequest.UnitPrice,

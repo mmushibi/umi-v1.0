@@ -848,7 +848,7 @@ namespace UmiHealthPOS.Models
         public virtual ICollection<ShiftAssignment> Assignments { get; set; }
     }
 
-    
+
     // Billing Entities
     public class Invoice
     {

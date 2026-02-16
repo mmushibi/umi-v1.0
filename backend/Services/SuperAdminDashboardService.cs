@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
@@ -389,12 +389,12 @@ namespace UmiHealthPOS.Services
                         break;
 
                     case "sales":
-                        var topSales = await _context.InventoryItems
-                            .Select(i => new TopPerformer
+                        var topSales = await _context.Products
+                            .Select(p => new TopPerformer
                             {
-                                Name = i.Name,
+                                Name = p.Name,
                                 Type = "product",
-                                Value = i.SaleItems.Sum(si => si.Quantity),
+                                Value = p.SaleItems.Sum(si => si.Quantity),
                                 Metric = "Units Sold",
                                 Growth = 15.3 // Placeholder
                             })
@@ -437,3 +437,4 @@ namespace UmiHealthPOS.Services
         }
     }
 }
+

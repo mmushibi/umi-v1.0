@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,9 +24,9 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 // Configure allowed hosts
-builder.Configuration.AddInMemoryCollection(new[]
+builder.Configuration.AddInMemoryCollection(new KeyValuePair<string, string?>[]
 {
-    new KeyValuePair<string, string>("AllowedHosts", "*")
+    new KeyValuePair<string, string?>("AllowedHosts", "*")
 });
 
 // Add services to the container.
@@ -84,8 +84,8 @@ builder.Services.AddScoped<ISubscriptionHistoryService, SubscriptionHistoryServi
 builder.Services.AddScoped<IBillingService, BillingService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 
-// Add data seeder
-builder.Services.AddScoped<DataSeeder>();
+// DataSeeder removed due to static type conflicts
+// builder.Services.AddScoped<DataSeeder>();
 builder.Services.AddScoped<SubscriptionDataSeeder>();
 builder.Services.AddScoped<CategoryDataSeeder>();
 
@@ -112,7 +112,7 @@ if (app.Environment.IsDevelopment())
     {
         var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         await CategoryDataSeeder.SeedCategoriesAsync(context);
-        
+
         // Seed pharmacist dashboard sample data
         var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
         var seederLogger = loggerFactory.CreateLogger<PharmacistDashboardSeeder>();
@@ -134,3 +134,5 @@ public static class InactivityMiddlewareExtensions
         return builder.UseMiddleware<InactivityMiddleware>();
     }
 }
+
+

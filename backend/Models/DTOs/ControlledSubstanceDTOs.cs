@@ -20,7 +20,7 @@ namespace UmiHealthPOS.DTOs
         public int MonthlyDispensed { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
-        
+
         // Tenant information
         public string PharmacyName { get; set; } = string.Empty;
         public string PharmacyEmail { get; set; } = string.Empty;
@@ -95,7 +95,7 @@ namespace UmiHealthPOS.DTOs
         public int PreviousStock { get; set; }
         public int NewStock { get; set; }
         public DateTime AuditDate { get; set; }
-        
+
         // Calculated property
         public string Impact { get; set; } = string.Empty;
     }

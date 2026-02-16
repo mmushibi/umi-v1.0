@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Data;
@@ -352,3 +352,5 @@ namespace UmiHealthPOS.Controllers.Api
         public List<Branch> Branches { get; set; } = new();
     }
 }
+
+

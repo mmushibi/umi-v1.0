@@ -46,36 +46,36 @@ namespace UmiHealthPOS.Data
         public required DbSet<ShiftAssignment> ShiftAssignments { get; set; } = null!;
         public required DbSet<Employee> Employees { get; set; } = null!;
         public required DbSet<ControlledSubstanceAudit> ControlledSubstanceAudits { get; set; } = null!;
-        
+
         // RBAC Entities
         public required DbSet<Role> Roles { get; set; } = null!;
         public required DbSet<Permission> Permissions { get; set; } = null!;
         public required DbSet<RolePermission> RolePermissions { get; set; } = null!;
         public required DbSet<UserRole> UserRoles { get; set; } = null!;
         public required DbSet<TenantRole> TenantRoles { get; set; } = null!;
-        
+
         // System Entities
         public required DbSet<Notification> Notifications { get; set; } = null!;
         public required DbSet<SystemSetting> SystemSettings { get; set; } = null!;
         public required DbSet<SettingsAuditLog> SettingsAuditLogs { get; set; } = null!;
         public required DbSet<AppSetting> AppSettings { get; set; } = null!;
-        
+
         // Application Feature Management
         public required DbSet<ApplicationFeature> ApplicationFeatures { get; set; } = null!;
         public required DbSet<SubscriptionPlanFeature> SubscriptionPlanFeatures { get; set; } = null!;
-        
+
         // Category Management
         public required DbSet<CategorySync> CategorySyncs { get; set; } = null!;
         public required DbSet<TenantCategory> TenantCategories { get; set; } = null!;
-        
+
         // Supplier Management
         public required DbSet<Supplier> Suppliers { get; set; } = null!;
         public required DbSet<SupplierContact> SupplierContacts { get; set; } = null!;
         public required DbSet<SupplierProduct> SupplierProducts { get; set; } = null!;
-        
+
         // Pharmacist Account Management
         public required DbSet<PharmacistProfile> PharmacistProfiles { get; set; }
-        
+
         // Clinical Management
         public required DbSet<ClinicalNote> ClinicalNotes { get; set; } = null!;
 
@@ -87,12 +87,11 @@ namespace UmiHealthPOS.Data
             modelBuilder.Entity<Product>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.Price).HasPrecision(10, 2);
+                entity.Property(e => e.UnitPrice).HasPrecision(10, 2);
+                entity.Property(e => e.SellingPrice).HasPrecision(10, 2);
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.Category).HasMaxLength(100);
-                entity.Property(e => e.Barcode).HasMaxLength(50);
                 entity.Property(e => e.Description).HasMaxLength(500);
-                entity.HasIndex(e => e.Barcode).IsUnique();
                 entity.HasIndex(e => e.Category);
             });
 
@@ -281,23 +280,17 @@ namespace UmiHealthPOS.Data
                 entity.HasIndex(e => e.CreatedBy);
             });
 
-            // User configuration
-            modelBuilder.Entity<User>(entity =>
+            // UserAccount configuration
+            modelBuilder.Entity<UserAccount>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.Email).IsRequired().HasMaxLength(200);
-                entity.Property(e => e.NormalizedEmail).IsRequired().HasMaxLength(200);
-                entity.Property(e => e.PhoneNumber).IsRequired().HasMaxLength(100);
-                entity.Property(e => e.PasswordHash).IsRequired().HasMaxLength(500);
-                entity.Property(e => e.Role).IsRequired().HasMaxLength(50).HasDefaultValue("Cashier");
-                entity.Property(e => e.Address).HasMaxLength(200);
-                entity.Property(e => e.City).HasMaxLength(100);
-                entity.Property(e => e.PostalCode).HasMaxLength(20);
-                entity.Property(e => e.Country).HasMaxLength(50).HasDefaultValue("Zambia");
-                entity.Property(e => e.LicenseNumber).HasMaxLength(100);
-                entity.Property(e => e.RegistrationNumber).HasMaxLength(100);
+                entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.FirstName).HasMaxLength(100);
+                entity.Property(e => e.LastName).HasMaxLength(100);
+                entity.Property(e => e.Role).IsRequired().HasMaxLength(20).HasDefaultValue("Cashier");
+                entity.Property(e => e.TenantId).IsRequired().HasMaxLength(6).HasDefaultValue("UMI001");
+                entity.Property(e => e.Status).IsRequired().HasMaxLength(20).HasDefaultValue("Active");
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
@@ -307,7 +300,7 @@ namespace UmiHealthPOS.Data
                       .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(e => e.Email).IsUnique();
-                entity.HasIndex(e => e.NormalizedEmail);
+                entity.HasIndex(e => e.TenantId);
                 entity.HasIndex(e => e.Role);
                 entity.HasIndex(e => e.IsActive);
                 entity.HasIndex(e => e.BranchId);

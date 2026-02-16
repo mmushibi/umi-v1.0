@@ -788,15 +788,15 @@
         },
         
         viewPatient(patient) {
-          console.log('View patient:', patient);
+          // View patient details - could open modal or navigate to detail page
         },
         
         editPatient(patient) {
-          console.log('Edit patient:', patient);
+          // Edit patient - could open edit modal with patient data
         },
         
         viewPrescriptions(patientId) {
-          console.log('View prescriptions for patient:', patientId);
+          // View prescriptions for patient - could navigate to prescription list
         },
         
         addPatient() {
@@ -902,7 +902,7 @@
                 }
               })
               .catch(error => {
-                console.error('Error importing patients:', error);
+                // Error importing patients
                 this.showNotification('Error importing patients', 'error');
               });
             }
@@ -937,7 +937,7 @@
               this.showNotification('Patients exported successfully', 'success');
             })
             .catch(error => {
-              console.error('Error exporting patients:', error);
+              // Error exporting patients
               this.showNotification('Error exporting patients', 'error');
             });
         },

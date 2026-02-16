@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
@@ -34,9 +34,7 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                var query = _context.AuditLogs
-                    .Include(a => a.User)
-                    .Include(a => a.Tenant)
+                var query = _context.ActivityLogs
                     .AsQueryable();
 
                 // Apply filters
@@ -55,39 +53,23 @@ namespace UmiHealthPOS.Controllers.Api
                     query = query.Where(a => a.Action == filter.Action);
                 }
 
-                if (!string.IsNullOrEmpty(filter.EntityType))
-                {
-                    query = query.Where(a => a.EntityType == filter.EntityType);
-                }
-
-                if (!string.IsNullOrEmpty(filter.Severity))
-                {
-                    query = query.Where(a => a.Severity == filter.Severity);
-                }
-
-                if (filter.IsSuccess.HasValue)
-                {
-                    query = query.Where(a => a.IsSuccess == filter.IsSuccess.Value);
-                }
+                // Remove EntityType filter as it doesn't exist in ActivityLog
 
                 if (filter.StartDate.HasValue)
                 {
-                    query = query.Where(a => a.Timestamp >= filter.StartDate.Value);
+                    query = query.Where(a => a.CreatedAt >= filter.StartDate.Value);
                 }
 
                 if (filter.EndDate.HasValue)
                 {
-                    query = query.Where(a => a.Timestamp <= filter.EndDate.Value);
+                    query = query.Where(a => a.CreatedAt <= filter.EndDate.Value);
                 }
 
                 if (!string.IsNullOrEmpty(filter.Search))
                 {
-                    query = query.Where(a => 
-                        a.User.FirstName.Contains(filter.Search) ||
-                        a.User.LastName.Contains(filter.Search) ||
-                        a.EntityType.Contains(filter.Search) ||
-                        a.EntityName.Contains(filter.Search) ||
-                        a.Description.Contains(filter.Search));
+                    query = query.Where(a =>
+                        a.Description.Contains(filter.Search) ||
+                        (a.Type != null && a.Type.Contains(filter.Search)));
                 }
 
                 // Get total count
@@ -95,28 +77,28 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Apply pagination
                 var auditLogs = await query
-                    .OrderByDescending(a => a.Timestamp)
+                    .OrderByDescending(a => a.CreatedAt)
                     .Skip((filter.Page - 1) * filter.PageSize)
                     .Take(filter.PageSize)
                     .Select(a => new AuditLogDto
                     {
                         Id = a.Id,
-                        UserId = a.UserId,
-                        UserName = a.User.FirstName + " " + a.User.LastName,
+                        UserId = a.UserId ?? string.Empty,
+                        UserName = "Unknown User", // Would need separate join to get user name
                         TenantId = a.TenantId,
-                        TenantName = a.Tenant != null ? a.Tenant.PharmacyName : null,
+                        TenantName = null, // Not available in ActivityLog
                         Action = a.Action,
-                        EntityType = a.EntityType,
-                        EntityId = a.EntityId,
-                        EntityName = a.EntityName,
-                        OldValues = a.OldValues,
-                        NewValues = a.NewValues,
+                        EntityType = a.Type ?? "Unknown",
+                        EntityId = null, // Not available in ActivityLog
+                        EntityName = null, // Not available in ActivityLog
+                        OldValues = string.Empty, // Not available in ActivityLog
+                        NewValues = string.Empty, // Not available in ActivityLog
                         IpAddress = a.IpAddress,
                         UserAgent = a.UserAgent,
                         Description = a.Description,
-                        Timestamp = a.Timestamp,
-                        Severity = a.Severity,
-                        IsSuccess = a.IsSuccess
+                        Timestamp = a.CreatedAt,
+                        Severity = a.Status ?? "Info",
+                        IsSuccess = a.Status == "success"
                     })
                     .ToListAsync();
 
@@ -146,15 +128,15 @@ namespace UmiHealthPOS.Controllers.Api
                 var weekStart = today.AddDays(-(int)today.DayOfWeek);
                 var monthStart = new DateTime(now.Year, now.Month, 1);
 
-                var query = _context.AuditLogs.AsQueryable();
+                var query = _context.ActivityLogs.AsQueryable();
 
                 var totalLogs = await query.CountAsync();
-                var todayLogs = await query.CountAsync(a => a.Timestamp >= today);
-                var thisWeekLogs = await query.CountAsync(a => a.Timestamp >= weekStart);
-                var thisMonthLogs = await query.CountAsync(a => a.Timestamp >= monthStart);
-                var criticalLogs = await query.CountAsync(a => a.Severity == "Critical");
-                var failedLogs = await query.CountAsync(a => !a.IsSuccess);
-                var successLogs = await query.CountAsync(a => a.IsSuccess);
+                var todayLogs = await query.CountAsync(a => a.CreatedAt >= today);
+                var thisWeekLogs = await query.CountAsync(a => a.CreatedAt >= weekStart);
+                var thisMonthLogs = await query.CountAsync(a => a.CreatedAt >= monthStart);
+                var criticalLogs = await query.CountAsync(a => a.Status == "Critical");
+                var failedLogs = await query.CountAsync(a => a.Status != "success");
+                var successLogs = await query.CountAsync(a => a.Status == "success");
 
                 var actionCounts = await query
                     .GroupBy(a => a.Action)
@@ -162,7 +144,7 @@ namespace UmiHealthPOS.Controllers.Api
                     .ToDictionaryAsync(x => x.Action, x => x.Count);
 
                 var entityTypeCounts = await query
-                    .GroupBy(a => a.EntityType)
+                    .GroupBy(a => a.Type ?? "Unknown")
                     .Select(g => new { EntityType = g.Key, Count = g.Count() })
                     .ToDictionaryAsync(x => x.EntityType, x => x.Count);
 
@@ -191,9 +173,7 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                var auditLog = await _context.AuditLogs
-                    .Include(a => a.User)
-                    .Include(a => a.Tenant)
+                var auditLog = await _context.ActivityLogs
                     .FirstOrDefaultAsync(a => a.Id == id);
 
                 if (auditLog == null)
@@ -204,22 +184,22 @@ namespace UmiHealthPOS.Controllers.Api
                 return Ok(new AuditLogDto
                 {
                     Id = auditLog.Id,
-                    UserId = auditLog.UserId,
-                    UserName = auditLog.User.FirstName + " " + auditLog.User.LastName,
+                    UserId = auditLog.UserId ?? string.Empty,
+                    UserName = "Unknown User", // Would need separate query to get user name
                     TenantId = auditLog.TenantId,
-                    TenantName = auditLog.Tenant?.PharmacyName,
+                    TenantName = null, // Not available in ActivityLog
                     Action = auditLog.Action,
-                    EntityType = auditLog.EntityType,
-                    EntityId = auditLog.EntityId,
-                    EntityName = auditLog.EntityName,
-                    OldValues = auditLog.OldValues,
-                    NewValues = auditLog.NewValues,
+                    EntityType = auditLog.Type ?? "Unknown",
+                    EntityId = null, // Not available in ActivityLog
+                    EntityName = null, // Not available in ActivityLog
+                    OldValues = string.Empty, // Not available in ActivityLog
+                    NewValues = string.Empty, // Not available in ActivityLog
                     IpAddress = auditLog.IpAddress,
                     UserAgent = auditLog.UserAgent,
                     Description = auditLog.Description,
-                    Timestamp = auditLog.Timestamp,
-                    Severity = auditLog.Severity,
-                    IsSuccess = auditLog.IsSuccess
+                    Timestamp = auditLog.CreatedAt,
+                    Severity = auditLog.Status ?? "Info",
+                    IsSuccess = auditLog.Status == "success"
                 });
             }
             catch (Exception ex)
@@ -240,43 +220,43 @@ namespace UmiHealthPOS.Controllers.Api
                     return Unauthorized(new { error = "User not authenticated" });
                 }
 
-                var auditLog = new AuditLog
+                var auditLog = new ActivityLog
                 {
                     UserId = currentUserId,
                     TenantId = request.TenantId,
                     Action = request.Action,
-                    EntityType = request.EntityType,
-                    EntityId = request.EntityId,
-                    EntityName = request.EntityName,
-                    OldValues = request.OldValues ?? string.Empty,
-                    NewValues = request.NewValues ?? string.Empty,
+                    Type = request.EntityType ?? "Unknown",
+                    Description = request.Description,
+                    Category = "General",
+                    Status = request.IsSuccess ? "success" : "failed",
                     IpAddress = GetClientIpAddress(),
                     UserAgent = Request.Headers["User-Agent"].ToString(),
-                    Description = request.Description,
-                    Severity = request.Severity,
-                    IsSuccess = request.IsSuccess
+                    CreatedAt = DateTime.UtcNow,
+                    Timestamp = DateTime.UtcNow
                 };
 
-                await _context.AuditLogs.AddAsync(auditLog);
+                await _context.ActivityLogs.AddAsync(auditLog);
                 await _context.SaveChangesAsync();
 
                 return CreatedAtAction(nameof(GetAuditLog), new { id = auditLog.Id }, new AuditLogDto
                 {
                     Id = auditLog.Id,
-                    UserId = auditLog.UserId,
+                    UserId = auditLog.UserId ?? string.Empty,
                     UserName = "Current User",
+                    TenantId = auditLog.TenantId,
+                    TenantName = null,
                     Action = auditLog.Action,
-                    EntityType = auditLog.EntityType,
-                    EntityId = auditLog.EntityId,
-                    EntityName = auditLog.EntityName,
-                    OldValues = auditLog.OldValues,
-                    NewValues = auditLog.NewValues,
+                    EntityType = auditLog.Type ?? "Unknown",
+                    EntityId = null,
+                    EntityName = null,
+                    OldValues = string.Empty,
+                    NewValues = string.Empty,
                     IpAddress = auditLog.IpAddress,
                     UserAgent = auditLog.UserAgent,
                     Description = auditLog.Description,
-                    Timestamp = auditLog.Timestamp,
-                    Severity = auditLog.Severity,
-                    IsSuccess = auditLog.IsSuccess
+                    Timestamp = auditLog.CreatedAt,
+                    Severity = auditLog.Status ?? "Info",
+                    IsSuccess = auditLog.Status == "success"
                 });
             }
             catch (Exception ex)
@@ -292,18 +272,19 @@ namespace UmiHealthPOS.Controllers.Api
             try
             {
                 var cutoffDate = DateTime.UtcNow.AddDays(-daysToKeep);
-                var logsToDelete = await _context.AuditLogs
-                    .Where(a => a.Timestamp < cutoffDate)
+                var logsToDelete = await _context.ActivityLogs
+                    .Where(a => a.CreatedAt < cutoffDate)
                     .CountAsync();
 
                 if (logsToDelete > 0)
                 {
-                    _context.AuditLogs.RemoveRange(
-                        _context.AuditLogs.Where(a => a.Timestamp < cutoffDate));
+                    _context.ActivityLogs.RemoveRange(
+                        _context.ActivityLogs.Where(a => a.CreatedAt < cutoffDate));
                     await _context.SaveChangesAsync();
                 }
 
-                return Ok(new { 
+                return Ok(new
+                {
                     message = $"Cleaned up {logsToDelete} audit logs older than {daysToKeep} days",
                     deletedCount = logsToDelete
                 });
@@ -329,7 +310,7 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     var csv = GenerateAuditLogCsv(pagedResult.Data);
                     var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
-                    
+
                     return File(bytes, "text/csv", $"audit_logs_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv");
                 }
 
@@ -379,18 +360,6 @@ namespace UmiHealthPOS.Controllers.Api
             return ipAddress ?? "Unknown";
         }
     }
-
-    public class CreateAuditLogRequest
-    {
-        public string? TenantId { get; set; }
-        public string Action { get; set; } = string.Empty;
-        public string EntityType { get; set; } = string.Empty;
-        public string? EntityId { get; set; }
-        public string? EntityName { get; set; }
-        public string? OldValues { get; set; }
-        public string? NewValues { get; set; }
-        public string? Description { get; set; }
-        public string Severity { get; set; } = "Info";
-        public bool IsSuccess { get; set; } = true;
-    }
 }
+
+

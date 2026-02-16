@@ -59,7 +59,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 if (!string.IsNullOrEmpty(search))
                 {
-                    query = query.Where(p => 
+                    query = query.Where(p =>
                         p.Name.Contains(search) ||
                         (p.Email != null && p.Email.Contains(search)) ||
                         (p.PhoneNumber != null && p.PhoneNumber.Contains(search)) ||
@@ -134,7 +134,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var tenantId = GetCurrentTenantId();
                 var userId = GetCurrentUserId();
-                
+
                 if (string.IsNullOrEmpty(tenantId) || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { error = "User not authenticated" });
@@ -147,7 +147,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Check for duplicate email or ID number
                 var existingPatient = await _context.Patients
-                    .FirstOrDefaultAsync(p => 
+                    .FirstOrDefaultAsync(p =>
                         (p.Email == request.Email && p.TenantId == tenantId) ||
                         (p.IdNumber == request.IdNumber && p.TenantId == tenantId && !string.IsNullOrEmpty(request.IdNumber)));
 
@@ -196,7 +196,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var tenantId = GetCurrentTenantId();
                 var userId = GetCurrentUserId();
-                
+
                 if (string.IsNullOrEmpty(tenantId) || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { error = "User not authenticated" });
@@ -217,7 +217,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Check for duplicate email or ID number (excluding current patient)
                 var duplicatePatient = await _context.Patients
-                    .FirstOrDefaultAsync(p => 
+                    .FirstOrDefaultAsync(p =>
                         p.Id != id &&
                         p.TenantId == tenantId &&
                         ((p.Email == request.Email) ||
@@ -261,7 +261,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var tenantId = GetCurrentTenantId();
                 var userId = GetCurrentUserId();
-                
+
                 if (string.IsNullOrEmpty(tenantId) || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { error = "User not authenticated" });
@@ -318,8 +318,8 @@ namespace UmiHealthPOS.Controllers.Api
 
                 var patients = await _context.Patients
                     .AsNoTracking()
-                    .Where(p => 
-                        p.TenantId == tenantId && 
+                    .Where(p =>
+                        p.TenantId == tenantId &&
                         p.IsActive &&
                         (p.Name.Contains(query) ||
                          (p.Email != null && p.Email.Contains(query)) ||

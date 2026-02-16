@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
@@ -496,6 +496,13 @@ namespace UmiHealthPOS.Controllers.Api
     }
 
     // Data Models
+    public class TopProduct
+    {
+        public string Name { get; set; }
+        public int QuantitySold { get; set; }
+        public decimal Revenue { get; set; }
+    }
+
     public class ReportData
     {
         public string ReportType { get; set; } = string.Empty;
@@ -545,3 +552,5 @@ namespace UmiHealthPOS.Controllers.Api
         public string RecipientEmail { get; set; } = string.Empty;
     }
 }
+
+

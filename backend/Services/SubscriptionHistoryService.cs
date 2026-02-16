@@ -312,7 +312,7 @@ namespace UmiHealthPOS.Services
                 var subscription = await _context.Subscriptions
                     .Include(s => s.Pharmacy)
                     .Include(s => s.Plan)
-                    .Include(s => s.SubscriptionHistories)
+                    .Include(s => s.SubscriptionHistory)
                         .ThenInclude(sh => sh.User)
                     .FirstOrDefaultAsync(s => s.Id == subscriptionId);
 

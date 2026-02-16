@@ -64,8 +64,8 @@ namespace UmiHealthPOS.Services
 
                 if (!string.IsNullOrEmpty(filter.Search))
                 {
-                    query = query.Where(n => 
-                        n.Title.Contains(filter.Search) || 
+                    query = query.Where(n =>
+                        n.Title.Contains(filter.Search) ||
                         n.Message.Contains(filter.Search));
                 }
 

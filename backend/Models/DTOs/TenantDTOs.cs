@@ -111,7 +111,7 @@ namespace UmiHealthPOS.Models.DTOs
     {
         [Required]
         public string Reason { get; set; } = string.Empty;
-        
+
         [Required]
         public string AdminConfirmation { get; set; } = string.Empty;
     }

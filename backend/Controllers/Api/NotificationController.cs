@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
@@ -61,7 +61,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 if (!string.IsNullOrEmpty(filter.Search))
                 {
-                    query = query.Where(n => 
+                    query = query.Where(n =>
                         n.Title.Contains(filter.Search) ||
                         n.Message.Contains(filter.Search));
                 }
@@ -458,7 +458,8 @@ namespace UmiHealthPOS.Controllers.Api
 
                 await _context.SaveChangesAsync();
 
-                return Ok(new { 
+                return Ok(new
+                {
                     message = $"Batch {request.Action} completed successfully",
                     affectedCount = notifications.Count
                 });
@@ -487,7 +488,8 @@ namespace UmiHealthPOS.Controllers.Api
                     await _context.SaveChangesAsync();
                 }
 
-                return Ok(new { 
+                return Ok(new
+                {
                     message = $"Cleaned up {notificationsToDelete} notifications older than {daysToKeep} days",
                     deletedCount = notificationsToDelete
                 });
@@ -513,7 +515,7 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     var csv = GenerateNotificationCsv(pagedResult.Data);
                     var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
-                    
+
                     return File(bytes, "text/csv", $"notifications_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv");
                 }
 
@@ -551,3 +553,5 @@ namespace UmiHealthPOS.Controllers.Api
         }
     }
 }
+
+

@@ -622,10 +622,10 @@
               if (this.branches.length > 0) {
                 this.selectedBranch = this.branches[0].id;
               }
-              console.log('Branches loaded:', this.branches);
+              // Branches loaded successfully
             }
           } catch (error) {
-            console.error('Error loading branches:', error);
+            // Error loading branches
             // Fallback to default
             this.branches = [{ id: 'all', name: 'All Branches' }];
           }
@@ -681,16 +681,16 @@
               this.avgOrderValue = data.metrics.avgOrderValue || 0;
               this.orderValueGrowth = data.metrics.revenueGrowth || 0;
               this.newCustomers = data.metrics.newCustomers || 0;
-              this.customerGrowth = 0; // TODO: Calculate from previous period
+              this.customerGrowth = this.calculateGrowth(data.metrics.newCustomers, data.metrics.previousPeriodCustomers);
               break;
               
             case 'financial':
               this.totalRevenue = data.metrics.revenue || 0;
-              this.revenueGrowth = 0; // TODO: Calculate from previous period
+              this.revenueGrowth = this.calculateGrowth(data.metrics.revenue, data.metrics.previousPeriodRevenue);
               this.totalSales = data.metrics.transactions || 0;
-              this.salesGrowth = 0; // TODO: Calculate from previous period
+              this.salesGrowth = this.calculateGrowth(data.metrics.transactions, data.metrics.previousPeriodTransactions);
               this.avgOrderValue = data.metrics.netRevenue || 0;
-              this.orderValueGrowth = 0; // TODO: Calculate from previous period
+              this.orderValueGrowth = this.calculateGrowth(data.metrics.netRevenue, data.metrics.previousPeriodNetRevenue);
               break;
               
             case 'inventory':
@@ -929,7 +929,7 @@
             
             const result = await response.json();
             this.showNotification('Report scheduled successfully', 'success');
-            console.log('Schedule ID:', result.scheduleId);
+            // Report scheduled with ID:
             
             // Close dropdown and reset form
             this.scheduleOpen = false;
@@ -944,6 +944,11 @@
         
         logout() {
           window.location.href = '../auth/signin.html';
+        },
+        
+        calculateGrowth(current, previous) {
+          if (!previous || previous === 0) return 0;
+          return ((current - previous) / previous * 100).toFixed(1);
         },
         
         getMetricLabel(type) {

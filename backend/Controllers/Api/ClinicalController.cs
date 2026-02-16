@@ -477,24 +477,6 @@ namespace UmiHealthPOS.Controllers.Api
         }
     }
 
-    // Clinical Note Entity (add to Entities.cs if needed)
-    public class ClinicalNote
-    {
-        public int Id { get; set; }
-        public int PatientId { get; set; }
-        public string NoteType { get; set; } = string.Empty;
-        public string Content { get; set; } = string.Empty;
-        public string? Diagnosis { get; set; }
-        public string? Symptoms { get; set; }
-        public string? Treatment { get; set; }
-        public bool FollowUpRequired { get; set; } = false;
-        public DateTime? FollowUpDate { get; set; }
-        public string TenantId { get; set; } = string.Empty;
-        public string CreatedBy { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
-    }
-
     // Response DTOs
     public class DrugInteraction
     {

@@ -991,8 +991,8 @@
                 trialEndDate: parsedSession.trialEndDate || null
               };
               
-              console.log('Loaded user data from session storage:', this.user);
-              console.log('Loaded pharmacy data from session storage:', this.pharmacy);
+              // Loaded user data from session storage
+              // Loaded pharmacy data from session storage
             } else {
               // Fallback to API calls if no session data
               const token = localStorage.getItem('authToken');

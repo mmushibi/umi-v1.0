@@ -194,7 +194,7 @@ namespace UmiHealthPOS.Services
                 {
                     TotalItems = totalItems,
                     LowStockItems = lowStockItems,
-                    TotalValue = totalValue,
+                    TotalValue = totalValue ?? 0m,
                     Categories = categories.Count
                 },
                 Charts = new ChartData
@@ -250,7 +250,7 @@ namespace UmiHealthPOS.Services
                     TotalPrescriptions = totalPrescriptions,
                     PendingPrescriptions = pendingPrescriptions,
                     CompletedToday = completedToday,
-                    TotalValue = totalValue
+                    TotalValue = totalValue ?? 0m
                 },
                 Charts = new ChartData
                 {

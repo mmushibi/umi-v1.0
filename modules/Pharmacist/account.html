@@ -306,22 +306,23 @@
                 
                 <div>
                   <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                  <input type="email" id="email" x-model="profile.email" @change.debounce.500="updateProfile()" placeholder="Enter your email address" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                  <input type="email" id="email" x-model="profile.email" @change.debounce.500="updateProfile()" placeholder="your.email@example.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
                 </div>
                 
                 <div>
                   <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                  <input type="tel" id="phone" x-model="profile.phone" @change.debounce.500="updateProfile()" placeholder="Enter your phone number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                  <input type="tel" id="phone" x-model="profile.phone" @change.debounce.500="updateProfile()" placeholder="+260 XXX XXX XXX" pattern="\+260[\s]?\d{3}[\s]?\d{3}[\s]?\d{3}" title="Please enter a valid Zambian phone number (e.g., +260 123 456 789)" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
                 </div>
                 
                 <div>
                   <label for="licenseNumber" class="block text-sm font-medium text-gray-700 mb-1">Pharmacy License Number</label>
-                  <input type="text" id="licenseNumber" x-model="profile.licenseNumber" @change.debounce.500="updateProfile()" placeholder="Enter your license number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                  <input type="text" id="licenseNumber" x-model="profile.licenseNumber" @change.debounce.500="updateProfile()" placeholder="PHARM-XXXX-XXX" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
                 </div>
                 
                 <div class="flex justify-end">
-                  <button type="submit" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors">
-                    Save Profile
+                  <button type="submit" :disabled="isLoading" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span x-show="!isLoading">Save Profile</span>
+                    <span x-show="isLoading">Saving...</span>
                   </button>
                 </div>
               </form>
@@ -442,14 +443,14 @@
         <div>
           <label for="currentPassword" class="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
           <input type="password" id="currentPassword" x-model="passwordForm.currentPassword" 
-                 placeholder="Enter current password" required
+                 placeholder="Enter your current password" required
                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
         </div>
         
         <div>
           <label for="newPassword" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
           <input type="password" id="newPassword" x-model="passwordForm.newPassword" 
-                 placeholder="Enter new password" required minlength="8"
+                 placeholder="Create a strong password" required minlength="8"
                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
           <p class="text-xs text-gray-500 mt-1">Password must be at least 8 characters long</p>
         </div>
@@ -457,7 +458,7 @@
         <div>
           <label for="confirmPassword" class="block text-sm font-medium text-gray-700 mb-1">Confirm New Password</label>
           <input type="password" id="confirmPassword" x-model="passwordForm.confirmPassword" 
-                 placeholder="Confirm new password" required
+                 placeholder="Confirm your new password" required
                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
         </div>
         
@@ -466,9 +467,10 @@
                   class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
             Cancel
           </button>
-          <button type="submit" 
-                  class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors">
-            Change Password
+          <button type="submit" :disabled="isLoading" 
+                  class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            <span x-show="!isLoading">Change Password</span>
+            <span x-show="isLoading">Changing...</span>
           </button>
         </div>
       </form>
@@ -529,6 +531,10 @@
           licenseNumber: ''
         },
         
+        isLoading: false,
+        lastActivity: Date.now(),
+        timeoutWarningShown: false,
+        
         settings: {
           sessionTimeout: '30',
           emailNotifications: false,
@@ -545,20 +551,136 @@
         init() {
           // Authentication removed - direct access
           this.loadUserData();
+          this.setupActivityTracking();
+          this.setupSessionTimeoutCheck();
+        },
+        
+        setupActivityTracking() {
+          // Track user activity to prevent session timeout
+          const activityEvents = [
+            'mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'
+          ];
+          
+          const resetActivityTimer = () => {
+            this.lastActivity = Date.now();
+            // Extend session via API
+            this.extendSession();
+          };
+          
+          activityEvents.forEach(event => {
+            document.addEventListener(event, resetActivityTimer, true);
+          });
+          
+          // Set initial activity
+          this.lastActivity = Date.now();
+        },
+        
+        setupSessionTimeoutCheck() {
+          // Check session timeout every minute
+          setInterval(() => {
+            this.checkSessionTimeout();
+          }, 60000); // Check every minute
+          
+          // Initial check
+          this.checkSessionTimeout();
+        },
+        
+        async extendSession() {
+          try {
+            const token = localStorage.getItem('authToken');
+            if (!token) return;
+            
+            // Only extend session if last activity was more than 2 minutes ago
+            const timeSinceLastActivity = Date.now() - this.lastActivity;
+            if (timeSinceLastActivity < 120000) return; // 2 minutes in milliseconds
+            
+            await fetch('/api/pharmacistaccount/extend-session', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+          } catch (error) {
+            console.warn('Failed to extend session:', error);
+          }
+        },
+        
+        async checkSessionTimeout() {
+          try {
+            const token = localStorage.getItem('authToken');
+            if (!token) return;
+            
+            const timeSinceLastActivity = Date.now() - this.lastActivity;
+            const timeoutMinutes = parseInt(this.settings.sessionTimeout) || 30;
+            const timeoutMs = timeoutMinutes * 60 * 1000; // Convert to milliseconds
+            
+            if (timeSinceLastActivity > timeoutMs) {
+              this.showNotificationMessage('Session expired due to inactivity', 'error');
+              setTimeout(() => {
+                this.logout();
+              }, 2000);
+              return;
+            }
+            
+            // Show warning when 5 minutes left
+            const warningTime = timeoutMs - (5 * 60 * 1000); // 5 minutes before timeout
+            if (timeSinceLastActivity > warningTime && !this.timeoutWarningShown) {
+              this.showNotificationMessage(`Session will expire in 5 minutes due to inactivity`, 'error');
+              this.timeoutWarningShown = true;
+              
+              // Reset warning flag after 1 minute
+              setTimeout(() => {
+                this.timeoutWarningShown = false;
+              }, 60000);
+            }
+          } catch (error) {
+            console.warn('Error checking session timeout:', error);
+          }
         },
         
         async loadUserData() {
           try {
-            // Mock user data since auth is removed
-            this.profile = {
-              firstName: 'Pharmacist',
-              lastName: 'User',
-              email: 'pharmacist@umihealth.com',
-              phone: '+260123456789',
-              name: 'Pharmacist User',
-              role: 'Pharmacist',
-              licenseNumber: 'PHARM-2024-001'
-            };
+            // Get JWT token from localStorage
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+              this.showNotificationMessage('Please log in to access your profile', 'error');
+              return;
+            }
+
+            // Call real API to get profile
+            const response = await fetch('/api/pharmacistaccount/profile', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              this.profile = {
+                firstName: data.firstName || '',
+                lastName: data.lastName || '',
+                email: data.email || '',
+                phone: data.phone || '',
+                name: data.firstName && data.lastName 
+                  ? `${data.firstName} ${data.lastName}`
+                  : 'Pharmacist',
+                role: 'Pharmacist',
+                licenseNumber: data.licenseNumber || ''
+              };
+              
+              this.settings = {
+                sessionTimeout: data.sessionTimeout?.toString() || '30',
+                emailNotifications: data.emailNotifications || false,
+                clinicalAlerts: data.clinicalAlerts || false,
+                language: data.language || 'en'
+              };
+            } else {
+              const error = await response.json();
+              this.showNotificationMessage(error.error || 'Failed to load profile data', 'error');
+            }
           } catch (error) {
             console.error('Error loading user data:', error);
             this.showNotificationMessage('Failed to load user data', 'error');
@@ -567,18 +689,92 @@
         
         async updateProfile() {
           try {
-            // Mock profile update since auth is removed
-            this.showNotificationMessage('Profile updated successfully', 'success');
+            this.isLoading = true;
+            
+            // Validate phone number format
+            if (this.profile.phone && !this.validatePhoneNumber(this.profile.phone)) {
+              this.showNotificationMessage('Please enter a valid phone number (e.g., +260 XXX XXX XXX)', 'error');
+              return;
+            }
+
+            // Get JWT token
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+              this.showNotificationMessage('Please log in to update your profile', 'error');
+              return;
+            }
+
+            // Call real API to update profile
+            const response = await fetch('/api/pharmacistaccount/profile', {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                firstName: this.profile.firstName,
+                lastName: this.profile.lastName,
+                email: this.profile.email,
+                phone: this.profile.phone,
+                licenseNumber: this.profile.licenseNumber
+              })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              // Update local profile with response data
+              this.profile = {
+                ...this.profile,
+                firstName: data.firstName,
+                lastName: data.lastName,
+                email: data.email,
+                phone: data.phone,
+                licenseNumber: data.licenseNumber,
+                name: data.firstName && data.lastName 
+                  ? `${data.firstName} ${data.lastName}`
+                  : 'Pharmacist'
+              };
+              
+              this.showNotificationMessage('Profile updated successfully', 'success');
+            } else {
+              const error = await response.json();
+              this.showNotificationMessage(error.error || 'Failed to update profile', 'error');
+            }
           } catch (error) {
             console.error('Error updating profile:', error);
             this.showNotificationMessage('Failed to update profile', 'error');
+          } finally {
+            this.isLoading = false;
           }
         },
         
         async toggle2FA() {
           try {
-            // Mock 2FA toggle since auth is removed
-            this.showNotificationMessage('Two-factor authentication setting updated', 'success');
+            // Get JWT token
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+              this.showNotificationMessage('Please log in to manage 2FA settings', 'error');
+              return;
+            }
+
+            // Call real API to toggle 2FA
+            const response = await fetch('/api/pharmacistaccount/toggle-2fa', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              this.showNotificationMessage(data.message, 'success');
+              // Reload profile to get updated 2FA status
+              await this.loadUserData();
+            } else {
+              const error = await response.json();
+              this.showNotificationMessage(error.error || 'Failed to update 2FA settings', 'error');
+            }
           } catch (error) {
             console.error('Error toggling 2FA:', error);
             this.showNotificationMessage('Failed to update two-factor authentication', 'error');
@@ -587,8 +783,35 @@
         
         async updateSettings() {
           try {
-            // Mock settings update since auth is removed
-            this.showNotificationMessage('Settings updated successfully', 'success');
+            // Get JWT token
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+              this.showNotificationMessage('Please log in to update settings', 'error');
+              return;
+            }
+
+            // Call real API to update settings
+            const response = await fetch('/api/pharmacistaccount/settings', {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                emailNotifications: this.settings.emailNotifications,
+                clinicalAlerts: this.settings.clinicalAlerts,
+                sessionTimeout: parseInt(this.settings.sessionTimeout),
+                language: this.settings.language
+              })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              this.showNotificationMessage(data.message, 'success');
+            } else {
+              const error = await response.json();
+              this.showNotificationMessage(error.error || 'Failed to update settings', 'error');
+            }
           } catch (error) {
             console.error('Error updating settings:', error);
             this.showNotificationMessage('Failed to update settings', 'error');
@@ -597,25 +820,101 @@
         
         async changePassword() {
           try {
-            // Mock password change since auth is removed
-            this.showNotificationMessage('Password changed successfully', 'success');
-            this.showPasswordModal = false;
-            this.passwordForm = {
-              currentPassword: '',
-              newPassword: '',
-              confirmPassword: ''
-            };
+            this.isLoading = true;
+            
+            // Validate passwords
+            if (this.passwordForm.newPassword !== this.passwordForm.confirmPassword) {
+              this.showNotificationMessage('New passwords do not match', 'error');
+              return;
+            }
+            
+            if (this.passwordForm.newPassword.length < 8) {
+              this.showNotificationMessage('Password must be at least 8 characters long', 'error');
+              return;
+            }
+
+            // Get JWT token
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+              this.showNotificationMessage('Please log in to change password', 'error');
+              return;
+            }
+
+            // Call real API to change password
+            const response = await fetch('/api/pharmacistaccount/change-password', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                currentPassword: this.passwordForm.currentPassword,
+                newPassword: this.passwordForm.newPassword,
+                confirmPassword: this.passwordForm.confirmPassword
+              })
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              this.showNotificationMessage(data.message, 'success');
+              this.showPasswordModal = false;
+              this.passwordForm = {
+                currentPassword: '',
+                newPassword: '',
+                confirmPassword: ''
+              };
+            } else {
+              const error = await response.json();
+              this.showNotificationMessage(error.error || 'Failed to change password', 'error');
+            }
           } catch (error) {
             console.error('Error changing password:', error);
             this.showNotificationMessage('Failed to change password', 'error');
+          } finally {
+            this.isLoading = false;
           }
         },
         
-        clearLocalData() {
+        async clearLocalData() {
           try {
+            // Get JWT token
+            const token = localStorage.getItem('authToken');
+            
+            // Call API to notify server (optional)
+            if (token) {
+              try {
+                await fetch('/api/pharmacistaccount/clear-data', {
+                  method: 'DELETE',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                  }
+                });
+              } catch (apiError) {
+                console.warn('API call failed, but continuing with local clear:', apiError);
+              }
+            }
+
             // Clear all localStorage and sessionStorage
             localStorage.clear();
             sessionStorage.clear();
+            
+            // Clear all cookies
+            document.cookie.split(';').forEach(cookie => {
+              const eqPos = cookie.indexOf('=');
+              const name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+              document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+              document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=' + window.location.hostname;
+            });
+            
+            // Clear browser cache if possible (Service Worker)
+            if ('caches' in window) {
+              caches.keys().then(cacheNames => {
+                cacheNames.forEach(cacheName => {
+                  caches.delete(cacheName);
+                });
+              });
+            }
             
             // Reset to defaults
             this.profile = {
@@ -623,7 +922,7 @@
               lastName: '',
               email: '',
               phone: '',
-              name: '',
+              name: 'Pharmacist',
               role: 'Pharmacist',
               licenseNumber: ''
             };
@@ -635,11 +934,30 @@
               language: 'en'
             };
             
-            this.showNotificationMessage('All local data cleared successfully!', 'success');
+            // Clear form fields
+            this.passwordForm = {
+              currentPassword: '',
+              newPassword: '',
+              confirmPassword: ''
+            };
+            
+            this.showNotificationMessage('All local data, cookies, and cache cleared successfully!', 'success');
+            
+            // Optionally reload the page after a short delay
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+            
           } catch (error) {
             console.error('Error clearing local data:', error);
             this.showNotificationMessage('Failed to clear local data', 'error');
           }
+        },
+        
+        validatePhoneNumber(phone) {
+          // Validate Zambian phone number format (+260 XXX XXX XXX)
+          const phoneRegex = /^\+260[\s]?\d{3}[\s]?\d{3}[\s]?\d{3}$/;
+          return phoneRegex.test(phone.replace(/\s/g, ''));
         },
         
         showNotificationMessage(message, type = 'success') {

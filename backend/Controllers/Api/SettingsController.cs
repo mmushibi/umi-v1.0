@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
@@ -58,8 +58,8 @@ namespace UmiHealthPOS.Controllers.Api
 
                 if (!string.IsNullOrEmpty(filter.Search))
                 {
-                    query = query.Where(s => 
-                        s.Key.Contains(filter.Search) || 
+                    query = query.Where(s =>
+                        s.Key.Contains(filter.Search) ||
                         s.Description.Contains(filter.Search));
                 }
 
@@ -370,7 +370,8 @@ namespace UmiHealthPOS.Controllers.Api
 
                 await _context.SaveChangesAsync();
 
-                return Ok(new { 
+                return Ok(new
+                {
                     message = $"Setting read-only status toggled to {setting.IsReadOnly}",
                     isReadOnly = setting.IsReadOnly
                 });
@@ -450,7 +451,7 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     var csv = GenerateSettingsCsv(pagedResult.Data);
                     var bytes = System.Text.Encoding.UTF8.GetBytes(csv);
-                    
+
                     return File(bytes, "text/csv", $"settings_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv");
                 }
 
@@ -558,7 +559,8 @@ namespace UmiHealthPOS.Controllers.Api
 
                 await _context.SaveChangesAsync();
 
-                return Ok(new { 
+                return Ok(new
+                {
                     message = $"Imported {importedCount} settings successfully",
                     importedCount = importedCount,
                     errors = errors
@@ -594,3 +596,5 @@ namespace UmiHealthPOS.Controllers.Api
         }
     }
 }
+
+

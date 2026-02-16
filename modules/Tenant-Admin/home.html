@@ -498,12 +498,10 @@
                 monthlyRevenue: statsData.monthlyRevenue || 'ZMK 0'
               };
             } else if (statsResponse) {
-              console.error('Failed to fetch dashboard stats:', statsResponse.statusText);
               this.showError('Failed to load dashboard statistics');
             }
             this.loadingStats = false;
           } catch (error) {
-            console.error('Error loading dashboard data:', error);
             this.showError('Error connecting to server');
             this.loadingStats = false;
           }
@@ -598,29 +596,29 @@
             });
             
             this.connection.onreconnected(() => {
-              console.log('SignalR reconnected');
+              // SignalR reconnected
               // Re-join tenant group after reconnection
               this.joinTenantGroup();
             });
             
             this.connection.onclose(() => {
-              console.log('SignalR connection closed');
+              // SignalR connection closed
             });
             
             // Start the connection
             this.connection.start()
               .then(() => {
-                console.log('SignalR connected successfully');
+                // SignalR connected successfully
                 this.joinTenantGroup();
               })
               .catch(err => {
-                console.error('SignalR connection failed:', err);
+                // SignalR connection failed
                 // Fallback to polling if SignalR fails
-                console.log('Falling back to polling for updates');
+                // Falling back to polling for updates
               });
               
           } catch (error) {
-            console.error('Error setting up SignalR:', error);
+              // Error setting up SignalR
           }
         },
         
@@ -630,12 +628,12 @@
           
           if (this.connection && this.connection.state === signalR.HubConnectionState.Connected) {
             this.connection.invoke('JoinTenantGroup', tenantId)
-              .catch(err => console.error('Error joining tenant group:', err));
+              // Error joining tenant group
           }
         },
         
         handleRealtimeUpdate(data) {
-          console.log('Received real-time update:', data);
+          // Received real-time update
           
           if (data.type === 'stats') {
             this.stats = { ...this.stats, ...data.payload };

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Data;
@@ -30,13 +30,14 @@ namespace UmiHealthPOS.Controllers.Api
 
                 var currentShift = await _context.ShiftAssignments
                     .Include(sa => sa.Shift)
-                    .Include(sa => sa.User)
+                    .Include(sa => sa.Employee)
                     .Where(sa => sa.UserId == userId && 
                                  sa.TenantId == tenantId &&
                                  sa.AssignmentDate.Date == DateTime.UtcNow.Date &&
                                  (sa.AssignmentStatus == "InProgress" || 
                                   (sa.AssignmentStatus == "Scheduled" && 
-                                   DateTime.UtcNow.TimeOfDay >= sa.ScheduledStart?.TimeOfDay)))
+                                   sa.ScheduledStart.HasValue && 
+                                   DateTime.UtcNow.TimeOfDay >= sa.ScheduledStart.Value.TimeOfDay)))
                     .FirstOrDefaultAsync();
 
                 if (currentShift == null)
@@ -52,7 +53,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 var duration = currentShift.ActualStart.HasValue
                     ? (DateTime.UtcNow - currentShift.ActualStart.Value).TotalHours.ToString("F1")
-                    : currentShift.Shift?.ScheduledDuration.HasValue
+                    : (currentShift.Shift?.ScheduledDuration.HasValue == true)
                         ? (currentShift.Shift.ScheduledDuration.Value / 60.0).ToString("F1")
                         : "0";
 
@@ -107,9 +108,9 @@ namespace UmiHealthPOS.Controllers.Api
                     date = sa.AssignmentDate.ToString("yyyy-MM-dd"),
                     startTime = sa.ScheduledStart?.ToString("HH:mm") ?? sa.Shift?.ScheduledStart?.ToString() ?? "00:00",
                     endTime = sa.ScheduledEnd?.ToString("HH:mm") ?? sa.Shift?.ScheduledEnd?.ToString() ?? "00:00",
-                    duration = sa.Shift?.ScheduledDuration.HasValue 
-                        ? (sa.Shift.ScheduledDuration.Value / 60.0) 
-                        : sa.TotalWorkedMinutes.HasValue 
+                    duration = sa.Shift?.ScheduledDuration.HasValue == true 
+                        ? (sa.Shift.ScheduledDuration.Value.TotalMinutes / 60.0) 
+                        : sa.TotalWorkedMinutes.HasValue == true 
                             ? (sa.TotalWorkedMinutes.Value / 60.0) 
                             : 8,
                     position = sa.Position ?? sa.Shift?.ShiftName ?? "Staff",
@@ -208,7 +209,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 var weekHours = weekShifts
                     .Where(sa => sa.Shift?.ScheduledDuration.HasValue == true)
-                    .Sum(sa => sa.Shift.ScheduledDuration.Value) / 60.0;
+                    .Sum(sa => (long)(sa.Shift.ScheduledDuration?.TotalMinutes ?? 0)) / 60.0;
 
                 var overtime = weekHours > 40 ? weekHours - 40 : 0;
 
@@ -330,3 +331,5 @@ namespace UmiHealthPOS.Controllers.Api
         public string Reason { get; set; }
     }
 }
+
+

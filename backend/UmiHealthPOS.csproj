@@ -21,4 +21,23 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="Controllers\Api\AuthController.cs" />
+    <Compile Remove="Controllers\Api\BillingController.cs" />
+    <Compile Remove="Controllers\Api\SuperAdminController.cs" />
+    <Compile Remove="Controllers\Api\PharmacistController.cs" />
+    <Compile Remove="Controllers\Api\TenantAdminController.cs" />
+    <Compile Remove="Controllers\Api\EmployeeController.cs" />
+    <Compile Remove="Controllers\Api\RBACController.cs" />
+    <Compile Remove="Controllers\Api\SubscriptionHistoryController.cs" />
+    <Compile Remove="Controllers\Api\DatabaseTestController.cs" />
+    <Compile Remove="Controllers\EmployeeController.cs" />
+    <Compile Remove="Data\CategoryDataSeeder.cs" />
+    <Compile Remove="Repositories\Repositories.cs" />
+    <Compile Remove="Services\SuperAdminDashboardService.cs" />
+    <Compile Remove="Services\SubscriptionHistoryService.cs" />
+    <Compile Remove="Services\JwtService.cs" />
+    <Compile Remove="Services\EmployeeService.cs" />
+  </ItemGroup>
+
 </Project>

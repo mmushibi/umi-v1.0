@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
@@ -99,7 +99,7 @@ namespace UmiHealthPOS.Controllers.Api
                     NormalizedEmail = request.Email.ToUpper(),
                     PhoneNumber = request.Phone,
                     Address = request.Address,
-                    Role = request.Role,
+                    Role = request.Role.ToString(),
                     PasswordHash = passwordHash,
                     Status = "active",
                     CreatedAt = DateTime.UtcNow,
@@ -117,7 +117,7 @@ namespace UmiHealthPOS.Controllers.Api
                     {
                         UserId = user.Id,
                         BranchId = 1, // Default branch for now
-                        UserRole = request.Role,
+                        UserRole = request.Role.ToString(),
                         Permission = "read",
                         IsActive = true,
                         AssignedAt = DateTime.UtcNow
@@ -169,7 +169,7 @@ namespace UmiHealthPOS.Controllers.Api
             user.NormalizedEmail = request.Email.ToUpper();
             user.PhoneNumber = request.Phone;
             user.Address = request.Address;
-            user.Role = request.Role;
+            user.Role = request.Role.ToString();
             user.UpdatedAt = DateTime.UtcNow;
             user.TenantId = request.PharmacyId;
 
@@ -191,14 +191,14 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var existingBranch = await _context.UserBranches
                     .FirstOrDefaultAsync(ub => ub.UserId == id);
-                
+
                 if (existingBranch == null)
                 {
                     var userBranch = new UserBranch
                     {
                         UserId = id,
                         BranchId = 1, // Default branch for now
-                        UserRole = request.Role,
+                        UserRole = request.Role.ToString(),
                         Permission = "read",
                         IsActive = true,
                         AssignedAt = DateTime.UtcNow
@@ -221,7 +221,7 @@ namespace UmiHealthPOS.Controllers.Api
                 return NotFound();
             }
 
-            user.Status = request.Status;
+            user.Status = request.Status.ToString();
             user.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -260,8 +260,8 @@ namespace UmiHealthPOS.Controllers.Api
 
             var pharmacies = await _context.Pharmacies
                 .Include(p => p.Subscriptions)
-                .Where(p => p.IsActive && 
-                           (p.Name.ToLower().Contains(query.ToLower()) || 
+                .Where(p => p.IsActive &&
+                           (p.Name.ToLower().Contains(query.ToLower()) ||
                             p.Address.ToLower().Contains(query.ToLower()) ||
                             p.City.ToLower().Contains(query.ToLower())))
                 .Select(p => new PharmacySearchResult
@@ -329,3 +329,5 @@ namespace UmiHealthPOS.Controllers.Api
         }
     }
 }
+
+

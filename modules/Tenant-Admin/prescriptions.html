@@ -830,11 +830,9 @@
               this.showNotification('Prescription created successfully!', 'success');
             } else {
               const error = await response.json();
-              console.error('Error creating prescription:', error);
               this.showNotification(error.error || 'Error creating prescription', 'error');
             }
           } catch (error) {
-            console.error('Error creating prescription:', error);
             this.showNotification('Error creating prescription', 'error');
           } finally {
             this.isSubmitting = false;

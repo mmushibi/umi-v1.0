@@ -90,7 +90,7 @@ namespace UmiHealthPOS.Services
                 _context.Subscriptions.Add(subscription);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Created subscription {SubscriptionId} for pharmacy {PharmacyId} with plan {PlanId}", 
+                _logger.LogInformation("Created subscription {SubscriptionId} for pharmacy {PharmacyId} with plan {PlanId}",
                     subscription.Id, request.PharmacyId, request.PlanId);
 
                 return subscription;
@@ -346,7 +346,7 @@ namespace UmiHealthPOS.Services
                 }
 
                 return await _context.Pharmacies
-                    .Where(p => p.IsActive && 
+                    .Where(p => p.IsActive &&
                                (p.Name.ToLower().Contains(query.ToLower()) ||
                                 p.Email.ToLower().Contains(query.ToLower())))
                     .OrderBy(p => p.Name)
@@ -428,9 +428,9 @@ namespace UmiHealthPOS.Services
                 var thirtyDaysFromNow = today.AddDays(30);
 
                 var activeSubscriptions = subscriptions.Count(s => s.Status == "active");
-                var expiringSoon = subscriptions.Count(s => 
+                var expiringSoon = subscriptions.Count(s =>
                     s.Status == "active" && s.EndDate <= thirtyDaysFromNow);
-                
+
                 var monthlyRevenue = subscriptions
                     .Where(s => s.Status == "active")
                     .Sum(s => s.Amount);

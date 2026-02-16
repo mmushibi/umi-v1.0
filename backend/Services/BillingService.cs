@@ -18,7 +18,7 @@ namespace UmiHealthPOS.Services
         Task<Invoice> UpdateInvoiceAsync(Invoice invoice);
         Task<bool> DeleteInvoiceAsync(int id);
         Task<CreditNote> CreateCreditNoteAsync(CreditNote creditNote);
-        Task<Payment> ProcessPaymentAsync(Payment payment);
+        Task<Models.Payment> ProcessPaymentAsync(Models.Payment payment);
         Task<IEnumerable<Tenant>> GetAllTenantsAsync();
         Task<Tenant?> GetTenantByIdAsync(int id);
         Task<BillingSummary> GetBillingSummaryAsync();
@@ -58,7 +58,6 @@ namespace UmiHealthPOS.Services
             {
                 return await _context.Invoices
                     .Include(i => i.Tenant)
-                    .Include(i => i.CreditNotes)
                     .Include(i => i.Payments)
                     .FirstOrDefaultAsync(i => i.Id == id);
             }
@@ -73,11 +72,14 @@ namespace UmiHealthPOS.Services
         {
             try
             {
+                var tenant = await _context.Tenants.FindAsync(tenantId);
+                if (tenant == null)
+                    return new List<Invoice>();
+
                 return await _context.Invoices
                     .Include(i => i.Tenant)
-                    .Include(i => i.CreditNotes)
                     .Include(i => i.Payments)
-                    .Where(i => i.TenantId == tenantId)
+                    .Where(i => i.TenantId == tenant.TenantId)
                     .OrderByDescending(i => i.CreatedAt)
                     .ToListAsync();
             }
@@ -96,9 +98,9 @@ namespace UmiHealthPOS.Services
                 var lastInvoice = await _context.Invoices
                     .OrderByDescending(i => i.Id)
                     .FirstOrDefaultAsync();
-                
+
                 var nextNumber = (lastInvoice?.Id ?? 0) + 1;
-                invoice.Number = $"INV-{DateTime.Now:yyyy}-{nextNumber:D3}";
+                invoice.InvoiceNumber = $"INV-{DateTime.Now:yyyy}-{nextNumber:D3}";
                 invoice.Status = "Pending";
                 invoice.CreatedAt = DateTime.UtcNow;
                 invoice.UpdatedAt = DateTime.UtcNow;
@@ -106,7 +108,7 @@ namespace UmiHealthPOS.Services
                 _context.Invoices.Add(invoice);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Created invoice {invoice.Number} for tenant {invoice.TenantId}");
+                _logger.LogInformation($"Created invoice {invoice.InvoiceNumber} for tenant {invoice.TenantId}");
                 return invoice;
             }
             catch (Exception ex)
@@ -124,12 +126,12 @@ namespace UmiHealthPOS.Services
                 _context.Invoices.Update(invoice);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Updated invoice {invoice.Number}");
+                _logger.LogInformation($"Updated invoice {invoice.InvoiceNumber}");
                 return invoice;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error updating invoice {invoice.Number}");
+                _logger.LogError(ex, $"Error updating invoice {invoice.InvoiceNumber}");
                 throw;
             }
         }
@@ -145,7 +147,7 @@ namespace UmiHealthPOS.Services
                 _context.Invoices.Remove(invoice);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Deleted invoice {invoice.Number}");
+                _logger.LogInformation($"Deleted invoice {invoice.InvoiceNumber}");
                 return true;
             }
             catch (Exception ex)
@@ -163,16 +165,16 @@ namespace UmiHealthPOS.Services
                 var lastCreditNote = await _context.CreditNotes
                     .OrderByDescending(cn => cn.Id)
                     .FirstOrDefaultAsync();
-                
+
                 var nextNumber = (lastCreditNote?.Id ?? 0) + 1;
-                creditNote.Number = $"CN-{DateTime.Now:yyyy}-{nextNumber:D3}";
+                creditNote.CreditNoteNumber = $"CN-{DateTime.Now:yyyy}-{nextNumber:D3}";
                 creditNote.CreatedAt = DateTime.UtcNow;
                 creditNote.UpdatedAt = DateTime.UtcNow;
 
                 _context.CreditNotes.Add(creditNote);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation($"Created credit note {creditNote.Number} for invoice {creditNote.InvoiceId}");
+                _logger.LogInformation($"Created credit note {creditNote.CreditNoteNumber} for invoice {creditNote.InvoiceId}");
                 return creditNote;
             }
             catch (Exception ex)
@@ -182,7 +184,7 @@ namespace UmiHealthPOS.Services
             }
         }
 
-        public async Task<Payment> ProcessPaymentAsync(Payment payment)
+        public async Task<Models.Payment> ProcessPaymentAsync(Models.Payment payment)
         {
             try
             {
@@ -191,7 +193,7 @@ namespace UmiHealthPOS.Services
                 payment.PaymentDate = DateTime.UtcNow;
 
                 _context.Payments.Add(payment);
-                
+
                 // Update invoice status if payment is successful
                 if (payment.Status == "Completed")
                 {
@@ -200,7 +202,6 @@ namespace UmiHealthPOS.Services
                     {
                         invoice.Status = "Paid";
                         invoice.PaymentDate = payment.PaymentDate;
-                        invoice.PaymentMethod = payment.PaymentMethod;
                         invoice.UpdatedAt = DateTime.UtcNow;
                         _context.Invoices.Update(invoice);
                     }
@@ -223,8 +224,8 @@ namespace UmiHealthPOS.Services
             try
             {
                 return await _context.Tenants
-                    .Where(t => t.IsActive)
-                    .OrderBy(t => t.Company)
+                    .Where(t => t.Status == "Active")
+                    .OrderBy(t => t.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -239,7 +240,6 @@ namespace UmiHealthPOS.Services
             try
             {
                 return await _context.Tenants
-                    .Include(t => t.Invoices)
                     .FirstOrDefaultAsync(t => t.Id == id);
             }
             catch (Exception ex)
@@ -254,7 +254,7 @@ namespace UmiHealthPOS.Services
             try
             {
                 var invoices = await _context.Invoices.ToListAsync();
-                
+
                 var totalInvoices = invoices.Count;
                 var paidInvoices = invoices.Where(i => i.Status == "Paid").ToList();
                 var pendingInvoices = invoices.Where(i => i.Status == "Pending").ToList();
@@ -263,7 +263,8 @@ namespace UmiHealthPOS.Services
                 return new BillingSummary
                 {
                     TotalInvoices = totalInvoices,
-                    TotalPaid = paidInvoices.Sum(i => i.Amount),
+                    TotalRevenue = paidInvoices.Sum(i => i.Amount),
+                    PendingRevenue = pendingInvoices.Sum(i => i.Amount),
                     TotalPending = pendingInvoices.Sum(i => i.Amount),
                     TotalOverdue = overdueInvoices.Sum(i => i.Amount),
                     MonthlyRevenue = paidInvoices
@@ -284,9 +285,9 @@ namespace UmiHealthPOS.Services
             try
             {
                 var invoices = await _context.Invoices
-                    .Where(i => i.TenantId == tenantId)
+                    .Where(i => i.TenantId == tenantId.ToString())
                     .ToListAsync();
-                
+
                 var totalInvoices = invoices.Count;
                 var paidInvoices = invoices.Where(i => i.Status == "Paid").ToList();
                 var pendingInvoices = invoices.Where(i => i.Status == "Pending").ToList();
@@ -295,18 +296,17 @@ namespace UmiHealthPOS.Services
                 return new BillingSummary
                 {
                     TotalInvoices = totalInvoices,
-                    TotalPaid = paidInvoices.Sum(i => i.Amount),
-                    TotalPending = pendingInvoices.Sum(i => i.Amount),
-                    TotalOverdue = overdueInvoices.Sum(i => i.Amount),
-                    MonthlyRevenue = paidInvoices
-                        .Where(i => i.PaymentDate.HasValue && i.PaymentDate.Value.Month == DateTime.Now.Month)
-                        .Sum(i => i.Amount),
+                    PaidInvoices = paidInvoices.Count,
+                    PendingInvoices = pendingInvoices.Count,
+                    OverdueInvoices = overdueInvoices.Count,
+                    TotalRevenue = paidInvoices.Sum(i => i.Amount),
+                    PendingRevenue = pendingInvoices.Sum(i => i.Amount),
                     PaymentSuccessRate = totalInvoices > 0 ? (double)paidInvoices.Count / totalInvoices * 100 : 0
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error retrieving billing summary for tenant {tenantId}");
+                _logger.LogError(ex, "Error retrieving billing summary");
                 throw;
             }
         }
@@ -315,7 +315,11 @@ namespace UmiHealthPOS.Services
     public class BillingSummary
     {
         public int TotalInvoices { get; set; }
-        public decimal TotalPaid { get; set; }
+        public int PaidInvoices { get; set; }
+        public int PendingInvoices { get; set; }
+        public int OverdueInvoices { get; set; }
+        public decimal TotalRevenue { get; set; }
+        public decimal PendingRevenue { get; set; }
         public decimal TotalPending { get; set; }
         public decimal TotalOverdue { get; set; }
         public decimal MonthlyRevenue { get; set; }

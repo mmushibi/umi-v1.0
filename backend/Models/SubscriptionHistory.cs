@@ -39,7 +39,7 @@ namespace UmiHealthPOS.Models
         public string UserId { get; set; } = string.Empty;
 
         [ForeignKey("UserId")]
-        public virtual User User { get; set; } = null!;
+        public virtual UserAccount User { get; set; } = null!;
 
         [Required]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

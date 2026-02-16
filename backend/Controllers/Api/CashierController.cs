@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -52,7 +52,8 @@ namespace UmiHealthPOS.Controllers.Api
                 var tomorrow = today.AddDays(1);
 
                 // Optimized parallel database queries for sub-second response
-                var statsTask = Task.Run(async () => {
+                var statsTask = Task.Run(async () =>
+                {
                     // Use raw SQL for better performance with proper indexing
                     var salesToday = await _context.Database
                         .SqlQueryRaw<int>(
@@ -441,7 +442,7 @@ namespace UmiHealthPOS.Controllers.Api
                 Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
                 return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", fileName);
             }
-            catch 
+            catch
             {
                 _logger.LogError("Error exporting sales to CSV");
                 return StatusCode(500, new { error = "Internal server error" });
@@ -510,3 +511,5 @@ namespace UmiHealthPOS.Controllers.Api
         public string Category { get; set; }
     }
 }
+
+

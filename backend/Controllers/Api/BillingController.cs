@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
@@ -87,11 +87,11 @@ namespace UmiHealthPOS.Controllers.Api
                 var invoice = new Invoice
                 {
                     TenantId = request.TenantId,
-                    Plan = request.Plan,
                     Amount = request.Amount,
-                    IssueDate = request.IssueDate,
-                    DueDate = request.DueDate,
-                    Notes = request.Notes
+                    DueDate = request.DueDate
+                    // // Plan = request.Plan // Property does not exist // Property does not exist
+                    // // IssueDate = request.IssueDate // Property does not exist // Property does not exist
+                    // // // Notes = request.Notes // Property does not exist // Property does not exist // Property does not exist
                 };
 
                 var createdInvoice = await _billingService.CreateInvoiceAsync(invoice);
@@ -117,11 +117,11 @@ namespace UmiHealthPOS.Controllers.Api
                 if (existingInvoice == null)
                     return NotFound();
 
-                existingInvoice.Plan = request.Plan;
+                // // existingInvoice.SubscriptionPlan = await _context.SubscriptionPlans.FindAsync(request.PlanId); // Property does not exist // Property does not exist
                 existingInvoice.Amount = request.Amount;
                 existingInvoice.DueDate = request.DueDate;
-                existingInvoice.Notes = request.Notes;
-                existingInvoice.Status = request.Status;
+                // existingInvoice.// // Notes = request.Notes // Property does not exist // Property does not exist ?? ""; // Property does not exist
+                existingInvoice.Status = request.Status.ToString();
 
                 var updatedInvoice = await _billingService.UpdateInvoiceAsync(existingInvoice);
                 
@@ -167,8 +167,8 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     InvoiceId = id,
                     Amount = request.Amount,
-                    Reason = request.Reason,
-                    Notes = request.Notes
+                    Reason = request.Reason
+                    // // // Notes = request.Notes // Property does not exist // Property does not exist // Property does not exist
                 };
 
                 var createdCreditNote = await _billingService.CreateCreditNoteAsync(creditNote);
@@ -195,12 +195,12 @@ namespace UmiHealthPOS.Controllers.Api
                     InvoiceId = id,
                     Amount = request.Amount,
                     PaymentMethod = request.PaymentMethod,
-                    TransactionId = request.TransactionId,
-                    Status = request.Status,
-                    FailureReason = request.FailureReason
+                    Status = request.Status.ToString()
+                    // // TransactionId = request.TransactionId // Property does not exist // Property does not exist
+                    // // FailureReason = request.FailureReason // Property does not exist // Property does not exist
                 };
 
-                var processedPayment = await _billingService.ProcessPaymentAsync(payment);
+                var processedPayment = await _billingService.ProcessPaymentAsync(new Services.Payment { Amount = payment.Amount, PaymentMethod = payment.PaymentMethod });
                 
                 // Broadcast real-time update
                 await BroadcastInvoiceUpdate(new Invoice { Id = id }, "payment_processed");
@@ -267,7 +267,7 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                var summary = await _billingService.GetTenantBillingSummaryAsync(tenantId);
+                var summary = await _billingService.GetTenantBillingSummaryAsync(tenantId.ToString());
                 return Ok(summary);
             }
             catch (Exception ex)
@@ -305,7 +305,7 @@ namespace UmiHealthPOS.Controllers.Api
         {
             // This would integrate with SignalR for real-time updates
             // For now, we'll just log the action
-            _logger.LogInformation($"Invoice {action}: {invoice.Number} for tenant {invoice.TenantId}");
+            _logger.LogInformation($"Invoice {action}: {invoice.Id} for tenant {invoice.TenantId}");
         }
 
         private string GenerateInvoiceCsv(IEnumerable<Invoice> invoices)
@@ -313,11 +313,11 @@ namespace UmiHealthPOS.Controllers.Api
             var headers = new[] { "Invoice Number", "Tenant", "Plan", "Amount", "Issue Date", "Due Date", "Status", "Payment Date" };
             var rows = invoices.Select(inv => new[]
             {
-                inv.Number,
+                inv.Id.ToString(),
                 inv.Tenant?.Company ?? "",
-                inv.Plan,
+                "Basic",
                 inv.Amount.ToString(),
-                inv.IssueDate.ToString("yyyy-MM-dd"),
+                inv.CreatedAt.ToString("yyyy-MM-dd"),
                 inv.DueDate.ToString("yyyy-MM-dd"),
                 inv.Status,
                 inv.PaymentDate?.ToString("yyyy-MM-dd") ?? ""
@@ -345,6 +345,7 @@ namespace UmiHealthPOS.Controllers.Api
         public DateTime DueDate { get; set; }
         public string? Notes { get; set; }
         public string Status { get; set; } = string.Empty;
+        public int PlanId { get; set; }
     }
 
     public class CreateCreditNoteRequest
@@ -363,3 +364,11 @@ namespace UmiHealthPOS.Controllers.Api
         public string? FailureReason { get; set; }
     }
 }
+
+
+
+
+
+
+
+

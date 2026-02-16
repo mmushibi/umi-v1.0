@@ -7,7 +7,7 @@ namespace UmiHealthPOS.Filters
     public class PerformanceMonitoringFilter : IActionFilter
     {
         private readonly ILogger<PerformanceMonitoringFilter> _logger;
-        
+
         public PerformanceMonitoringFilter(ILogger<PerformanceMonitoringFilter> logger)
         {
             _logger = logger;
@@ -20,29 +20,29 @@ namespace UmiHealthPOS.Filters
 
         public void OnActionExecuted(ActionExecutedContext context)
         {
-            if (context.HttpContext.Items.TryGetValue("ActionStartTime", out var startTimeObj) && 
+            if (context.HttpContext.Items.TryGetValue("ActionStartTime", out var startTimeObj) &&
                 startTimeObj is Stopwatch stopwatch)
             {
                 stopwatch.Stop();
                 var duration = stopwatch.ElapsedMilliseconds;
                 var actionName = context.ActionDescriptor.DisplayName;
                 var path = context.HttpContext.Request.Path;
-                
+
                 // Log performance metrics
                 if (duration > 1000) // Log warnings for slow requests
                 {
-                    _logger.LogWarning("Slow request detected: {Action} took {Duration}ms for path {Path}", 
+                    _logger.LogWarning("Slow request detected: {Action} took {Duration}ms for path {Path}",
                         actionName, duration, path);
                 }
                 else
                 {
-                    _logger.LogInformation("Request completed: {Action} took {Duration}ms for path {Path}", 
+                    _logger.LogInformation("Request completed: {Action} took {Duration}ms for path {Path}",
                         actionName, duration, path);
                 }
 
                 // Add performance headers
-                context.HttpContext.Response.Headers.Add("X-Response-Time", $"{duration}ms");
-                
+                context.HttpContext.Response.Headers["X-Response-Time"] = $"{duration}ms";
+
                 // Add to performance metrics for monitoring
                 var metrics = context.HttpContext.Items["PerformanceMetrics"] as List<PerformanceMetric> ?? new List<PerformanceMetric>();
                 metrics.Add(new PerformanceMetric

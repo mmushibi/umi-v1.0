@@ -95,7 +95,7 @@ namespace UmiHealthPOS.Services
                 {
                     var existingPatient = await _context.Patients
                         .FirstOrDefaultAsync(p => p.IdNumber == request.IdNumber);
-                    
+
                     if (existingPatient != null)
                     {
                         throw new InvalidOperationException("A patient with this ID number already exists.");
@@ -161,7 +161,7 @@ namespace UmiHealthPOS.Services
                 {
                     var existingPatient = await _context.Patients
                         .FirstOrDefaultAsync(p => p.IdNumber == request.IdNumber && p.Id != id);
-                    
+
                     if (existingPatient != null)
                     {
                         throw new InvalidOperationException("A patient with this ID number already exists.");
@@ -301,7 +301,7 @@ namespace UmiHealthPOS.Services
         public async Task<CsvImportResult> ImportPatientsFromCsvAsync(IFormFile file)
         {
             var result = new CsvImportResult();
-            
+
             try
             {
                 if (file == null || file.Length == 0)
@@ -355,7 +355,7 @@ namespace UmiHealthPOS.Services
                         {
                             var existing = await _context.Patients
                                 .FirstOrDefaultAsync(p => p.IdNumber == patient.IdNumber);
-                            
+
                             if (existing != null)
                             {
                                 result.Errors.Add($"Row {i + 1}: Patient with ID number '{patient.IdNumber}' already exists");
@@ -407,7 +407,7 @@ namespace UmiHealthPOS.Services
 
                 var patients = await _context.Patients
                     .Include(p => p.Prescriptions)
-                    .Where(p => 
+                    .Where(p =>
                         p.Name.ToLower().Contains(normalizedQuery) ||
                         (p.IdNumber != null && p.IdNumber.ToLower().Contains(normalizedQuery)) ||
                         (p.PhoneNumber != null && p.PhoneNumber.Contains(normalizedQuery)) ||
@@ -494,4 +494,4 @@ namespace UmiHealthPOS.Services
         }
     }
 
-    }
+}

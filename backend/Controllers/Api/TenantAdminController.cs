@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
@@ -381,7 +381,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPost("prescriptions")]
-        public async Task<ActionResult<Prescription>> CreatePrescription([FromBody] CreatePrescriptionRequest request)
+        public async Task<ActionResult<Prescription>> CreatePrescription([FromBody] UmiHealthPOS.Services.CreatePrescriptionRequest request)
         {
             try
             {
@@ -396,7 +396,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPut("prescriptions/{id}")]
-        public async Task<ActionResult<Prescription>> UpdatePrescription(int id, [FromBody] UpdatePrescriptionRequest request)
+        public async Task<ActionResult<Prescription>> UpdatePrescription(int id, [FromBody] UmiHealthPOS.Services.UpdatePrescriptionRequest request)
         {
             try
             {
@@ -506,7 +506,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPost("patients")]
-        public async Task<ActionResult<Patient>> CreatePatient([FromBody] CreatePatientRequest request)
+        public async Task<ActionResult<Patient>> CreatePatient([FromBody] UmiHealthPOS.Services.CreatePatientRequest request)
         {
             try
             {
@@ -521,7 +521,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPut("patients/{id}")]
-        public async Task<ActionResult<Patient>> UpdatePatient(int id, [FromBody] CreatePatientRequest request)
+        public async Task<ActionResult<Patient>> UpdatePatient(int id, [FromBody] UmiHealthPOS.Services.CreatePatientRequest request)
         {
             try
             {
@@ -1084,6 +1084,246 @@ namespace UmiHealthPOS.Controllers.Api
             // TODO: Implement proper PDF generation
             return bytes;
         }
+
+        // Supplier Management Endpoints
+        [HttpGet("suppliers")]
+        public async Task<ActionResult<List<Supplier>>> GetSuppliers()
+        {
+            try
+            {
+                var suppliers = await _context.Suppliers
+                    .Where(s => s.TenantId == "UMI001" && s.IsActive)
+                    .OrderByDescending(s => s.CreatedAt)
+                    .ToListAsync();
+                return Ok(suppliers);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving suppliers");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("suppliers/{id}")]
+        public async Task<ActionResult<Supplier>> GetSupplier(int id)
+        {
+            try
+            {
+                var supplier = await _context.Suppliers
+                    .Include(s => s.Contacts)
+                    .Include(s => s.Products)
+                    .FirstOrDefaultAsync(s => s.Id == id && s.TenantId == "UMI001");
+
+                if (supplier == null)
+                {
+                    return NotFound(new { error = "Supplier not found" });
+                }
+                return Ok(supplier);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving supplier with ID: {Id}", id);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("suppliers")]
+        public async Task<ActionResult<Supplier>> CreateSupplier([FromBody] CreateSupplierRequest request)
+        {
+            try
+            {
+                var supplier = new Supplier
+                {
+                    SupplierCode = GenerateSupplierCode(),
+                    BusinessName = request.BusinessName,
+                    TradeName = request.TradeName,
+                    RegistrationNumber = request.RegistrationNumber,
+                    TaxIdentificationNumber = request.TaxIdentificationNumber,
+                    PharmacyLicenseNumber = request.PharmacyLicenseNumber,
+                    DrugSupplierLicense = request.DrugSupplierLicense,
+                    ContactPerson = request.ContactPerson,
+                    ContactPersonTitle = request.ContactPersonTitle,
+                    PrimaryPhoneNumber = request.PrimaryPhoneNumber,
+                    SecondaryPhoneNumber = request.SecondaryPhoneNumber,
+                    Email = request.Email,
+                    AlternativeEmail = request.AlternativeEmail,
+                    Website = request.Website,
+                    PhysicalAddress = request.PhysicalAddress,
+                    PostalAddress = request.PostalAddress,
+                    City = request.City,
+                    Province = request.Province,
+                    Country = request.Country ?? "Zambia",
+                    PostalCode = request.PostalCode,
+                    BusinessType = request.BusinessType,
+                    Industry = request.Industry,
+                    YearsInOperation = request.YearsInOperation,
+                    NumberOfEmployees = request.NumberOfEmployees,
+                    AnnualRevenue = request.AnnualRevenue,
+                    BankName = request.BankName,
+                    BankAccountNumber = request.BankAccountNumber,
+                    BankAccountName = request.BankAccountName,
+                    BankBranch = request.BankBranch,
+                    BankCode = request.BankCode,
+                    SwiftCode = request.SwiftCode,
+                    PaymentTerms = request.PaymentTerms ?? "Net 30",
+                    CreditLimit = request.CreditLimit ?? 0.00m,
+                    CreditPeriod = request.CreditPeriod ?? 30,
+                    DiscountTerms = request.DiscountTerms,
+                    EarlyPaymentDiscount = request.EarlyPaymentDiscount ?? 0.00m,
+                    SupplierCategory = request.SupplierCategory,
+                    SupplierStatus = "Active",
+                    PriorityLevel = request.PriorityLevel ?? "Medium",
+                    IsPreferred = request.IsPreferred ?? false,
+                    IsBlacklisted = false,
+                    ZambianRegistered = request.ZambianRegistered ?? false,
+                    GmpCertified = request.GmpCertified ?? false,
+                    IsoCertified = request.IsoCertified ?? false,
+                    RegulatoryComplianceStatus = "Pending",
+                    TenantId = "UMI001",
+                    IsActive = true
+                };
+
+                _context.Suppliers.Add(supplier);
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction(nameof(GetSupplier), new { id = supplier.Id }, supplier);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating supplier");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPut("suppliers/{id}")]
+        public async Task<ActionResult<Supplier>> UpdateSupplier(int id, [FromBody] UpdateSupplierRequest request)
+        {
+            try
+            {
+                var supplier = await _context.Suppliers
+                    .FirstOrDefaultAsync(s => s.Id == id && s.TenantId == "UMI001");
+
+                if (supplier == null)
+                {
+                    return NotFound(new { error = "Supplier not found" });
+                }
+
+                // Update supplier properties
+                supplier.BusinessName = request.BusinessName ?? supplier.BusinessName;
+                supplier.TradeName = request.TradeName ?? supplier.TradeName;
+                supplier.RegistrationNumber = request.RegistrationNumber ?? supplier.RegistrationNumber;
+                supplier.TaxIdentificationNumber = request.TaxIdentificationNumber ?? supplier.TaxIdentificationNumber;
+                supplier.PharmacyLicenseNumber = request.PharmacyLicenseNumber ?? supplier.PharmacyLicenseNumber;
+                supplier.DrugSupplierLicense = request.DrugSupplierLicense ?? supplier.DrugSupplierLicense;
+                supplier.ContactPerson = request.ContactPerson ?? supplier.ContactPerson;
+                supplier.ContactPersonTitle = request.ContactPersonTitle ?? supplier.ContactPersonTitle;
+                supplier.PrimaryPhoneNumber = request.PrimaryPhoneNumber ?? supplier.PrimaryPhoneNumber;
+                supplier.SecondaryPhoneNumber = request.SecondaryPhoneNumber ?? supplier.SecondaryPhoneNumber;
+                supplier.Email = request.Email ?? supplier.Email;
+                supplier.AlternativeEmail = request.AlternativeEmail ?? supplier.AlternativeEmail;
+                supplier.Website = request.Website ?? supplier.Website;
+                supplier.PhysicalAddress = request.PhysicalAddress ?? supplier.PhysicalAddress;
+                supplier.PostalAddress = request.PostalAddress ?? supplier.PostalAddress;
+                supplier.City = request.City ?? supplier.City;
+                supplier.Province = request.Province ?? supplier.Province;
+                supplier.Country = request.Country ?? supplier.Country;
+                supplier.PostalCode = request.PostalCode ?? supplier.PostalCode;
+                supplier.BusinessType = request.BusinessType ?? supplier.BusinessType;
+                supplier.Industry = request.Industry ?? supplier.Industry;
+                supplier.YearsInOperation = request.YearsInOperation ?? supplier.YearsInOperation;
+                supplier.NumberOfEmployees = request.NumberOfEmployees ?? supplier.NumberOfEmployees;
+                supplier.AnnualRevenue = request.AnnualRevenue ?? supplier.AnnualRevenue;
+                supplier.BankName = request.BankName ?? supplier.BankName;
+                supplier.BankAccountNumber = request.BankAccountNumber ?? supplier.BankAccountNumber;
+                supplier.BankAccountName = request.BankAccountName ?? supplier.BankAccountName;
+                supplier.BankBranch = request.BankBranch ?? supplier.BankBranch;
+                supplier.BankCode = request.BankCode ?? supplier.BankCode;
+                supplier.SwiftCode = request.SwiftCode ?? supplier.SwiftCode;
+                supplier.PaymentTerms = request.PaymentTerms ?? supplier.PaymentTerms;
+                supplier.CreditLimit = request.CreditLimit ?? supplier.CreditLimit;
+                supplier.CreditPeriod = request.CreditPeriod ?? supplier.CreditPeriod;
+                supplier.DiscountTerms = request.DiscountTerms ?? supplier.DiscountTerms;
+                supplier.EarlyPaymentDiscount = request.EarlyPaymentDiscount ?? supplier.EarlyPaymentDiscount;
+                supplier.SupplierCategory = request.SupplierCategory ?? supplier.SupplierCategory;
+                supplier.SupplierStatus = request.SupplierStatus ?? supplier.SupplierStatus;
+                supplier.PriorityLevel = request.PriorityLevel ?? supplier.PriorityLevel;
+                supplier.IsPreferred = request.IsPreferred ?? supplier.IsPreferred;
+                supplier.ZambianRegistered = request.ZambianRegistered ?? supplier.ZambianRegistered;
+                supplier.GmpCertified = request.GmpCertified ?? supplier.GmpCertified;
+                supplier.IsoCertified = request.IsoCertified ?? supplier.IsoCertified;
+                supplier.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(supplier);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating supplier with ID: {Id}", id);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpDelete("suppliers/{id}")]
+        public async Task<ActionResult> DeleteSupplier(int id)
+        {
+            try
+            {
+                var supplier = await _context.Suppliers
+                    .FirstOrDefaultAsync(s => s.Id == id && s.TenantId == "UMI001");
+
+                if (supplier == null)
+                {
+                    return NotFound(new { error = "Supplier not found" });
+                }
+
+                supplier.IsActive = false;
+                supplier.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Supplier deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting supplier with ID: {Id}", id);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("suppliers/export-csv")]
+        public async Task<IActionResult> ExportSuppliersToCsv()
+        {
+            try
+            {
+                var suppliers = await _context.Suppliers
+                    .Where(s => s.TenantId == "UMI001" && s.IsActive)
+                    .OrderByDescending(s => s.CreatedAt)
+                    .ToListAsync();
+
+                var csv = new StringBuilder();
+                csv.AppendLine("Supplier Code,Business Name,Trade Name,Registration Number,Contact Person,Primary Phone,Email,City,Province,Business Type,Supplier Category,Status,Is Preferred,Created At");
+
+                foreach (var supplier in suppliers)
+                {
+                    csv.AppendLine($"{supplier.SupplierCode},{supplier.BusinessName},{supplier.TradeName},{supplier.RegistrationNumber},{supplier.ContactPerson},{supplier.PrimaryPhoneNumber},{supplier.Email},{supplier.City},{supplier.Province},{supplier.BusinessType},{supplier.SupplierCategory},{supplier.SupplierStatus},{supplier.IsPreferred},{supplier.CreatedAt:yyyy-MM-dd HH:mm:ss}");
+                }
+
+                var fileName = $"suppliers_export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
+                Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+                return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting suppliers to CSV");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        private string GenerateSupplierCode()
+        {
+            return $"SUP-{DateTime.UtcNow:yyyyMMdd}-{new Random().Next(1000, 9999)}";
+        }
     }
 
     // Request/Response Models
@@ -1142,3 +1382,5 @@ namespace UmiHealthPOS.Controllers.Api
         public string Specialization { get; set; }
     }
 }
+
+

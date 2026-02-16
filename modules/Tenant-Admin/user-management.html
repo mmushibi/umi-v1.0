@@ -259,6 +259,52 @@
         </div>
       </header>
 
+      <!-- Notification Component -->
+      <div x-show="notification.show" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 transform -translate-y-2"
+           x-transition:enter-end="opacity-100 transform translate-y-0"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 transform translate-y-0"
+           x-transition:leave-end="opacity-0 transform -translate-y-2"
+           class="fixed top-4 right-4 z-50 max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto"
+           :class="{
+             'bg-green-50 border-green-200 text-green-800': notification.type === 'success',
+             'bg-red-50 border-red-200 text-red-800': notification.type === 'error',
+             'bg-yellow-50 border-yellow-200 text-yellow-800': notification.type === 'warning',
+             'bg-blue-50 border-blue-200 text-blue-800': notification.type === 'info'
+           }">
+        <div class="p-4">
+          <div class="flex items-start">
+            <div class="flex-shrink-0">
+              <svg x-show="notification.type === 'success'" class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a2 2 0 012-2h-2a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2v-6a2 2 0 00-2-2h-2a2 2 0 00-2 2z"></path>
+              </svg>
+              <svg x-show="notification.type === 'error'" class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M12 8c-1.657 0-3 1.343-3 3v6a3 3 0 003 3h6a3 3 0 003-3v-6a3 3 0 00-3-3z"></path>
+              </svg>
+              <svg x-show="notification.type === 'warning'" class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77 1.333-2.694 1.732-3z"></path>
+              </svg>
+              <svg x-show="notification.type === 'info'" class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h1m1 4v1m0 0v1a3 3 0 003 3h6a3 3 0 003-3v-1m-6 0h6v-1m-6 0h6v1M9 7h6m0 0v1a3 3 0 11-6 0v-1m0 0v1a3 3 0 003 3h6a3 3 0 003-3v-1m-6 0h6v1"></path>
+              </svg>
+            </div>
+            <div class="ml-3 w-0 flex-1">
+              <p class="text-sm font-medium" x-text="notification.title"></p>
+              <p class="text-sm text-gray-500" x-text="notification.message"></p>
+            </div>
+            <div class="ml-4 flex-shrink-0">
+              <button @click="notification.show = false" class="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Page Content -->
       <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
         <!-- Stats Cards -->
@@ -696,6 +742,12 @@
         itemsPerPage: 10,
         users: [],
         monthlyRevenue: 0,
+        notification: {
+          show: false,
+          type: 'info',
+          title: '',
+          message: ''
+        },
         newUser: {
           name: '',
           email: '',
@@ -738,7 +790,6 @@
               this.users = data;
             })
             .catch(error => {
-              console.error('Error loading users:', error);
               // Fallback to localStorage for demo
               this.loadUsersFromStorage();
             });
@@ -835,19 +886,19 @@
         },
         
         viewUser(user) {
-          console.log('View user:', user);
+          // View user details - could open a modal or navigate to detail page
         },
         
         editUser(user) {
-          console.log('Edit user:', user);
+          // Edit user - could open edit modal with user data
         },
         
         resetPassword(user) {
-          console.log('Reset password for:', user);
+          // Reset password - could open password reset modal
         },
         
         toggleUserStatus(user) {
-          console.log('Toggle status for:', user);
+          // Toggle user status - could update active/inactive status
         },
         
         importUsers(event) {
@@ -887,9 +938,9 @@
               
               this.users.push(...importedUsers);
               this.showImportUsers = false;
-              alert(`Successfully imported ${importedUsers.length} users! They can login with email and password 'Temp123!'`);
+              this.showNotification(`Successfully imported ${importedUsers.length} users! They can login with email and password 'Temp123!'`, 'success');
             } catch (error) {
-              alert('Error importing CSV file. Please check the format.');
+              this.showNotification('Error importing CSV file. Please check format.', 'error');
             }
           };
           
@@ -911,7 +962,7 @@
         
         exportUsers() {
           if (this.filteredUsers.length === 0) {
-            alert('No users to export');
+            this.showNotification('No users to export', 'warning');
             return;
           }
           
@@ -934,7 +985,6 @@
               window.URL.revokeObjectURL(url);
             })
             .catch(error => {
-              console.error('Error exporting from backend:', error);
               // Fallback to local export
               this.exportUsersLocally();
             });
@@ -971,7 +1021,7 @@
         addUser() {
           // Validate passwords match
           if (this.newUser.password !== this.newUser.confirmPassword) {
-            alert('Passwords do not match!');
+            this.showNotification('Passwords do not match!', 'error');
             return;
           }
           
@@ -1009,10 +1059,9 @@
             this.resetNewUser();
             this.showAddUser = false;
             
-            alert('User added successfully! They can now login with their credentials.');
+            this.showNotification('User added successfully! They can now login with their credentials.', 'success');
           })
           .catch(error => {
-            console.error('Error creating user:', error);
             // Fallback to localStorage for demo
             this.addUserLocally();
           });
@@ -1065,6 +1114,19 @@
             createdAt: new Date().toISOString()
           };
           localStorage.setItem('umi_users', JSON.stringify(users));
+        },
+        
+        showNotification(message, type = 'info', title = 'Notification') {
+          this.notification = {
+            show: true,
+            type: type,
+            title: title,
+            message: message
+          };
+          
+          setTimeout(() => {
+            this.notification.show = false;
+          }, 5000);
         },
         
         logout() {

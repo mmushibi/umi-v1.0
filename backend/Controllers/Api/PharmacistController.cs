@@ -1,4 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -147,7 +148,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPost("prescriptions")]
-        public async Task<ActionResult<Prescription>> CreatePrescription([FromBody] CreatePrescriptionRequest request)
+        public async Task<ActionResult<Prescription>> CreatePrescription([FromBody] UmiHealthPOS.Services.CreatePrescriptionRequest request)
         {
             try
             {
@@ -226,14 +227,14 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 // Update prescription status to "ready"
-                var updateRequest = new UpdatePrescriptionRequest
+                var updateRequest = new UmiHealthPOS.Services.UpdatePrescriptionRequest
                 {
                     PatientName = prescription.PatientName,
                     DoctorName = prescription.DoctorName,
                     Medication = prescription.Medication,
                     Dosage = prescription.Dosage,
                     Instructions = prescription.Instructions,
-                    TotalCost = prescription.TotalCost,
+                    TotalCost = prescription.TotalCost ?? 0m,
                     Notes = prescription.Notes,
                     IsUrgent = prescription.IsUrgent
                 };
@@ -303,14 +304,14 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 // Update prescription status to "cancelled"
-                var updateRequest = new UpdatePrescriptionRequest
+                var updateRequest = new UmiHealthPOS.Services.UpdatePrescriptionRequest
                 {
                     PatientName = prescription.PatientName,
                     DoctorName = prescription.DoctorName,
                     Medication = prescription.Medication,
                     Dosage = prescription.Dosage,
                     Instructions = prescription.Instructions,
-                    TotalCost = prescription.TotalCost,
+                    TotalCost = prescription.TotalCost ?? 0m,
                     Notes = prescription.Notes + " - Rejected by pharmacist",
                     IsUrgent = prescription.IsUrgent
                 };
@@ -615,3 +616,5 @@ namespace UmiHealthPOS.Controllers.Api
         public string SubmittedBy { get; set; }
     }
 }
+
+
