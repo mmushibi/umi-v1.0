@@ -96,7 +96,7 @@ namespace UmiHealthPOS.Controllers.Api
                     .Select(m => m.Trim().ToLower())
                     .ToList();
 
-                var allergyList = string.IsNullOrWhiteSpace(allergies) 
+                var allergyList = string.IsNullOrWhiteSpace(allergies)
                     ? new List<string>()
                     : allergies.Split(',', StringSplitOptions.RemoveEmptyEntries)
                         .Select(a => a.Trim().ToLower())
@@ -141,7 +141,7 @@ namespace UmiHealthPOS.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calculating dosage for medication: {Medication}, weight: {Weight}, age: {Age}", 
+                _logger.LogError(ex, "Error calculating dosage for medication: {Medication}, weight: {Weight}, age: {Age}",
                     medication, weight, age);
                 return StatusCode(500, new { error = "Internal server error" });
             }
@@ -167,7 +167,7 @@ namespace UmiHealthPOS.Controllers.Api
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving clinical guidelines for condition: {Condition}, medication: {Medication}", 
+                _logger.LogError(ex, "Error retrieving clinical guidelines for condition: {Condition}, medication: {Medication}",
                     condition, medication);
                 return StatusCode(500, new { error = "Internal server error" });
             }
@@ -208,7 +208,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var tenantId = GetCurrentTenantId();
                 var userId = GetCurrentUserId();
-                
+
                 if (string.IsNullOrEmpty(tenantId) || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { error = "User not authenticated" });
@@ -247,7 +247,7 @@ namespace UmiHealthPOS.Controllers.Api
                 _context.ClinicalNotes.Add(clinicalNote);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Clinical note {NoteId} created for patient {PatientId} by user {UserId}", 
+                _logger.LogInformation("Clinical note {NoteId} created for patient {PatientId} by user {UserId}",
                     clinicalNote.Id, request.PatientId, userId);
 
                 return CreatedAtAction(nameof(GetClinicalNote), new { id = clinicalNote.Id }, clinicalNote);

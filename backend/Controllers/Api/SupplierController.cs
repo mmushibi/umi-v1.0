@@ -301,7 +301,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Check for duplicate supplier code or registration number (excluding current supplier)
                 var duplicateSupplier = await _context.Suppliers
-                    .FirstOrDefaultAsync(s => 
+                    .FirstOrDefaultAsync(s =>
                         s.Id != id &&
                         s.TenantId == tenantId &&
                         (s.RegistrationNumber == request.RegistrationNumber && !string.IsNullOrEmpty(request.RegistrationNumber)));

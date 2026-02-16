@@ -31,12 +31,12 @@ namespace UmiHealthPOS.Controllers.Api
                 var currentShift = await _context.ShiftAssignments
                     .Include(sa => sa.Shift)
                     .Include(sa => sa.Employee)
-                    .Where(sa => sa.UserId == userId && 
+                    .Where(sa => sa.UserId == userId &&
                                  sa.TenantId == tenantId &&
                                  sa.AssignmentDate.Date == DateTime.UtcNow.Date &&
-                                 (sa.AssignmentStatus == "InProgress" || 
-                                  (sa.AssignmentStatus == "Scheduled" && 
-                                   sa.ScheduledStart.HasValue && 
+                                 (sa.AssignmentStatus == "InProgress" ||
+                                  (sa.AssignmentStatus == "Scheduled" &&
+                                   sa.ScheduledStart.HasValue &&
                                    DateTime.UtcNow.TimeOfDay >= sa.ScheduledStart.Value.TimeOfDay)))
                     .FirstOrDefaultAsync();
 
@@ -108,10 +108,10 @@ namespace UmiHealthPOS.Controllers.Api
                     date = sa.AssignmentDate.ToString("yyyy-MM-dd"),
                     startTime = sa.ScheduledStart?.ToString("HH:mm") ?? sa.Shift?.ScheduledStart?.ToString() ?? "00:00",
                     endTime = sa.ScheduledEnd?.ToString("HH:mm") ?? sa.Shift?.ScheduledEnd?.ToString() ?? "00:00",
-                    duration = sa.Shift?.ScheduledDuration.HasValue == true 
-                        ? (sa.Shift.ScheduledDuration.Value.TotalMinutes / 60.0) 
-                        : sa.TotalWorkedMinutes.HasValue == true 
-                            ? (sa.TotalWorkedMinutes.Value / 60.0) 
+                    duration = sa.Shift?.ScheduledDuration.HasValue == true
+                        ? (sa.Shift.ScheduledDuration.Value.TotalMinutes / 60.0)
+                        : sa.TotalWorkedMinutes.HasValue == true
+                            ? (sa.TotalWorkedMinutes.Value / 60.0)
                             : 8,
                     position = sa.Position ?? sa.Shift?.ShiftName ?? "Staff",
                     status = GetShiftStatus(sa),
@@ -150,7 +150,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 currentShift.ActualEnd = DateTime.UtcNow;
                 currentShift.AssignmentStatus = "Completed";
-                
+
                 if (currentShift.ActualStart.HasValue)
                 {
                     var workedMinutes = (int)(currentShift.ActualEnd.Value - currentShift.ActualStart.Value).TotalMinutes;
@@ -193,7 +193,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 var todayCompleted = todayShifts.Count(sa => sa.AssignmentStatus == "Completed");
                 var nextShift = todayShifts
-                    .Where(sa => sa.AssignmentStatus == "Scheduled" && 
+                    .Where(sa => sa.AssignmentStatus == "Scheduled" &&
                                  sa.ScheduledStart > DateTime.UtcNow)
                     .OrderBy(sa => sa.ScheduledStart)
                     .FirstOrDefault();
@@ -219,7 +219,7 @@ namespace UmiHealthPOS.Controllers.Api
                     {
                         totalHours = Math.Round(todayHours, 1),
                         shiftsCompleted = todayCompleted,
-                        nextShift = nextShift != null 
+                        nextShift = nextShift != null
                             ? $"{nextShift.ScheduledStart?.ToString("HH:mm")} - {nextShift.ScheduledEnd?.ToString("HH:mm")}"
                             : "None"
                     },

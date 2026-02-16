@@ -69,7 +69,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 if (!string.IsNullOrEmpty(search))
                 {
-                    query = query.Where(p => 
+                    query = query.Where(p =>
                         p.PrescriptionNumber.Contains(search) ||
                         (p.PatientName != null && p.PatientName.Contains(search)) ||
                         (p.Patient != null && p.Patient.Name.Contains(search)) ||
@@ -162,7 +162,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var tenantId = GetCurrentTenantId();
                 var userId = GetCurrentUserId();
-                
+
                 if (string.IsNullOrEmpty(tenantId) || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { error = "User not authenticated" });
@@ -235,7 +235,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                         _context.PrescriptionItems.Add(prescriptionItem);
                     }
-                    
+
                     await _context.SaveChangesAsync();
                 }
 
@@ -257,7 +257,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var tenantId = GetCurrentTenantId();
                 var userId = GetCurrentUserId();
-                
+
                 if (string.IsNullOrEmpty(tenantId) || string.IsNullOrEmpty(userId))
                 {
                     return Unauthorized(new { error = "User not authenticated" });
@@ -329,7 +329,7 @@ namespace UmiHealthPOS.Controllers.Api
             var datePrefix = DateTime.UtcNow.ToString("yyyyMMdd");
             var count = await _context.Prescriptions
                 .CountAsync(p => p.TenantId == tenantId && p.PrescriptionNumber != null && p.PrescriptionNumber.StartsWith(datePrefix));
-            
+
             return $"RX{datePrefix}{(count + 1):D4}";
         }
     }

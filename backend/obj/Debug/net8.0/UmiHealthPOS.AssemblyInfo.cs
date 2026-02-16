@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("UmiHealthPOS")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+547862c7fd6dd33108cf64e3c8b7a0f2c323fe6d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3501666f91db3c9db8ca92081cb1d7558733c329")]
 [assembly: System.Reflection.AssemblyProductAttribute("UmiHealthPOS")]
 [assembly: System.Reflection.AssemblyTitleAttribute("UmiHealthPOS")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
