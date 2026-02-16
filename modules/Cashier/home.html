@@ -81,12 +81,6 @@
             <span>Patients</span>
           </a>
           
-          <a href="sales.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-            </svg>
-            <span>Sales</span>
-          </a>
           
           <a href="payments.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,7 +156,7 @@
       
       <nav class="mt-8">
         <div class="px-4 space-y-2">
-          <a href="#" class="flex items-center space-x-3 text-gray-700 bg-ocean-50 rounded-lg px-3 py-2 text-sm font-medium">
+          <a href="home.html" class="flex items-center space-x-3 text-gray-700 bg-ocean-50 rounded-lg px-3 py-2 text-sm font-medium">
             <svg class="h-5 w-5 text-ocean-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
             </svg>
@@ -183,12 +177,6 @@
             <span>Patients</span>
           </a>
           
-          <a href="sales.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-            </svg>
-            <span>Sales</span>
-          </a>
           
           <a href="payments.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,7 +289,7 @@
         <div class="flex items-center">
           <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
             <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
             </svg>
           </div>
           <div class="ml-4">
@@ -478,17 +466,31 @@
         recentSales: [],
         
         init() {
-          this.checkAuth();
+          // Initialize authentication
+          if (!window.umiAuth.initPageAuth('Cashier')) {
+            return; // Will redirect if not authenticated
+          }
+          
           this.loadDashboardData();
           this.startRealTimeUpdates();
+          this.setupPerformanceMonitoring();
         },
         
         async loadDashboardData() {
+          const startTime = performance.now();
           this.loading = true;
+          
           try {
-            // Fetch dashboard stats from backend API
+            // Parallel API requests for faster loading
             this.loadingStats = true;
-            const statsResponse = await this.makeApiRequest('/api/cashier/dashboard/stats');
+            this.loadingSales = true;
+            
+            const [statsResponse, salesResponse] = await Promise.all([
+              this.makeApiRequest('/api/cashier/dashboard/stats'),
+              this.makeApiRequest('/api/cashier/dashboard/recent-sales?limit=10')
+            ]);
+            
+            // Process stats response
             if (statsResponse && statsResponse.ok) {
               const statsData = await statsResponse.json();
               this.stats = {
@@ -497,46 +499,86 @@
                 customersToday: statsData.customersToday || 0,
                 averageTransaction: statsData.averageTransaction || 0.00
               };
+              this.cacheData('stats', this.stats);
             } else if (statsResponse) {
               console.error('Failed to fetch dashboard stats:', statsResponse.statusText);
               this.showError('Failed to load dashboard statistics');
+              // Try to use cached data
+              const cachedStats = this.getCachedData('stats');
+              if (cachedStats) this.stats = cachedStats;
             }
             this.loadingStats = false;
+            
+            // Process sales response
+            if (salesResponse && salesResponse.ok) {
+              const sales = await salesResponse.json();
+              this.recentSales = sales.map(sale => ({
+                ...sale,
+                timestamp: this.formatTimestamp(sale.createdAt)
+              }));
+              this.cacheData('recentSales', this.recentSales);
+            } else if (salesResponse) {
+              console.error('Failed to fetch recent sales:', salesResponse.statusText);
+              // Try to use cached data
+              const cachedSales = this.getCachedData('recentSales');
+              if (cachedSales) this.recentSales = cachedSales;
+            }
+            this.loadingSales = false;
+            
           } catch (error) {
             console.error('Error loading dashboard data:', error);
             this.showError('Error connecting to server');
+            
+            // Fallback to cached data
+            const cachedStats = this.getCachedData('stats');
+            const cachedSales = this.getCachedData('recentSales');
+            if (cachedStats) this.stats = cachedStats;
+            if (cachedSales) this.recentSales = cachedSales;
+            
             this.loadingStats = false;
+            this.loadingSales = false;
           }
-
-          // Fetch recent sales
-          await this.fetchRecentSales();
+          
+          const endTime = performance.now();
+          this.logPerformance('loadDashboardData', endTime - startTime);
           this.loading = false;
         },
         
         startRealTimeUpdates() {
-          // Set up real-time updates every 15 seconds for better responsiveness
-          this.updateInterval = setInterval(async () => {
-            await this.fetchRecentSales();
+          // Optimized polling: 30 seconds for stats, 10 seconds for recent sales
+          this.statsUpdateInterval = setInterval(async () => {
             await this.updateStats();
-          }, 15000);
+          }, 30000);
           
-          // Also fetch immediately on load
-          this.fetchRecentSales();
+          this.salesUpdateInterval = setInterval(async () => {
+            await this.fetchRecentSales();
+          }, 10000);
           
           // Set up WebSocket for real-time updates (if available)
           this.setupWebSocket();
         },
         
         async fetchRecentSales() {
+          // Prevent duplicate requests
+          if (this.loadingSales) return;
+          
+          const startTime = performance.now();
           this.loadingSales = true;
+          
           try {
             const response = await this.makeApiRequest('/api/cashier/dashboard/recent-sales?limit=10');
             if (response && response.ok) {
               const sales = await response.json();
-              this.recentSales = sales.map(sale => ({
+              const newSales = sales.map(sale => ({
                 ...sale,
                 timestamp: this.formatTimestamp(sale.createdAt)
               }));
+              
+              // Only update if data has changed
+              if (JSON.stringify(newSales) !== JSON.stringify(this.recentSales)) {
+                this.recentSales = newSales;
+                this.cacheData('recentSales', this.recentSales);
+              }
             } else if (response) {
               console.error('Failed to fetch recent sales:', response.statusText);
             }
@@ -544,45 +586,63 @@
             console.error('Error fetching recent sales:', error);
           } finally {
             this.loadingSales = false;
+            const endTime = performance.now();
+            this.logPerformance('fetchRecentSales', endTime - startTime);
           }
         },
         
         async updateStats() {
+          // Prevent duplicate requests
+          if (this.loadingStats) return;
+          
+          const startTime = performance.now();
+          this.loadingStats = true;
+          
           try {
             const response = await this.makeApiRequest('/api/cashier/dashboard/stats');
             if (response && response.ok) {
               const statsData = await response.json();
-              this.stats = {
+              const newStats = {
                 salesToday: statsData.salesToday || this.stats.salesToday,
                 transactionsToday: statsData.transactionsToday || this.stats.transactionsToday,
                 customersToday: statsData.customersToday || this.stats.customersToday,
                 averageTransaction: statsData.averageTransaction || this.stats.averageTransaction
               };
+              
+              // Only update if data has changed
+              if (JSON.stringify(newStats) !== JSON.stringify(this.stats)) {
+                this.stats = newStats;
+                this.cacheData('stats', this.stats);
+              }
             }
           } catch (error) {
             console.error('Error updating stats:', error);
+          } finally {
+            this.loadingStats = false;
+            const endTime = performance.now();
+            this.logPerformance('updateStats', endTime - startTime);
           }
         },
         
         setupWebSocket() {
           try {
-            // Initialize SignalR connection
+            // Initialize SignalR connection with optimized settings
             const options = {
-              logMessageContent: true,
-              logger: signalR.LogLevel.Information,
-              accessTokenFactory: () => {
-                return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-              }
+              logMessageContent: false, // Disable for performance
+              logger: signalR.LogLevel.Warning, // Reduce logging
+              transport: signalR.HttpTransportType.WebSockets, // Prefer WebSockets
+              skipNegotiation: true, // Skip negotiation for faster connection
+              withCredentials: true
             };
             
-            // Create connection
+            // Create connection with retry policy
             this.connection = new signalR.HubConnectionBuilder()
               .withUrl(`${this.getApiBaseUrl()}/dashboardHub`, options)
-              .withAutomaticReconnect()
-              .configureLogging(signalR.LogLevel.Information)
+              .withAutomaticReconnect([0, 2000, 10000, 30000]) // Exponential backoff
+              .configureLogging(signalR.LogLevel.Warning)
               .build();
             
-            // Set up event handlers
+            // Set up optimized event handlers
             this.connection.on('CashierStatsUpdate', (data) => {
               this.handleRealtimeUpdate(data);
             });
@@ -596,6 +656,18 @@
               this.joinCashierGroup();
             });
             
+            this.connection.onclose(() => {
+              console.log('SignalR connection closed');
+              // Attempt to reconnect after 5 seconds
+              setTimeout(() => {
+                if (this.connection.state === signalR.HubConnectionState.Disconnected) {
+                  this.connection.start().catch(err => {
+                    console.error('SignalR reconnection failed:', err);
+                  });
+                }
+              }, 5000);
+            });
+            
             // Start the connection
             this.connection.start()
               .then(() => {
@@ -604,11 +676,26 @@
               })
               .catch(err => {
                 console.error('SignalR connection failed:', err);
+                // Fallback to polling if SignalR fails
+                this.setupPollingFallback();
               });
               
           } catch (error) {
             console.error('Error setting up SignalR:', error);
+            // Fallback to polling if SignalR setup fails
+            this.setupPollingFallback();
           }
+        },
+        
+        setupPollingFallback() {
+          console.log('Setting up polling fallback for real-time updates');
+          // Use longer intervals for polling fallback to reduce server load
+          this.fallbackInterval = setInterval(async () => {
+            if (!document.hidden) { // Only poll when page is visible
+              await this.updateStats();
+              await this.fetchRecentSales();
+            }
+          }, 45000); // 45 seconds for fallback
         },
         
         joinCashierGroup() {
@@ -664,20 +751,15 @@
         
         getApiBaseUrl() {
           if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return 'http://localhost:5000';
+            return 'http://localhost:8080';
           }
           return window.location.origin;
         },
         
         getAuthHeaders() {
-          const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
           const headers = {
             'Content-Type': 'application/json',
           };
-          
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-          }
           
           return headers;
         },
@@ -706,11 +788,7 @@
         },
         
         handleUnauthorized() {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('tenantId');
-          sessionStorage.removeItem('authToken');
-          sessionStorage.removeItem('tenantId');
-          console.warn('Unauthorized access - redirecting to login');
+          console.warn('Unauthorized access - check backend configuration');
         },
         
         formatTimestamp(dateString) {
@@ -737,31 +815,119 @@
           window.location.href = `${page}.html`;
         },
         
-        checkAuth() {
-          // Use the auth module to validate access
-          return window.umiAuth.initPageAuth('cashier');
-        },
         
         clearAuthData() {
-          sessionStorage.removeItem('umihealthUserRole');
-          sessionStorage.removeItem('umihealth_auth_token');
-          sessionStorage.removeItem('umihealth_refresh_token');
-          localStorage.removeItem('umihealthUserRole');
-          localStorage.removeItem('umihealth_auth_token');
-          localStorage.removeItem('umihealth_refresh_token');
+          // Clear any remaining session data
+          sessionStorage.clear();
+          localStorage.clear();
         },
         
         logout() {
-          if (this.updateInterval) {
-            clearInterval(this.updateInterval);
+          if (this.statsUpdateInterval) {
+            clearInterval(this.statsUpdateInterval);
+          }
+          if (this.salesUpdateInterval) {
+            clearInterval(this.salesUpdateInterval);
           }
           
+          // Stop SignalR connection
           if (this.connection) {
             this.connection.stop().catch(err => console.error('Error stopping SignalR connection:', err));
           }
           
-          // Use auth module for logout
-          window.umiAuth.logout();
+          // Clear cached data on logout
+          this.clearCache();
+          
+          // Use auth system logout
+          window.umiLogout();
+        },
+        
+        // Performance optimization methods
+        cacheData(key, data) {
+          try {
+            const cacheItem = {
+              data: data,
+              timestamp: Date.now(),
+              ttl: 5 * 60 * 1000 // 5 minutes TTL
+            };
+            localStorage.setItem(`cashier_cache_${key}`, JSON.stringify(cacheItem));
+          } catch (error) {
+            console.warn('Failed to cache data:', error);
+          }
+        },
+        
+        getCachedData(key) {
+          try {
+            const cached = localStorage.getItem(`cashier_cache_${key}`);
+            if (!cached) return null;
+            
+            const cacheItem = JSON.parse(cached);
+            const now = Date.now();
+            
+            // Check if cache is still valid
+            if (now - cacheItem.timestamp < cacheItem.ttl) {
+              return cacheItem.data;
+            }
+            
+            // Remove expired cache
+            localStorage.removeItem(`cashier_cache_${key}`);
+            return null;
+          } catch (error) {
+            console.warn('Failed to retrieve cached data:', error);
+            return null;
+          }
+        },
+        
+        clearCache() {
+          try {
+            const keys = Object.keys(localStorage);
+            keys.forEach(key => {
+              if (key.startsWith('cashier_cache_')) {
+                localStorage.removeItem(key);
+              }
+            });
+          } catch (error) {
+            console.warn('Failed to clear cache:', error);
+          }
+        },
+        
+        setupPerformanceMonitoring() {
+          // Monitor page visibility to pause/resume updates
+          document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+              // Pause updates when page is not visible
+              if (this.statsUpdateInterval) clearInterval(this.statsUpdateInterval);
+              if (this.salesUpdateInterval) clearInterval(this.salesUpdateInterval);
+            } else {
+              // Resume updates when page becomes visible
+              this.startRealTimeUpdates();
+              // Refresh data immediately when page becomes visible
+              this.loadDashboardData();
+            }
+          });
+        },
+        
+        logPerformance(operation, duration) {
+          if (duration > 1000) {
+            console.warn(`Slow operation detected: ${operation} took ${duration.toFixed(2)}ms`);
+          } else {
+            console.log(`Performance: ${operation} completed in ${duration.toFixed(2)}ms`);
+          }
+          
+          // Store performance metrics for monitoring
+          const metrics = this.getCachedData('performance_metrics') || [];
+          metrics.push({
+            operation,
+            duration,
+            timestamp: Date.now()
+          });
+          
+          // Keep only last 50 metrics
+          if (metrics.length > 50) {
+            metrics.splice(0, metrics.length - 50);
+          }
+          
+          this.cacheData('performance_metrics', metrics);
         }
       }
     }

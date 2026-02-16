@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
+using Microsoft.AspNetCore.Http;
 using System.IO;
 using UmiHealthPOS.Services;
 using UmiHealthPOS.Models;
@@ -151,7 +152,7 @@ namespace UmiHealthPOS.Controllers.Api
                 var csvBytes = await _inventoryService.ExportInventoryToCsvAsync();
                 var fileName = $"inventory_export_{DateTime.UtcNow:yyyyMMdd_HHmmss}.csv";
 
-                Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+                Response.Headers["Content-Disposition"] = $"attachment; filename=\"{fileName}\"";
                 return File(csvBytes, "text/csv", fileName);
             }
             catch (Exception ex)
@@ -172,7 +173,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 var fileName = "inventory_template.csv";
 
-                Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+                Response.Headers["Content-Disposition"] = $"attachment; filename=\"{fileName}\"";
                 return File(Encoding.UTF8.GetBytes(template), "text/csv", fileName);
             }
             catch (Exception ex)

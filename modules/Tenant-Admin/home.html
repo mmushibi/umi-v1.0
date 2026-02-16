@@ -685,7 +685,7 @@
         getApiBaseUrl() {
           // Determine API base URL based on environment
           if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return 'http://localhost:5000'; // Default ASP.NET Core port
+            return 'http://localhost:8080'; // Backend API port
           }
           return window.location.origin;
         },

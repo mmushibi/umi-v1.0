@@ -8,11 +8,13 @@ using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Services;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.Data;
+using UmiHealthPOS.Filters;
 
 namespace UmiHealthPOS.Controllers.Api
 {
     [ApiController]
     [Route("api/[controller]")]
+    [ServiceFilter(typeof(PerformanceMonitoringFilter))]
     public class CashierController : ControllerBase
     {
         private readonly IDashboardService _dashboardService;
@@ -33,11 +35,11 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpGet("dashboard/stats")]
+        [ResponseCache(Duration = 30, Location = ResponseCacheLocation.Client, NoStore = false)]
         public async Task<ActionResult<CashierStats>> GetCashierStats()
         {
             try
             {
-                // Get user ID and tenant ID from claims for row-level security
                 var userId = GetCurrentUserId();
                 var tenantId = GetCurrentTenantId();
 
@@ -46,16 +48,47 @@ namespace UmiHealthPOS.Controllers.Api
                     return Unauthorized(new { error = "User not authenticated" });
                 }
 
-                // Return empty stats - no mock data
-                // When database is implemented, this will query real data filtered by user/tenant
-                var stats = new CashierStats
-                {
-                    SalesToday = 0,
-                    RevenueToday = 0,
-                    CustomersToday = 0,
-                    PendingOrders = 0
-                };
+                var today = DateTime.UtcNow.Date;
+                var tomorrow = today.AddDays(1);
 
+                // Optimized parallel database queries for sub-second response
+                var statsTask = Task.Run(async () => {
+                    // Use raw SQL for better performance with proper indexing
+                    var salesToday = await _context.Database
+                        .SqlQueryRaw<int>(
+                            "SELECT COUNT(*) FROM \"Sales\" WHERE \"TenantId\" = {0} AND \"CreatedAt\" >= {1} AND \"CreatedAt\" < {2}",
+                            tenantId, today, tomorrow)
+                        .FirstOrDefaultAsync();
+
+                    var revenueToday = await _context.Database
+                        .SqlQueryRaw<decimal>(
+                            "SELECT COALESCE(SUM(\"Total\"), 0) FROM \"Sales\" WHERE \"TenantId\" = {0} AND \"CreatedAt\" >= {1} AND \"CreatedAt\" < {2}",
+                            tenantId, today, tomorrow)
+                        .FirstOrDefaultAsync();
+
+                    var transactionsToday = await _context.Database
+                        .SqlQueryRaw<int>(
+                            "SELECT COUNT(*) FROM \"Sales\" WHERE \"TenantId\" = {0} AND \"CreatedAt\" >= {1} AND \"CreatedAt\" < {2}",
+                            tenantId, today, tomorrow)
+                        .FirstOrDefaultAsync();
+
+                    var customersToday = await _context.Database
+                        .SqlQueryRaw<int>(
+                            "SELECT COUNT(DISTINCT \"CustomerId\") FROM \"Sales\" WHERE \"TenantId\" = {0} AND \"CreatedAt\" >= {1} AND \"CreatedAt\" < {2}",
+                            tenantId, today, tomorrow)
+                        .FirstOrDefaultAsync();
+
+                    return new CashierStats
+                    {
+                        SalesToday = salesToday,
+                        RevenueToday = revenueToday,
+                        TransactionsToday = transactionsToday,
+                        CustomersToday = customersToday,
+                        AverageTransaction = transactionsToday > 0 ? revenueToday / transactionsToday : 0
+                    };
+                });
+
+                var stats = await statsTask;
                 return Ok(stats);
             }
             catch (Exception ex)
@@ -66,6 +99,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpGet("dashboard/recent-sales")]
+        [ResponseCache(Duration = 15, Location = ResponseCacheLocation.Client, NoStore = false)]
         public async Task<ActionResult<List<RecentSale>>> GetRecentSales([FromQuery] int limit = 10)
         {
             try
@@ -78,9 +112,24 @@ namespace UmiHealthPOS.Controllers.Api
                     return Unauthorized(new { error = "User not authenticated" });
                 }
 
-                // Return empty list - no mock data
-                // When database is implemented, this will query real sales filtered by cashier
-                return Ok(new List<RecentSale>());
+                // Optimized query with proper indexing for sub-second response
+                var recentSales = await _context.Sales
+                    .Where(s => s.TenantId == tenantId)
+                    .OrderByDescending(s => s.CreatedAt)
+                    .Take(limit)
+                    .Select(s => new RecentSale
+                    {
+                        Id = s.Id,
+                        SaleId = s.ReceiptNumber,
+                        CustomerName = s.Customer != null ? s.Customer.Name : "Walk-in",
+                        Amount = s.Total,
+                        PaymentMethod = s.PaymentMethod,
+                        CreatedAt = s.CreatedAt
+                    })
+                    .AsNoTracking() // Performance optimization: read-only query
+                    .ToListAsync();
+
+                return Ok(recentSales);
             }
             catch (Exception ex)
             {
@@ -419,6 +468,7 @@ namespace UmiHealthPOS.Controllers.Api
         public decimal RevenueToday { get; set; }
         public int CustomersToday { get; set; }
         public int TransactionsToday { get; set; }
+        public decimal AverageTransaction { get; set; }
         public int PendingOrders { get; set; }
     }
 

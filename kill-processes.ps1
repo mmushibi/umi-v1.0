@@ -35,8 +35,8 @@ if (-not $isAdmin) {
     Write-Host ""
 }
 
-# Function to kill process by name
-function Kill-ProcessByName {
+# Function to stop process by name
+function Stop-ProcessByName {
     param(
         [string]$ProcessName,
         [string]$DisplayName = $ProcessName
@@ -51,10 +51,10 @@ function Kill-ProcessByName {
             
             if ($Force -or $isAdmin) {
                 try {
-                    $proc.Kill()
-                    Write-Host "  ✓ Killed $($proc.ProcessName) (PID: $($proc.Id))" -ForegroundColor Green
+                    $proc.Stop()
+                    Write-Host "  ✓ Stopped $($proc.ProcessName) (PID: $($proc.Id))" -ForegroundColor Green
                 } catch {
-                    Write-Host "  ✗ Failed to kill $($proc.ProcessName) (PID: $($proc.Id)): $($_.Exception.Message)" -ForegroundColor Red
+                    Write-Host "  ✗ Failed to stop $($proc.ProcessName) (PID: $($proc.Id)): $($_.Exception.Message)" -ForegroundColor Red
                 }
             } else {
                 Write-Host "  ⚠ Skipping $($proc.ProcessName) (use -Force or run as Administrator)" -ForegroundColor Yellow
@@ -99,8 +99,8 @@ function Stop-ServiceSafely {
     Write-Host ""
 }
 
-# Function to kill process by port
-function Kill-ProcessByPort {
+# Function to stop process by port
+function Stop-ProcessByPort {
     param(
         [int]$Port,
         [string]$DisplayName = "Port $Port"
@@ -111,25 +111,25 @@ function Kill-ProcessByPort {
     try {
         $connections = netstat -ano | findstr ":$Port"
         if ($connections) {
-            Write-Host "  Found processes using $DisplayName:" -ForegroundColor Gray
+            Write-Host "  Found processes using port $Port:" -ForegroundColor Gray
             
             foreach ($line in $connections) {
                 if ($line -match 'LISTENING\s+(\d+)$') {
-                    $pid = $matches[1]
-                    $process = Get-Process -Id $pid -ErrorAction SilentlyContinue
+                    $processId = $matches[1]
+                    $process = Get-Process -Id $processId -ErrorAction SilentlyContinue
                     
                     if ($process) {
-                        Write-Host "    Found $($process.ProcessName) (PID: $pid) on $DisplayName" -ForegroundColor Gray
+                        Write-Host "    Found $($process.ProcessName) (PID: $processId) on port $Port" -ForegroundColor Gray
                         
                         if ($Force -or $isAdmin) {
                             try {
-                                $process.Kill()
-                                Write-Host "    ✓ Killed $($process.ProcessName) (PID: $pid) on $DisplayName" -ForegroundColor Green
+                                $process.Stop()
+                                Write-Host "    ✓ Stopped $($process.ProcessName) (PID: $processId) on port $Port" -ForegroundColor Green
                             } catch {
-                                Write-Host "    ✗ Failed to kill $($process.ProcessName) (PID: $pid): $($_.Exception.Message)" -ForegroundColor Red
+                                Write-Host "    ✗ Failed to stop $($process.ProcessName) (PID: $processId): $($_.Exception.Message)" -ForegroundColor Red
                             }
                         } else {
-                            Write-Host "    ⚠ Skipping $($process.ProcessName) on $DisplayName (use -Force or run as Administrator)" -ForegroundColor Yellow
+                            Write-Host "    ⚠ Skipping $($process.ProcessName) on port $Port (use -Force or run as Administrator)" -ForegroundColor Yellow
                         }
                     }
                 }
@@ -138,7 +138,7 @@ function Kill-ProcessByPort {
             Write-Host "  No processes found using $DisplayName" -ForegroundColor Gray
         }
     } catch {
-        Write-Host "  Error checking $DisplayName: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host "  Error checking port $Port: $($_.Exception.Message)" -ForegroundColor Red
     }
     Write-Host ""
 }
@@ -148,7 +148,7 @@ Write-Host "=== Stopping Docker Containers ===" -ForegroundColor Cyan
 Write-Host ""
 
 try {
-    $dockerResult = docker-compose down 2>$null
+    docker-compose down 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) {
         Write-Host "✓ Docker containers stopped successfully" -ForegroundColor Green
     } else {
@@ -163,10 +163,10 @@ Write-Host ""
 Write-Host "=== Killing Application Processes ===" -ForegroundColor Cyan
 Write-Host ""
 
-Kill-ProcessByName -ProcessName "dotnet" -DisplayName ".NET"
-Kill-ProcessByName -ProcessName "node" -DisplayName "Node.js"
-Kill-ProcessByName -ProcessName "nginx" -DisplayName "Nginx"
-Kill-ProcessByName -ProcessName "postgres" -DisplayName "PostgreSQL"
+Stop-ProcessByName -ProcessName "dotnet" -DisplayName ".NET"
+Stop-ProcessByName -ProcessName "node" -DisplayName "Node.js"
+Stop-ProcessByName -ProcessName "nginx" -DisplayName "Nginx"
+Stop-ProcessByName -ProcessName "postgres" -DisplayName "PostgreSQL"
 
 # Stop Windows services
 Write-Host "=== Stopping Windows Services ===" -ForegroundColor Cyan
@@ -180,9 +180,9 @@ Stop-ServiceSafely -ServiceName "postgresql-x64-14" -DisplayName "PostgreSQL Ser
 Write-Host "=== Killing Processes by Port ===" -ForegroundColor Cyan
 Write-Host ""
 
-Kill-ProcessByPort -Port 5432 -DisplayName "PostgreSQL Port"
-Kill-ProcessByPort -Port 5000 -DisplayName "Backend API Port"
-Kill-ProcessByPort -Port 80 -DisplayName "Frontend Port"
+Stop-ProcessByPort -Port 5432 -DisplayName "PostgreSQL Port"
+Stop-ProcessByPort -Port 5000 -DisplayName "Backend API Port"
+Stop-ProcessByPort -Port 80 -DisplayName "Frontend Port"
 
 # Final status check
 Write-Host "=== Final Status Check ===" -ForegroundColor Green
@@ -221,7 +221,7 @@ try {
 Write-Host ""
 
 if ($allClear) {
-    Write-Host "🎉 SUCCESS: All Umi Health POS processes have been killed!" -ForegroundColor Green
+    Write-Host "🎉 SUCCESS: All Umi Health POS processes have been stopped!" -ForegroundColor Green
 } else {
     Write-Host "⚠ Some processes may still be running" -ForegroundColor Yellow
     if (-not $isAdmin) {

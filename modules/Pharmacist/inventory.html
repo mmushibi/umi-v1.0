@@ -344,9 +344,11 @@
                   placeholder="Search by name, generic name, brand, or batch..."
                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
                 >
-                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
+                </div>
               </div>
             </div>
             
@@ -375,20 +377,20 @@
             </div>
           </div>
           
-          <div class="mt-4 flex justify-between items-center">
-            <div class="flex space-x-2">
-              <button @click="showAddProduct = true" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
-                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div class="mt-4 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-3 sm:space-y-0">
+            <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+              <button @click="showAddProduct = true" class="flex-1 sm:flex-none px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors duration-200 font-medium shadow-sm">
+                <svg class="h-5 w-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>Add Product
               </button>
-              <button @click="exportInventory()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
-                <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <button @click="exportInventory()" class="flex-1 sm:flex-none px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors duration-200 font-medium">
+                <svg class="h-5 w-5 mr-2 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>Export
               </button>
             </div>
-            <div class="text-sm text-gray-600">
+            <div class="text-sm text-gray-600 w-full sm:w-auto text-center sm:text-right">
               Showing <span x-text="filteredProducts.length"></span> of <span x-text="products.length"></span> products
             </div>
           </div>
@@ -634,6 +636,134 @@
     </div>
   </div>
 
+  <!-- Edit Product Modal -->
+  <div x-show="showEditProduct" x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+       class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div x-show="showEditProduct" x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+           class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" @click="showEditProduct = false"></div>
+
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+
+      <div x-show="showEditProduct" x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+           x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+           x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+           class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+        <form @submit.prevent="updateProduct()">
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div class="sm:flex sm:items-start">
+              <div class="w-full">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">
+                  Edit Inventory Item
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Inventory Item Name *</label>
+                    <input type="text" x-model="editingItem.inventoryItemName" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Generic Name *</label>
+                    <input type="text" x-model="editingItem.genericName" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Brand Name *</label>
+                    <input type="text" x-model="editingItem.brandName" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Manufacture Date *</label>
+                    <input type="date" x-model="editingItem.manufactureDate" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Batch Number *</label>
+                    <input type="text" x-model="editingItem.batchNumber" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">License Number</label>
+                    <input type="text" x-model="editingItem.licenseNumber"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Zambia REG Number</label>
+                    <input type="text" x-model="editingItem.zambiaRegNumber"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Packing Type *</label>
+                    <select x-model="editingItem.packingType" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                      <option value="">Select Packing Type</option>
+                      <option value="Box">Box</option>
+                      <option value="Bottle">Bottle</option>
+                      <option value="Packet">Packet</option>
+                      <option value="Blister">Blister</option>
+                      <option value="Tube">Tube</option>
+                      <option value="Vial">Vial</option>
+                      <option value="Carton">Carton</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
+                    <input type="number" x-model="editingItem.quantity" min="0" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Unit Price *</label>
+                    <input type="number" x-model="editingItem.unitPrice" min="0" step="0.01" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price *</label>
+                    <input type="number" x-model="editingItem.sellingPrice" min="0" step="0.01" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                  
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Reorder Level</label>
+                    <input type="number" x-model="editingItem.reorderLevel" min="0"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-ocean-600 text-base font-medium text-white hover:bg-ocean-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ocean-500 sm:ml-3 sm:w-auto sm:text-sm">
+              Update Item
+            </button>
+            <button type="button" @click="showEditProduct = false" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ocean-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script>
     function pharmacistInventory() {
       return {
@@ -642,9 +772,11 @@
         selectedPackingType: '',
         stockStatus: '',
         showAddProduct: false,
+        showEditProduct: false,
         currentPage: 1,
         itemsPerPage: 10,
         products: [],
+        editingItem: null,
         newItem: {
           inventoryItemName: '',
           genericName: '',
@@ -662,20 +794,26 @@
         
         init() {
           this.loadInventoryData();
+          // Set up real-time data synchronization every 30 seconds
+          setInterval(() => {
+            this.loadInventoryData();
+          }, 30000);
         },
         
         async loadInventoryData() {
           try {
-            const response = await fetch('/api/tenantadmin/inventory/items');
+            const response = await fetch('/api/inventory/items');
             if (response.ok) {
               this.products = await response.json();
             } else {
               console.error('Failed to load inventory data');
               this.products = [];
+              this.showNotification('Failed to load inventory data', 'error');
             }
           } catch (error) {
             console.error('Error loading inventory data:', error);
             this.products = [];
+            this.showNotification('Error loading inventory data', 'error');
           }
         },
         
@@ -748,7 +886,7 @@
         
         async addProduct() {
           try {
-            const response = await fetch('/api/tenantadmin/inventory/items', {
+            const response = await fetch('/api/inventory/items', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
@@ -763,7 +901,7 @@
               this.showNotification('Inventory item added successfully', 'success');
             } else {
               const error = await response.json();
-              this.showNotification(error.error || 'Failed to add inventory item', 'error');
+              this.showNotification(error.message || 'Failed to add inventory item', 'error');
             }
           } catch (error) {
             console.error('Error adding inventory item:', error);
@@ -789,14 +927,39 @@
         },
         
         editProduct(item) {
-          // For now, just log the item. In a full implementation, this would open an edit modal
-          console.log('Edit product:', item);
-          this.showNotification('Edit functionality coming soon', 'info');
+          // Open edit modal with current item data
+          this.editingItem = { ...item };
+          this.showEditProduct = true;
+        },
+        
+        async updateProduct() {
+          try {
+            const response = await fetch(`/api/inventory/items/${this.editingItem.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(this.editingItem)
+            });
+            
+            if (response.ok) {
+              await this.loadInventoryData();
+              this.showEditProduct = false;
+              this.editingItem = null;
+              this.showNotification('Inventory item updated successfully', 'success');
+            } else {
+              const error = await response.json();
+              this.showNotification(error.message || 'Failed to update inventory item', 'error');
+            }
+          } catch (error) {
+            console.error('Error updating inventory item:', error);
+            this.showNotification('Error updating inventory item', 'error');
+          }
         },
         
         async exportInventory() {
           try {
-            const response = await fetch('/api/tenantadmin/inventory/export-csv');
+            const response = await fetch('/api/inventory/export-csv');
             if (response.ok) {
               const blob = await response.blob();
               const url = window.URL.createObjectURL(blob);
@@ -837,6 +1000,9 @@
         },
         
         logout() {
+          // Direct logout - clear session and redirect
+          sessionStorage.clear();
+          localStorage.clear();
           window.location.href = '../auth/signin.html';
         }
       }

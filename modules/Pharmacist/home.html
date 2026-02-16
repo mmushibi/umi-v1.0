@@ -29,7 +29,6 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="../../wwwroot/js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -121,6 +120,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <span>Help & Training</span>
+          </a>
+          
+          <a href="shift-management.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Shift Management</span>
           </a>
           
           <a href="account.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
@@ -216,6 +222,13 @@
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <span>Help & Training</span>
+          </a>
+          
+          <a href="shift-management.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Shift Management</span>
           </a>
           
           <a href="account.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
@@ -463,60 +476,46 @@
         },
         recentPrescriptions: [],
         
-        init() {
+        async init() {
           this.checkAuth();
-          this.loadDashboardData();
+          // Load data in parallel for faster initial render
+          await Promise.all([
+            this.loadDashboardStats(),
+            this.loadRecentPrescriptions()
+          ]);
           this.startRealTimeUpdates();
         },
         
-        async loadDashboardData() {
-          this.loading = true;
+        async loadDashboardStats() {
+          this.loadingStats = true;
           try {
-            // Fetch dashboard stats from backend API
-            this.loadingStats = true;
-            const statsResponse = await this.makeApiRequest('/api/pharmacist/dashboard/stats');
-            if (statsResponse && statsResponse.ok) {
-              const statsData = await statsResponse.json();
+            const response = await this.makeApiRequest('/api/pharmacist/dashboard/stats');
+            if (response && response.ok) {
+              const statsData = await response.json();
               this.stats = {
                 prescriptionsToday: statsData.prescriptionsToday || 0,
                 patientsToday: statsData.patientsToday || 0,
                 pendingReviews: statsData.pendingReviews || 0,
                 lowStockItems: statsData.lowStockItems || 0
               };
-            } else if (statsResponse) {
-              console.error('Failed to fetch dashboard stats:', statsResponse.statusText);
-              this.showError('Failed to load dashboard statistics');
+            } else if (response) {
+              console.error('Failed to fetch dashboard stats:', response.statusText);
+              // Set default values to prevent UI from breaking
+              this.stats = { prescriptionsToday: 0, patientsToday: 0, pendingReviews: 0, lowStockItems: 0 };
             }
-            this.loadingStats = false;
           } catch (error) {
-            console.error('Error loading dashboard data:', error);
-            this.showError('Error connecting to server');
+            console.error('Error loading dashboard stats:', error);
+            // Set default values to prevent UI from breaking
+            this.stats = { prescriptionsToday: 0, patientsToday: 0, pendingReviews: 0, lowStockItems: 0 };
+          } finally {
             this.loadingStats = false;
           }
-
-          // Fetch recent prescriptions
-          await this.fetchRecentPrescriptions();
-          this.loading = false;
         },
         
-        startRealTimeUpdates() {
-          // Set up real-time updates every 15 seconds for better responsiveness
-          this.updateInterval = setInterval(async () => {
-            await this.fetchRecentPrescriptions();
-            await this.updateStats();
-          }, 15000);
-          
-          // Also fetch immediately on load
-          this.fetchRecentPrescriptions();
-          
-          // Set up WebSocket for real-time updates (if available)
-          this.setupWebSocket();
-        },
-        
-        async fetchRecentPrescriptions() {
+        async loadRecentPrescriptions() {
           this.loadingPrescriptions = true;
           try {
-            const response = await this.makeApiRequest('/api/pharmacist/dashboard/recent-prescriptions?limit=10');
+            const response = await this.makeApiRequest('/api/pharmacist/dashboard/recent-prescriptions?limit=5');
             if (response && response.ok) {
               const prescriptions = await response.json();
               this.recentPrescriptions = prescriptions.map(prescription => ({
@@ -525,25 +524,44 @@
               }));
             } else if (response) {
               console.error('Failed to fetch recent prescriptions:', response.statusText);
+              this.recentPrescriptions = [];
             }
           } catch (error) {
             console.error('Error fetching recent prescriptions:', error);
+            this.recentPrescriptions = [];
           } finally {
             this.loadingPrescriptions = false;
           }
         },
+        
+        startRealTimeUpdates() {
+          // Set up real-time updates every 30 seconds to reduce server load
+          this.updateInterval = setInterval(async () => {
+            await this.updateStats();
+            await this.loadRecentPrescriptions();
+          }, 30000);
+          
+          // Set up WebSocket for real-time updates (if available)
+          this.setupWebSocket();
+        },
+        
         
         async updateStats() {
           try {
             const response = await this.makeApiRequest('/api/pharmacist/dashboard/stats');
             if (response && response.ok) {
               const statsData = await response.json();
-              this.stats = {
+              // Only update if data has changed to prevent unnecessary re-renders
+              const newStats = {
                 prescriptionsToday: statsData.prescriptionsToday || this.stats.prescriptionsToday,
                 patientsToday: statsData.patientsToday || this.stats.patientsToday,
                 pendingReviews: statsData.pendingReviews || this.stats.pendingReviews,
                 lowStockItems: statsData.lowStockItems || this.stats.lowStockItems
               };
+              
+              if (JSON.stringify(newStats) !== JSON.stringify(this.stats)) {
+                this.stats = newStats;
+              }
             }
           } catch (error) {
             console.error('Error updating stats:', error);
@@ -551,24 +569,26 @@
         },
         
         setupWebSocket() {
+          // Only set up WebSocket if not already connected to reduce overhead
+          if (this.connection) {
+            return;
+          }
+          
           try {
-            // Initialize SignalR connection
             const options = {
-              logMessageContent: true,
-              logger: signalR.LogLevel.Information,
+              logMessageContent: false, // Disable verbose logging for performance
+              logger: signalR.LogLevel.Warning, // Only log warnings and errors
               accessTokenFactory: () => {
                 return localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
               }
             };
             
-            // Create connection
             this.connection = new signalR.HubConnectionBuilder()
               .withUrl(`${this.getApiBaseUrl()}/dashboardHub`, options)
-              .withAutomaticReconnect()
-              .configureLogging(signalR.LogLevel.Information)
+              .withAutomaticReconnect([0, 2000, 10000, 30000]) // Custom retry intervals
+              .configureLogging(signalR.LogLevel.Warning)
               .build();
             
-            // Set up event handlers
             this.connection.on('PharmacistStatsUpdate', (data) => {
               this.handleRealtimeUpdate(data);
             });
@@ -578,22 +598,19 @@
             });
             
             this.connection.onreconnected(() => {
-              console.log('SignalR reconnected');
               this.joinPharmacistGroup();
             });
             
-            // Start the connection
             this.connection.start()
               .then(() => {
-                console.log('SignalR connected successfully');
                 this.joinPharmacistGroup();
               })
               .catch(err => {
-                console.error('SignalR connection failed:', err);
+                console.warn('SignalR connection failed, falling back to polling:', err);
               });
               
           } catch (error) {
-            console.error('Error setting up SignalR:', error);
+            console.warn('Error setting up SignalR:', error);
           }
         },
         
@@ -650,7 +667,7 @@
         
         getApiBaseUrl() {
           if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return 'http://localhost:5000';
+            return 'http://localhost:8080';
           }
           return window.location.origin;
         },
@@ -734,8 +751,8 @@
         },
         
         checkAuth() {
-          // Use the auth module to validate access
-          return window.umiAuth.initPageAuth('pharmacist');
+          // Authentication removed - direct access
+          return true;
         },
         
         clearAuthData() {
@@ -756,8 +773,10 @@
             this.connection.stop().catch(err => console.error('Error stopping SignalR connection:', err));
           }
           
-          // Use auth module for logout
-          window.umiAuth.logout();
+          // Direct logout - clear session and redirect
+          sessionStorage.clear();
+          localStorage.clear();
+          window.location.href = '../auth/signin.html';
         }
       }
     }

@@ -28,11 +28,42 @@ namespace UmiHealthPOS.Data
         public required DbSet<Pharmacy> Pharmacies { get; set; } = null!;
         public required DbSet<SubscriptionPlan> SubscriptionPlans { get; set; } = null!;
         public required DbSet<Subscription> Subscriptions { get; set; } = null!;
+        public required DbSet<SubscriptionHistory> SubscriptionHistories { get; set; } = null!;
         public required DbSet<ActivityLog> ActivityLogs { get; set; } = null!;
         public required DbSet<UserSession> UserSessions { get; set; } = null!;
         public required DbSet<User> Users { get; set; } = null!;
         public required DbSet<Branch> Branches { get; set; } = null!;
         public required DbSet<UserBranch> UserBranches { get; set; } = null!;
+        public required DbSet<Tenant> Tenants { get; set; } = null!;
+        public required DbSet<UserAccount> UserAccounts { get; set; } = null!;
+        public required DbSet<DaybookTransaction> DaybookTransactions { get; set; } = null!;
+        public required DbSet<DaybookTransactionItem> DaybookTransactionItems { get; set; } = null!;
+        public required DbSet<Invoice> Invoices { get; set; } = null!;
+        public required DbSet<CreditNote> CreditNotes { get; set; } = null!;
+        public required DbSet<Payment> Payments { get; set; } = null!;
+        public required DbSet<ControlledSubstance> ControlledSubstances { get; set; } = null!;
+        public required DbSet<Shift> Shifts { get; set; } = null!;
+        public required DbSet<ShiftAssignment> ShiftAssignments { get; set; } = null!;
+        public required DbSet<Employee> Employees { get; set; } = null!;
+        public required DbSet<ControlledSubstanceAudit> ControlledSubstanceAudits { get; set; } = null!;
+        
+        // RBAC Entities
+        public required DbSet<Role> Roles { get; set; } = null!;
+        public required DbSet<Permission> Permissions { get; set; } = null!;
+        public required DbSet<RolePermission> RolePermissions { get; set; } = null!;
+        public required DbSet<UserRole> UserRoles { get; set; } = null!;
+        public required DbSet<TenantRole> TenantRoles { get; set; } = null!;
+        
+        // System Entities
+        public required DbSet<Notification> Notifications { get; set; } = null!;
+        public required DbSet<SystemSetting> SystemSettings { get; set; } = null!;
+        public required DbSet<SettingsAuditLog> SettingsAuditLogs { get; set; } = null!;
+        public required DbSet<AppSetting> AppSettings { get; set; } = null!;
+        public required DbSet<ActivityLog> AuditLogs { get; set; } = null!;
+        
+        // Application Feature Management
+        public required DbSet<ApplicationFeature> ApplicationFeatures { get; set; } = null!;
+        public required DbSet<SubscriptionPlanFeature> SubscriptionPlanFeatures { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

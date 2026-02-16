@@ -7,7 +7,6 @@ out/
 *.pdb
 *.json
 *.jsproj
-*.csproj
 *.user
 *.suo
 *.cache

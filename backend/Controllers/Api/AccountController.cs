@@ -611,61 +611,61 @@ namespace UmiHealthPOS.Controllers.Api
 
     public class UpdateProfileRequest
     {
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string Email { get; set; }
-        public string PhoneNumber { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
     }
 
     public class UpdatePharmacyRequest
     {
         [Required(ErrorMessage = "Pharmacy name is required")]
         [StringLength(200, ErrorMessage = "Pharmacy name cannot exceed 200 characters")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [Required(ErrorMessage = "License number is required")]
         [StringLength(50, ErrorMessage = "License number cannot exceed 50 characters")]
-        public string LicenseNumber { get; set; }
+        public string? LicenseNumber { get; set; }
 
         [Required(ErrorMessage = "Address is required")]
         [StringLength(500, ErrorMessage = "Address cannot exceed 500 characters")]
-        public string Address { get; set; }
+        public string? Address { get; set; }
 
         [Required(ErrorMessage = "City is required")]
         [StringLength(100, ErrorMessage = "City cannot exceed 100 characters")]
-        public string City { get; set; }
+        public string? City { get; set; }
 
         [Required(ErrorMessage = "Province is required")]
         [StringLength(100, ErrorMessage = "Province cannot exceed 100 characters")]
-        public string Province { get; set; }
+        public string? Province { get; set; }
 
         [Required(ErrorMessage = "Postal code is required")]
         [StringLength(20, ErrorMessage = "Postal code cannot exceed 20 characters")]
-        public string PostalCode { get; set; }
+        public string? PostalCode { get; set; }
 
         [Required(ErrorMessage = "Phone number is required")]
         [StringLength(20, ErrorMessage = "Phone number cannot exceed 20 characters")]
-        public string Phone { get; set; }
+        public string? Phone { get; set; }
 
         [Required(ErrorMessage = "Email is required")]
         [EmailAddress(ErrorMessage = "Invalid email format")]
         [StringLength(200, ErrorMessage = "Email cannot exceed 200 characters")]
-        public string Email { get; set; }
+        public string? Email { get; set; }
     }
 
     public class ChangePasswordRequest
     {
         [Required(ErrorMessage = "Current password is required")]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 100 characters")]
-        public string CurrentPassword { get; set; }
+        public string? CurrentPassword { get; set; }
 
         [Required(ErrorMessage = "New password is required")]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 100 characters")]
-        public string NewPassword { get; set; }
+        public string? NewPassword { get; set; }
 
         [Required(ErrorMessage = "Confirm password is required")]
         [StringLength(100, MinimumLength = 8, ErrorMessage = "Password must be between 8 and 100 characters")]
-        public string ConfirmPassword { get; set; }
+        public string? ConfirmPassword { get; set; }
     }
 
     public class ToggleTwoFactorRequest
@@ -683,13 +683,13 @@ namespace UmiHealthPOS.Controllers.Api
     public class UpdatePreferencesRequest
     {
         [StringLength(50, ErrorMessage = "Theme cannot exceed 50 characters")]
-        public string Theme { get; set; }
+        public string? Theme { get; set; }
 
         [StringLength(10, ErrorMessage = "Language cannot exceed 10 characters")]
-        public string Language { get; set; }
+        public string? Language { get; set; }
 
         [StringLength(50, ErrorMessage = "Time zone cannot exceed 50 characters")]
-        public string TimeZone { get; set; }
+        public string? TimeZone { get; set; }
 
         public bool EmailNotifications { get; set; }
         public bool PushNotifications { get; set; }
@@ -698,6 +698,6 @@ namespace UmiHealthPOS.Controllers.Api
     public class UpgradeSubscriptionRequest
     {
         [Required]
-        public string PlanId { get; set; }
+        public string? PlanId { get; set; }
     }
 }

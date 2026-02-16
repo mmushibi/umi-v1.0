@@ -9,13 +9,15 @@ using UmiHealthPOS.Models;
 
 namespace UmiHealthPOS.Data
 {
-    public class DataSeeder
+    public static class DataSeeder
     {
         public static async Task SeedDataAsync(IServiceProvider serviceProvider)
         {
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             var logger = scope.ServiceProvider.GetRequiredService<ILogger<DataSeeder>>();
+
+            await new SubscriptionDataSeeder(context, logger).SeedSubscriptionDataAsync();
 
             try
             {

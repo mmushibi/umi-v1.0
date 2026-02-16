@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en" x-data="tenantImpersonationPage()" x-init="init()">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tenant Impersonation - Umi Health</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'dark-bg': '#11191f',
+            'light-bg': '#f4f3ec',
+            'yellow-accent': '#ffed90',
+            'orange-accent': '#ff9500',
+            'green-accent': '#34c759'
+          },
+          fontFamily: {
+            'instrument': ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+  </style>
+</head>
+<body class="bg-light-bg text-gray-900 font-instrument">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Mobile Menu Overlay -->
+    <div x-show="mobileMenuOpen" x-transition.opacity
+         @click="mobileMenuOpen = false"
+         class="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"></div>
+
+<!-- Sidebar -->
+    <aside class="w-64 bg-dark-bg text-white flex flex-col fixed h-full z-30 transform transition-transform duration-300 ease-in-out lg:translate-x-0"
+           :class="{'-translate-x-full': !mobileMenuOpen, 'translate-x-0': mobileMenuOpen}">
+      <!-- Logo -->
+      <div class="p-6 border-b border-gray-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 bg-yellow-accent rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-dark-bg" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+            </svg>
+          </div>
+          <span class="text-xl font-semibold">UmiHealth</span>
+        </div>
+      </div>
+
+<!-- Navigation -->
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <a href="home.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="tenants.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <span>Tenants</span>
+        </a>
+        <a href="employees.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+          </svg>
+          <span>Employee Management</span>
+        </a>
+        <a href="billing.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          <span>Billing & Payments</span>
+        </a>
+        <a href="tenant-impersonation.html" class="flex items-center space-x-3 rounded-lg bg-white text-dark-bg px-4 py-3 font-medium">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          <span>Tenant Impersonation</span>
+        </a>
+        <a href="controlled-substances.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+          <span>Controlled Substances</span>
+        </a>
+        <a href="categories.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <span>Categories</span>
+        </a>
+        <a href="subscriptions.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          <span>Subscriptions</span>
+        </a>
+        <a href="audit-logs.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <span>Audit Logs</span>
+        </a>
+        <a href="rbac.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          <span>RBAC</span>
+        </a>
+        <a href="notifications.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          <span>Notifications</span>
+        </a>
+        <a href="settings.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+<!-- User Profile -->
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex items-center space-x-3">
+          <img src="https://picsum.photos/seed/superadmin/40/40.jpg" alt="Super Admin" class="w-10 h-10 rounded-full">
+          <div class="flex-1">
+            <p class="text-sm font-medium">Super Admin</p>
+            <p class="text-xs text-gray-400">admin@umihealth.com</p>
+          </div>
+          <button @click="logout()" class="text-gray-400 hover:text-white" title="Sign out">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+<!-- Main Content Area -->
+    <div class="flex-1 ml-0 lg:ml-64">
+      <!-- Main Content -->
+      <main class="flex-1 bg-light-bg p-4 lg:p-6 overflow-y-auto custom-scrollbar h-screen">
+        <!-- Mobile Header -->
+        <div class="lg:hidden flex items-center justify-between mb-4">
+          <button @click="mobileMenuOpen = true" class="text-gray-600 hover:text-gray-900" title="Open mobile menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <h1 class="text-lg font-semibold text-gray-900">Tenant Impersonation</h1>
+        </div>
+
+<!-- Desktop Header -->
+        <div class="hidden lg:block mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">Tenant Impersonation</h1>
+          <p class="text-gray-600">Securely access tenant environments for support and troubleshooting</p>
+        </div>
+
+<!-- Current Impersonation Status -->
+        <div x-show="currentImpersonation" class="mb-6">
+          <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <div class="p-2 rounded-full bg-orange-100">
+                  <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 class="text-sm font-medium text-orange-800">Currently Impersonating</h3>
+                  <p class="text-sm text-orange-600" x-text="`You are viewing as: ${currentImpersonation.tenantName}`"></p>
+                </div>
+              </div>
+              <button @click="stopImpersonation()" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-sm font-medium">
+                Stop Impersonation
+              </button>
+            </div>
+          </div>
+        </div>
+
+<!-- Impersonation Overview -->
+        <div x-show="loading" class="flex items-center justify-center py-12">
+          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-accent"></div>
+        </div>
+
+        <div x-show="error" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <div class="flex items-center">
+            <svg class="w-5 h-5 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span class="text-red-800" x-text="error"></span>
+          </div>
+        </div>
+
+        <div x-show="!loading && !error" class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-blue-100">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Total Tenants</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="stats.totalTenants"></p>
+                <p class="text-xs text-gray-600">Available for access</p>
+              </div>
+            </div>
+          </div>
+
+<div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-green-100">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Active Sessions</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="stats.activeSessions"></p>
+                <p class="text-xs text-green-600">Currently active</p>
+              </div>
+            </div>
+          </div>
+
+<div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-yellow-accent">
+                <svg class="w-6 h-6 text-dark-bg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Today's Sessions</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="stats.todaySessions"></p>
+                <p class="text-xs text-orange-600">Started today</p>
+              </div>
+            </div>
+          </div>
+
+<div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-purple-100">
+                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Audit Logs</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="stats.monthlyLogs"></p>
+                <p class="text-xs text-gray-600">This month</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+<!-- Tenant Selection -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden mb-6">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Select Tenant to Impersonate</h2>
+          </div>
+          <div class="p-6">
+            <div x-show="loading" class="flex items-center justify-center py-8">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-accent mr-3"></div>
+              <span class="text-gray-600">Loading tenants...</span>
+            </div>
+            
+            <div x-show="!loading">
+              <div class="flex flex-col lg:flex-row gap-4 mb-6">
+              <div class="flex-1">
+                <label class="sr-only" for="tenant-search">Search tenants</label>
+                <input type="text" id="tenant-search" x-model="searchTerm" @input="filterTenants()" placeholder="Search tenants..." class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+              </div>
+              <select x-model="statusFilter" @change="filterTenants()" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent w-full lg:w-auto" title="Filter by status">
+                <option value="">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Suspended">Suspended</option>
+              </select>
+              <div class="flex gap-2">
+                <button @click="viewMode = 'grid'" 
+                        :class="viewMode === 'grid' ? 'bg-yellow-accent text-dark-bg' : 'bg-gray-100 text-gray-600'"
+                        class="px-3 py-2 rounded-lg font-medium transition-colors" title="Grid View">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path>
+                  </svg>
+                </button>
+                <button @click="viewMode = 'list'" 
+                        :class="viewMode === 'list' ? 'bg-yellow-accent text-dark-bg' : 'bg-gray-100 text-gray-600'"
+                        class="px-3 py-2 rounded-lg font-medium transition-colors" title="List View">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                  </svg>
+                </button>
+                <button @click="exportTenants()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors" title="Export Tenants">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Grid View -->
+            <div x-show="viewMode === 'grid'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <template x-for="tenant in filteredTenants" :key="tenant.id">
+                <div class="border border-gray-200 rounded-lg p-4 hover:border-yellow-accent transition-colors">
+                  <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center">
+                      <img :src="tenant.logo" :alt="tenant.name" class="w-10 h-10 rounded-lg mr-3">
+                      <div>
+                        <h3 class="font-medium text-gray-900" x-text="tenant.name"></h3>
+                        <p class="text-sm text-gray-500" x-text="tenant.plan"></p>
+                      </div>
+                    </div>
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                          :class="{
+                            'bg-green-100 text-green-800': tenant.status === 'Active',
+                            'bg-yellow-100 text-yellow-800': tenant.status === 'Inactive',
+                            'bg-red-100 text-red-800': tenant.status === 'Suspended'
+                          }" x-text="tenant.status"></span>
+                  </div>
+                  <div class="space-y-2 text-sm text-gray-600 mb-4">
+                    <div class="flex justify-between">
+                      <span>Users:</span>
+                      <span x-text="tenant.userCount"></span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span>Last Login:</span>
+                      <span x-text="tenant.lastLogin"></span>
+                    </div>
+                  </div>
+                  <button @click="startImpersonation(tenant)" 
+                          :disabled="tenant.status === 'Suspended' || currentImpersonation || loading"
+                          class="w-full px-4 py-2 bg-yellow-accent hover:bg-yellow-300 text-dark-bg rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span x-show="!loading">Impersonate</span>
+                    <span x-show="loading">Processing...</span>
+                  </button>
+                </div>
+              </template>
+            </div>
+
+            <!-- List View -->
+            <div x-show="viewMode === 'list'" class="overflow-x-auto">
+              <table class="w-full min-w-[800px]">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Users</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <template x-for="tenant in filteredTenants" :key="tenant.id">
+                    <tr class="hover:bg-gray-50">
+                      <td class="px-6 py-4">
+                        <div class="flex items-center">
+                          <img :src="tenant.logo" :alt="tenant.name" class="w-8 h-8 rounded-lg mr-3">
+                          <div>
+                            <div class="text-sm font-medium text-gray-900" x-text="tenant.name"></div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 text-sm text-gray-900" x-text="tenant.plan"></td>
+                      <td class="px-6 py-4">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                              :class="{
+                                'bg-green-100 text-green-800': tenant.status === 'Active',
+                                'bg-yellow-100 text-yellow-800': tenant.status === 'Inactive',
+                                'bg-red-100 text-red-800': tenant.status === 'Suspended'
+                              }" x-text="tenant.status"></span>
+                      </td>
+                      <td class="px-6 py-4 text-sm text-gray-900" x-text="tenant.userCount"></td>
+                      <td class="px-6 py-4 text-sm text-gray-900" x-text="tenant.lastLogin"></td>
+                      <td class="px-6 py-4">
+                        <button @click="startImpersonation(tenant)" 
+                                :disabled="tenant.status === 'Suspended' || currentImpersonation || loading"
+                                class="px-3 py-1 bg-yellow-accent hover:bg-yellow-300 text-dark-bg rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                          <span x-show="!loading">Impersonate</span>
+                          <span x-show="loading">Processing...</span>
+                        </button>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+            
+            <div x-show="!loading && filteredTenants.length === 0" class="text-center py-8 text-gray-500">
+              No tenants found matching your criteria.
+            </div>
+            </div>
+          </div>
+        </div>
+
+<!-- Recent Impersonation Logs -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-900">Recent Impersonation Activity</h2>
+            <button @click="exportLogs()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium">
+              Export Logs
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[1000px]">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <template x-for="log in impersonationLogs" :key="log.id">
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm text-gray-900" x-text="log.timestamp"></td>
+                    <td class="px-6 py-4 text-sm text-gray-900" x-text="log.admin"></td>
+                    <td class="px-6 py-4 text-sm text-gray-900" x-text="log.tenant"></td>
+                    <td class="px-6 py-4">
+                      <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                            :class="{
+                              'bg-green-100 text-green-800': log.action === 'Started',
+                              'bg-orange-100 text-orange-800': log.action === 'Stopped'
+                            }" x-text="log.action"></span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900" x-text="log.duration"></td>
+                    <td class="px-6 py-4 text-sm text-gray-500" x-text="log.ipAddress"></td>
+                    <td class="px-6 py-4">
+                      <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                            :class="{
+                              'bg-green-100 text-green-800': log.status === 'Success',
+                              'bg-red-100 text-red-800': log.status === 'Failed'
+                            }" x-text="log.status"></span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+<script>
+    function tenantImpersonationPage() {
+      return {
+        mobileMenuOpen: false,
+        currentImpersonation: null,
+        searchTerm: '',
+        statusFilter: '',
+        viewMode: 'grid', // Default to grid view
+        tenants: [],
+        impersonationLogs: [],
+        stats: {
+          totalTenants: 0,
+          activeSessions: 0,
+          todaySessions: 0,
+          monthlyLogs: 0
+        },
+        loading: true,
+        error: null,
+        async init() {
+          await this.loadData();
+          // Check for existing impersonation session
+          const savedImpersonation = sessionStorage.getItem('impersonatingTenant');
+          if (savedImpersonation) {
+            this.currentImpersonation = JSON.parse(savedImpersonation);
+          }
+          
+          // Set up real-time updates
+          this.setupRealTimeUpdates();
+        },
+        async loadData() {
+          this.loading = true;
+          this.error = null;
+          
+          try {
+            await Promise.all([
+              this.loadStats(),
+              this.loadTenants(),
+              this.loadImpersonationLogs(),
+              this.loadCurrentImpersonation()
+            ]);
+          } catch (error) {
+            console.error('Error loading data:', error);
+            this.error = 'Failed to load data. Please try again.';
+          } finally {
+            this.loading = false;
+          }
+        },
+        async loadStats() {
+          try {
+            const response = await fetch('/api/superadmin/impersonation/stats', {
+              headers: {
+                'Authorization': `Bearer ${this.getAuthToken()}`
+              }
+            });
+            
+            if (!response.ok) throw new Error('Failed to load stats');
+            
+            this.stats = await response.json();
+          } catch (error) {
+            console.error('Error loading stats:', error);
+          }
+        },
+        async loadTenants() {
+          try {
+            const response = await fetch('/api/superadmin/impersonation/tenants', {
+              headers: {
+                'Authorization': `Bearer ${this.getAuthToken()}`
+              }
+            });
+            
+            if (!response.ok) throw new Error('Failed to load tenants');
+            
+            const tenantsData = await response.json();
+            this.tenants = tenantsData.map(tenant => ({
+              ...tenant,
+              name: tenant.pharmacyName,
+              plan: tenant.subscriptionPlan,
+              lastLogin: tenant.lastLogin ? new Date(tenant.lastLogin).toLocaleDateString() : 'Never'
+            }));
+            
+            this.filteredTenants = this.tenants;
+          } catch (error) {
+            console.error('Error loading tenants:', error);
+          }
+        },
+        async loadImpersonationLogs() {
+          try {
+            const response = await fetch('/api/superadmin/impersonation/logs', {
+              headers: {
+                'Authorization': `Bearer ${this.getAuthToken()}`
+              }
+            });
+            
+            if (!response.ok) throw new Error('Failed to load logs');
+            
+            this.impersonationLogs = await response.json();
+          } catch (error) {
+            console.error('Error loading logs:', error);
+          }
+        },
+        async loadCurrentImpersonation() {
+          try {
+            const response = await fetch('/api/superadmin/impersonation/current', {
+              headers: {
+                'Authorization': `Bearer ${this.getAuthToken()}`
+              }
+            });
+            
+            if (!response.ok) throw new Error('Failed to load current impersonation');
+            
+            const data = await response.json();
+            if (data.currentImpersonation) {
+              this.currentImpersonation = {
+                tenantId: data.currentImpersonation.tenantId,
+                tenantName: data.currentImpersonation.tenantName,
+                startTime: new Date(data.currentImpersonation.startTime)
+              };
+              sessionStorage.setItem('impersonatingTenant', JSON.stringify(this.currentImpersonation));
+            }
+          } catch (error) {
+            console.error('Error loading current impersonation:', error);
+          }
+        },
+        setupRealTimeUpdates() {
+          // Set up periodic updates every 30 seconds
+          setInterval(async () => {
+            if (!this.loading) {
+              await this.loadStats();
+              await this.loadCurrentImpersonation();
+            }
+          }, 30000);
+          
+          // Set up real-time logs updates every 10 seconds
+          setInterval(async () => {
+            if (!this.loading) {
+              await this.loadImpersonationLogs();
+            }
+          }, 10000);
+        },
+        getAuthToken() {
+          return localStorage.getItem('umihealthAuthToken') || sessionStorage.getItem('umihealthAuthToken') || '';
+        },
+        filterTenants() {
+          this.filteredTenants = this.tenants.filter(tenant => {
+            const matchesSearch = !this.searchTerm || 
+              tenant.name.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+              tenant.adminName?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+              tenant.adminEmail?.toLowerCase().includes(this.searchTerm.toLowerCase());
+            const matchesStatus = !this.statusFilter || tenant.status === this.statusFilter;
+            return matchesSearch && matchesStatus;
+          });
+        },
+        async startImpersonation(tenant) {
+          try {
+            this.loading = true;
+            
+            const response = await fetch('/api/superadmin/impersonation/start', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.getAuthToken()}`
+              },
+              body: JSON.stringify({
+                tenantId: tenant.id,
+                reason: 'Support and troubleshooting'
+              })
+            });
+            
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to start impersonation');
+            }
+            
+            const result = await response.json();
+            
+            // Update local state
+            this.currentImpersonation = {
+              tenantId: tenant.id,
+              tenantName: tenant.name,
+              startTime: new Date(result.startTime)
+            };
+            
+            // Store impersonation state in sessionStorage
+            sessionStorage.setItem('impersonatingTenant', JSON.stringify(this.currentImpersonation));
+            sessionStorage.setItem('impersonationToken', result.impersonationToken);
+            
+            // Refresh data
+            await this.loadData();
+            
+            // Open tenant account in new tab
+            setTimeout(() => {
+              const tenantUrl = result.tenantDashboardUrl || `/tenant/${tenant.tenantId}/dashboard`;
+              window.open(tenantUrl, '_blank');
+            }, 500);
+            
+          } catch (error) {
+            console.error('Error starting impersonation:', error);
+            alert(`Failed to start impersonation: ${error.message}`);
+          } finally {
+            this.loading = false;
+          }
+        },
+        async stopImpersonation() {
+          try {
+            this.loading = true;
+            
+            const response = await fetch('/api/superadmin/impersonation/stop', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.getAuthToken()}`
+              }
+            });
+            
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to stop impersonation');
+            }
+            
+            // Clear local state
+            sessionStorage.removeItem('impersonatingTenant');
+            sessionStorage.removeItem('impersonationToken');
+            this.currentImpersonation = null;
+            
+            // Refresh data
+            await this.loadData();
+            
+          } catch (error) {
+            console.error('Error stopping impersonation:', error);
+            alert(`Failed to stop impersonation: ${error.message}`);
+          } finally {
+            this.loading = false;
+          }
+        },
+        calculateDuration(startTime) {
+          const now = new Date();
+          const diff = now - startTime;
+          const hours = Math.floor(diff / (1000 * 60 * 60));
+          const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+if (hours > 0) {
+            return `${hours}h ${minutes}min`;
+          }
+          return `${minutes}min`;
+        },
+        exportLogs() {
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+          this.exportToCSV(this.impersonationLogs, `impersonation-logs-${timestamp}.csv`, [
+            'timestamp', 'admin', 'tenant', 'action', 'duration', 'ipAddress', 'status'
+          ]);
+        },
+        exportTenants() {
+          const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+          const exportData = this.filteredTenants.map(tenant => ({
+            id: tenant.id,
+            tenantId: tenant.tenantId,
+            name: tenant.name,
+            adminName: tenant.adminName,
+            adminEmail: tenant.adminEmail,
+            phoneNumber: tenant.phoneNumber,
+            plan: tenant.plan,
+            status: tenant.status,
+            userCount: tenant.userCount,
+            lastLogin: tenant.lastLogin,
+            createdAt: tenant.createdAt ? new Date(tenant.createdAt).toLocaleDateString() : ''
+          }));
+          this.exportToCSV(exportData, `tenants-${timestamp}.csv`, [
+            'id', 'tenantId', 'name', 'adminName', 'adminEmail', 'phoneNumber', 'plan', 'status', 'userCount', 'lastLogin', 'createdAt'
+          ]);
+        },
+        exportToCSV(data, filename, headers) {
+          if (data.length === 0) {
+            alert('No data to export');
+            return;
+          }
+
+          // Create CSV content
+          const csvHeaders = headers.join(',');
+          const csvRows = data.map(row => 
+            headers.map(header => {
+              const value = row[header] || '';
+              // Escape commas and quotes in values
+              const escapedValue = String(value).replace(/"/g, '""');
+              return escapedValue.includes(',') ? `"${escapedValue}"` : escapedValue;
+            }).join(',')
+          );
+          
+          const csvContent = [csvHeaders, ...csvRows].join('\n');
+          
+          // Create download link
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          link.setAttribute('href', url);
+          link.setAttribute('download', filename);
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        },
+        logout() {
+          sessionStorage.clear();
+          localStorage.removeItem('umihealthUserRole');
+          window.location.href = '../auth/signin.html';
+        }
+      }
+    }
+  </script>
+</body>
+</html>

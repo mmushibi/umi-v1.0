@@ -904,6 +904,9 @@
         },
         
         logout() {
+          // Direct logout - clear session and redirect
+          sessionStorage.clear();
+          localStorage.clear();
           window.location.href = '../auth/signin.html';
         },
         

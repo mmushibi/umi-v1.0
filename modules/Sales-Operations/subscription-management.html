@@ -73,14 +73,14 @@
           
           <a href="subscription-management.html" class="flex items-center space-x-3 text-gray-700 bg-ocean-50 rounded-lg px-3 py-2 text-sm font-medium">
             <svg class="h-5 w-5 text-ocean-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
             </svg>
             <span>Subscriptions</span>
           </a>
           
           <a href="subscription-history.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v1a3 3 0 003 3h0a3 3 0 003-3v-1m-6 0h6M9 7h6m-6 4h6m-6-8h6a2 2 0 012 2v8a2 2 0 01-2 2H9a2 2 0 01-2-2V5a2 2 0 012-2z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <span>Subscription History</span>
           </a>
@@ -133,14 +133,14 @@
           
           <a href="subscription-management.html" class="flex items-center space-x-3 text-gray-700 bg-ocean-50 rounded-lg px-3 py-2 text-sm font-medium">
             <svg class="h-5 w-5 text-ocean-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
             </svg>
             <span>Subscriptions</span>
           </a>
           
           <a href="subscription-history.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v1a3 3 0 003 3h0a3 3 0 003-3v-1m-6 0h6M9 7h6m-6 4h6m-6-8h6a2 2 0 012 2v8a2 2 0 01-2 2H9a2 2 0 01-2-2V5a2 2 0 012-2z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
             <span>Subscription History</span>
           </a>
@@ -300,7 +300,7 @@
                 <template x-for="subscription in filteredSubscriptions" :key="subscription.id">
                   <tr>
                     <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="text-sm font-medium text-gray-900" x-text="subscription.tenant"></div>
+                      <div class="text-sm font-medium text-gray-900 cursor-pointer hover:text-ocean-600" @click="viewTenantHistory(subscription)" x-text="subscription.tenant"></div>
                       <div class="text-sm text-gray-500" x-text="subscription.email"></div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
@@ -315,6 +315,7 @@
                             :class="getStatusBadgeClass(subscription.status)" x-text="subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)"></span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button @click="viewTenantHistory(subscription)" class="text-ocean-600 hover:text-ocean-900 mr-3">View History</button>
                       <button @click="editSubscription(subscription)" class="text-ocean-600 hover:text-ocean-900 mr-3">Edit</button>
                       <button @click="cancelSubscription(subscription)" class="text-red-600 hover:text-red-900">Cancel</button>
                     </td>
@@ -334,20 +335,60 @@
           <h3 class="text-lg font-medium text-gray-900" x-text="editingSubscription ? 'Edit Subscription' : 'Add New Subscription'"></h3>
           <div class="mt-4 space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Tenant Name</label>
-              <input type="text" x-model="subscriptionForm.tenant" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Pharmacy Name</label>
+              <div class="relative">
+                <input 
+                  type="text" 
+                  x-model="subscriptionForm.pharmacyName" 
+                  @input="searchPharmacies()"
+                  @focus="showPharmacySuggestions = true"
+                  @blur="setTimeout(() => showPharmacySuggestions = false, 200)"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500"
+                  placeholder="Type to search pharmacies..."
+                >
+                <div x-show="showPharmacySuggestions && pharmacySuggestions.length > 0" 
+                     class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                  <template x-for="pharmacy in pharmacySuggestions" :key="pharmacy.id">
+                    <div @click="selectPharmacy(pharmacy)" 
+                         class="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0">
+                      <div class="font-medium" x-text="pharmacy.name"></div>
+                      <div class="text-sm text-gray-500" x-text="pharmacy.phone"></div>
+                    </div>
+                  </template>
+                </div>
+              </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input type="email" x-model="subscriptionForm.email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <div class="relative">
+                <input 
+                  type="tel" 
+                  x-model="subscriptionForm.phoneNumber" 
+                  @input="searchPhoneNumbers()"
+                  @focus="showPhoneSuggestions = true"
+                  @blur="setTimeout(() => showPhoneSuggestions = false, 200)"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500"
+                  placeholder="Type to search phone numbers..."
+                >
+                <div x-show="showPhoneSuggestions && phoneSuggestions.length > 0" 
+                     class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-40 overflow-y-auto">
+                  <template x-for="phone in phoneSuggestions" :key="phone.id">
+                    <div @click="selectPhoneNumber(phone)" 
+                         class="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0">
+                      <div class="font-medium" x-text="phone.phone"></div>
+                      <div class="text-sm text-gray-500" x-text="pharmacy.name"></div>
+                    </div>
+                  </template>
+                </div>
+              </div>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Plan</label>
               <select x-model="subscriptionForm.plan" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
                 <option value="">Select Plan</option>
-                <option value="basic">Basic - $50/month</option>
-                <option value="professional">Professional - $150/month</option>
-                <option value="enterprise">Enterprise - $500/month</option>
+                <template x-for="plan in subscriptionPlans" :key="plan.id">
+                  <option :value="plan.id" x-text="plan.name"></option>
+                </template>
               </select>
             </div>
             <div>
@@ -370,6 +411,149 @@
         </div>
       </div>
     </div>
+
+    <!-- Tenant History Modal -->
+    <div x-show="showTenantHistoryModal" x-transition.opacity class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-10 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-lg bg-white">
+        <div class="mt-3">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-medium text-gray-900">
+              <span x-text="selectedTenant?.tenant"></span> - Subscription History
+            </h3>
+            <button @click="closeTenantHistoryModal()" class="text-gray-400 hover:text-gray-600">
+              <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- Tenant Info -->
+          <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p class="text-sm font-medium text-gray-500">Pharmacy Name</p>
+                <p class="text-sm font-bold text-gray-900" x-text="selectedTenant?.tenant"></p>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500">Phone Number</p>
+                <p class="text-sm font-bold text-gray-900" x-text="selectedTenant?.email"></p>
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-500">Current Status</p>
+                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                      :class="getStatusBadgeClass(selectedTenant?.status)" x-text="selectedTenant?.status?.charAt(0)?.toUpperCase() + selectedTenant?.status?.slice(1)"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8">
+              <button @click="activeHistoryTab = 'subscription'" 
+                      :class="activeHistoryTab === 'subscription' ? 'border-ocean-500 text-ocean-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                      class="py-2 px-1 border-b-2 font-medium text-sm">
+                Subscription History
+              </button>
+              <button @click="activeHistoryTab = 'payment'" 
+                      :class="activeHistoryTab === 'payment' ? 'border-ocean-500 text-ocean-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                      class="py-2 px-1 border-b-2 font-medium text-sm">
+                Payment History
+              </button>
+              <button @click="activeHistoryTab = 'activity'" 
+                      :class="activeHistoryTab === 'activity' ? 'border-ocean-500 text-ocean-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                      class="py-2 px-1 border-b-2 font-medium text-sm">
+                Activity Log
+              </button>
+            </nav>
+          </div>
+
+          <!-- Tab Content -->
+          <div class="mt-6">
+            <!-- Subscription History Tab -->
+            <div x-show="activeHistoryTab === 'subscription'" class="space-y-4">
+              <div class="bg-white border border-gray-200 rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-200">
+                  <h4 class="text-md font-semibold text-gray-900">Subscription Changes</h4>
+                </div>
+                <div class="divide-y divide-gray-200">
+                  <template x-for="history in tenantSubscriptionHistory" :key="history.id">
+                    <div class="px-6 py-4">
+                      <div class="flex justify-between items-start">
+                        <div>
+                          <p class="text-sm font-medium text-gray-900" x-text="history.action"></p>
+                          <p class="text-sm text-gray-500" x-text="history.description"></p>
+                          <p class="text-xs text-gray-400 mt-1" x-text="history.date"></p>
+                        </div>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                              :class="history.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'"
+                              x-text="history.status"></span>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <!-- Payment History Tab -->
+            <div x-show="activeHistoryTab === 'payment'" class="space-y-4">
+              <div class="bg-white border border-gray-200 rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-200">
+                  <h4 class="text-md font-semibold text-gray-900">Payment Records</h4>
+                </div>
+                <div class="divide-y divide-gray-200">
+                  <template x-for="payment in tenantPaymentHistory" :key="payment.id">
+                    <div class="px-6 py-4">
+                      <div class="flex justify-between items-start">
+                        <div>
+                          <p class="text-sm font-medium text-gray-900" x-text="payment.description"></p>
+                          <p class="text-sm text-gray-500" x-text="payment.method"></p>
+                          <p class="text-xs text-gray-400 mt-1" x-text="payment.date"></p>
+                        </div>
+                        <div class="text-right">
+                          <p class="text-sm font-bold text-gray-900" x-text="payment.amount"></p>
+                          <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                                :class="payment.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+                                x-text="payment.status"></span>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
+            <!-- Activity Log Tab -->
+            <div x-show="activeHistoryTab === 'activity'" class="space-y-4">
+              <div class="bg-white border border-gray-200 rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-200">
+                  <h4 class="text-md font-semibold text-gray-900">Recent Activity</h4>
+                </div>
+                <div class="divide-y divide-gray-200">
+                  <template x-for="activity in tenantActivityLog" :key="activity.id">
+                    <div class="px-6 py-4">
+                      <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                          <div class="h-8 w-8 rounded-full bg-ocean-100 flex items-center justify-center">
+                            <svg class="h-4 w-4 text-ocean-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                          </div>
+                        </div>
+                        <div class="flex-1">
+                          <p class="text-sm font-medium text-gray-900" x-text="activity.action"></p>
+                          <p class="text-sm text-gray-500" x-text="activity.details"></p>
+                          <p class="text-xs text-gray-400 mt-1" x-text="activity.date"></p>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -377,27 +561,50 @@
       return {
         mobileMenuOpen: false,
         showSubscriptionModal: false,
+        showTenantHistoryModal: false,
         editingSubscription: null,
+        selectedTenant: null,
+        activeHistoryTab: 'subscription',
         searchTerm: '',
         selectedPlan: '',
         selectedStatus: '',
-        subscriptions: [
-          { id: 1, tenant: 'MediCare Pharmacy', email: 'admin@medicare.com', plan: 'basic', amount: '$50', billingCycle: 'Monthly', nextBilling: '2024-02-15', status: 'active', startDate: '2024-01-15' },
-          { id: 2, tenant: 'HealthPlus Group', email: 'info@healthplus.com', plan: 'professional', amount: '$150', billingCycle: 'Monthly', nextBilling: '2024-02-20', status: 'active', startDate: '2024-01-20' },
-          { id: 3, tenant: 'City Hospital', email: 'contact@cityhospital.com', plan: 'enterprise', amount: '$500', billingCycle: 'Annually', nextBilling: '2025-01-10', status: 'active', startDate: '2024-01-10' },
-          { id: 4, tenant: 'Quick Pharmacy', email: 'support@quickpharmacy.com', plan: 'basic', amount: '$50', billingCycle: 'Monthly', nextBilling: '2024-01-25', status: 'expired', startDate: '2023-12-25' }
-        ],
-        subscriptionForm: {
-          tenant: '',
-          email: '',
-          plan: '',
-          billingCycle: 'monthly',
-          startDate: ''
-        },
+        subscriptions: [],
+        subscriptionPlans: [],
         filteredSubscriptions: [],
         
         init() {
+          this.loadSubscriptions();
+          this.loadSubscriptionPlans();
           this.filteredSubscriptions = this.subscriptions;
+        },
+        
+        async loadSubscriptions() {
+          try {
+            const response = await fetch('/api/tenantadmin/subscriptions');
+            if (response.ok) {
+              this.subscriptions = await response.json();
+              this.filteredSubscriptions = this.subscriptions;
+            } else {
+              console.error('Failed to load subscriptions:', response.statusText);
+              this.showNotification('Failed to load subscriptions', 'error');
+            }
+          } catch (error) {
+            console.error('Error loading subscriptions:', error);
+            this.showNotification('Error loading subscriptions', 'error');
+          }
+        },
+
+        async loadSubscriptionPlans() {
+          try {
+            const response = await fetch('/api/tenantadmin/subscription-plans');
+            if (response.ok) {
+              this.subscriptionPlans = await response.json();
+            } else {
+              console.error('Failed to load subscription plans:', response.statusText);
+            }
+          } catch (error) {
+            console.error('Error loading subscription plans:', error);
+          }
         },
         
         filterSubscriptions() {
@@ -428,27 +635,37 @@
         },
         
         getMonthlyRevenue() {
-          return '$' + this.subscriptions
-            .filter(s => s.status === 'active' && s.billingCycle === 'Monthly')
-            .reduce((total, s) => total + parseInt(s.amount.replace('$', '')), 0);
+          return 'ZMK ' + this.subscriptions
+            .filter(s => s.status === 'active')
+            .reduce((total, s) => {
+              const amount = parseFloat(s.amount.replace(/[^0-9.]/g, ''));
+              return total + amount;
+            }, 0)
+            .toLocaleString('en-ZM', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         },
         
         openAddSubscriptionModal() {
           this.editingSubscription = null;
-          this.subscriptionForm = { tenant: '', email: '', plan: '', billingCycle: 'monthly', startDate: '' };
+          this.subscriptionForm = { 
+            pharmacyName: '', 
+            phoneNumber: '', 
+            plan: '', 
+            billingCycle: 'monthly', 
+            startDate: new Date().toISOString().split('T')[0] 
+          };
           this.showSubscriptionModal = true;
         },
         
         editSubscription(subscription) {
           this.editingSubscription = subscription;
-          this.subscriptionForm = { ...subscription };
+          this.subscriptionForm = {
+            pharmacyName: subscription.tenant,
+            phoneNumber: subscription.email,
+            plan: subscription.plan,
+            billingCycle: subscription.billingCycle.toLowerCase(),
+            startDate: subscription.startDate
+          };
           this.showSubscriptionModal = true;
-        },
-        
-        closeSubscriptionModal() {
-          this.showSubscriptionModal = false;
-          this.editingSubscription = null;
-          this.subscriptionForm = { tenant: '', email: '', plan: '', billingCycle: 'monthly', startDate: '' };
         },
         
         saveSubscription() {
@@ -464,6 +681,8 @@
             if (index !== -1) {
               this.subscriptions[index] = { 
                 ...this.subscriptions[index], 
+                tenant: this.subscriptionForm.pharmacyName,
+                email: this.subscriptionForm.phoneNumber,
                 ...this.subscriptionForm,
                 amount: '$' + planAmounts[this.subscriptionForm.plan]
               };
@@ -472,6 +691,8 @@
             // Add new subscription
             const newSubscription = {
               id: Math.max(...this.subscriptions.map(s => s.id)) + 1,
+              tenant: this.subscriptionForm.pharmacyName,
+              email: this.subscriptionForm.phoneNumber,
               ...this.subscriptionForm,
               amount: '$' + planAmounts[this.subscriptionForm.plan],
               status: 'active',
@@ -496,11 +717,190 @@
           return date.toISOString().split('T')[0];
         },
         
-        cancelSubscription(subscription) {
-          if (confirm(`Are you sure you want to cancel the subscription for ${subscription.tenant}?`)) {
-            subscription.status = 'cancelled';
-            this.filterSubscriptions();
+        async saveSubscription() {
+          try {
+            const subscriptionData = {
+              planId: parseInt(this.subscriptionForm.plan),
+              pharmacyId: this.subscriptionForm.pharmacyId || this.subscriptionForm.pharmacyName,
+              startDate: this.subscriptionForm.startDate,
+              billingCycle: this.subscriptionForm.billingCycle,
+              autoRenew: true
+            };
+
+            let response;
+            if (this.editingSubscription) {
+              // Update existing subscription
+              response = await fetch(`/api/tenantadmin/subscriptions/${this.editingSubscription.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(subscriptionData)
+              });
+            } else {
+              // Create new subscription
+              response = await fetch('/api/tenantadmin/subscriptions', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(subscriptionData)
+              });
+            }
+
+            if (response.ok) {
+              const savedSubscription = await response.json();
+              
+              if (this.editingSubscription) {
+                // Update existing subscription in local array
+                const index = this.subscriptions.findIndex(s => s.id === this.editingSubscription.id);
+                if (index !== -1) {
+                  this.subscriptions[index] = savedSubscription;
+                }
+              } else {
+                // Add new subscription to local array
+                this.subscriptions.push(savedSubscription);
+              }
+              
+              this.filterSubscriptions();
+              this.closeSubscriptionModal();
+              this.showNotification(
+                this.editingSubscription ? 'Subscription updated successfully' : 'Subscription created successfully', 
+                'success'
+              );
+            } else {
+              const errorData = await response.json();
+              this.showNotification(errorData.error || 'Failed to save subscription', 'error');
+            }
+          } catch (error) {
+            console.error('Error saving subscription:', error);
+            this.showNotification('Error saving subscription', 'error');
           }
+        },
+        
+        viewTenantHistory(subscription) {
+          this.selectedTenant = subscription;
+          this.activeHistoryTab = 'subscription';
+          this.loadTenantHistory(subscription);
+          this.showTenantHistoryModal = true;
+        },
+        
+        closeTenantHistoryModal() {
+          this.showTenantHistoryModal = false;
+          this.selectedTenant = null;
+          this.activeHistoryTab = 'subscription';
+          this.tenantSubscriptionHistory = [];
+          this.tenantPaymentHistory = [];
+          this.tenantActivityLog = [];
+        },
+        
+        loadTenantHistory(subscription) {
+          // Simulate loading tenant history data
+          this.tenantSubscriptionHistory = [
+            {
+              id: 1,
+              action: 'Subscription Created',
+              description: `Basic plan subscription started for ${subscription.tenant}`,
+              date: subscription.startDate,
+              status: 'completed'
+            },
+            {
+              id: 2,
+              action: 'Plan Upgraded',
+              description: 'Upgraded from Basic to Professional plan',
+              date: '2024-01-15',
+              status: 'completed'
+            },
+            {
+              id: 3,
+              action: 'Billing Cycle Changed',
+              description: 'Changed from Monthly to Quarterly billing',
+              date: '2024-02-01',
+              status: 'completed'
+            }
+          ];
+          
+          this.tenantPaymentHistory = [
+            {
+              id: 1,
+              description: 'Monthly Subscription Fee',
+              amount: subscription.amount,
+              method: 'Bank Transfer',
+              date: subscription.startDate,
+              status: 'success'
+            },
+            {
+              id: 2,
+              description: 'Plan Upgrade Fee',
+              amount: '$100',
+              method: 'Mobile Money',
+              date: '2024-01-15',
+              status: 'success'
+            },
+            {
+              id: 3,
+              description: 'Quarterly Subscription Fee',
+              amount: '$450',
+              method: 'Credit Card',
+              date: '2024-02-01',
+              status: 'pending'
+            }
+          ];
+          
+          this.tenantActivityLog = [
+            {
+              id: 1,
+              action: 'Login',
+              details: 'User logged into the system',
+              date: '2024-02-10 09:30 AM'
+            },
+            {
+              id: 2,
+              action: 'Profile Updated',
+              details: 'Pharmacy contact information updated',
+              date: '2024-02-08 02:15 PM'
+            },
+            {
+              id: 3,
+              action: 'Invoice Generated',
+              details: 'Monthly invoice generated and sent',
+              date: '2024-02-01 11:00 AM'
+            },
+            {
+              id: 4,
+              action: 'Payment Received',
+              details: 'Payment for monthly subscription received',
+              date: '2024-02-01 03:45 PM'
+            }
+          ];
+        },
+        
+        addActivityLog(subscription, action, details) {
+          const activity = {
+            id: Date.now(),
+            action: action,
+            details: details,
+            date: new Date().toLocaleString()
+          };
+          
+          // In a real application, this would be saved to the database
+          console.log('Activity Log:', activity);
+        },
+        
+        showNotification(message, type = 'info') {
+          // Create a simple notification (you can enhance this)
+          const notification = document.createElement('div');
+          notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+            type === 'success' ? 'bg-green-500 text-white' : 
+            type === 'error' ? 'bg-red-500 text-white' : 
+            'bg-blue-500 text-white'
+          }`;
+          notification.textContent = message;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            document.body.removeChild(notification);
+          }, 3000);
         },
         
         getPlanLabel(plan) {
@@ -528,6 +928,54 @@
             'cancelled': 'bg-gray-100 text-gray-800'
           };
           return classes[status] || 'bg-gray-100 text-gray-800';
+        },
+        
+        async cancelSubscription(subscription) {
+          if (confirm(`Are you sure you want to cancel the subscription for ${subscription.tenant}?`)) {
+            try {
+              const response = await fetch(`/api/tenantadmin/subscriptions/${subscription.id}`, {
+                method: 'DELETE'
+              });
+
+              if (response.ok) {
+                subscription.status = 'cancelled';
+                this.filterSubscriptions();
+                this.showNotification('Subscription cancelled successfully', 'success');
+              } else {
+                const errorData = await response.json();
+                this.showNotification(errorData.error || 'Failed to cancel subscription', 'error');
+              }
+            } catch (error) {
+              console.error('Error cancelling subscription:', error);
+              this.showNotification('Error cancelling subscription', 'error');
+            }
+          }
+        },
+        
+        async fetchPharmacies(query) {
+          // This method is no longer needed as we use real API
+          return [];
+        },
+        
+        async fetchPhoneNumbers(query) {
+          // This method is no longer needed as we use real API
+          return [];
+        },
+        
+        selectPharmacy(pharmacy) {
+          this.subscriptionForm.pharmacyName = pharmacy.name;
+          this.subscriptionForm.phoneNumber = pharmacy.phone;
+          this.subscriptionForm.pharmacyId = pharmacy.id;
+          this.pharmacySuggestions = [];
+          this.showPharmacySuggestions = false;
+        },
+        
+        selectPhoneNumber(phone) {
+          this.subscriptionForm.phoneNumber = phone.phone;
+          this.subscriptionForm.pharmacyName = phone.pharmacy.name;
+          this.subscriptionForm.pharmacyId = phone.pharmacyId;
+          this.phoneSuggestions = [];
+          this.showPhoneSuggestions = false;
         },
         
         logout() {

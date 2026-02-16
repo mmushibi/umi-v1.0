@@ -29,6 +29,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="../../wwwroot/js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -80,12 +81,6 @@
             <span>Patients</span>
           </a>
           
-          <a href="sales.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-            </svg>
-            <span>Sales</span>
-          </a>
           
           <a href="payments.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,12 +177,6 @@
             <span>Patients</span>
           </a>
           
-          <a href="sales.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-            </svg>
-            <span>Sales</span>
-          </a>
           
           <a href="payments.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,17 +281,56 @@
                 <!-- Product Search -->
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Search Products</label>
-                  <div class="relative">
+                  <div class="relative" x-data="{ showSuggestions: false }">
                     <input 
                       type="text" 
                       x-model="searchQuery"
                       @input="searchProducts"
+                      @focus="showSuggestions = true"
+                      @blur="setTimeout(() => showSuggestions = false, 200)"
+                      @keydown.escape="showSuggestions = false"
                       placeholder="Scan barcode or search by name..."
                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                      autocomplete="off"
                     >
                     <svg class="absolute left-3 top-2.5 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                     </svg>
+                    
+                    <!-- Search Suggestions Dropdown -->
+                    <div 
+                      x-show="showSuggestions && searchSuggestions.length > 0"
+                      x-transition:enter="transition ease-out duration-200"
+                      x-transition:enter-start="opacity-0 transform scale-95"
+                      x-transition:enter-end="opacity-100 transform scale-100"
+                      x-transition:leave="transition ease-in duration-150"
+                      x-transition:leave-start="opacity-100 transform scale-100"
+                      x-transition:leave-end="opacity-0 transform scale-95"
+                      class="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                    >
+                      <template x-for="suggestion in searchSuggestions.slice(0, 8)" :key="suggestion.id">
+                        <div 
+                          @click="selectSuggestion(suggestion)"
+                          class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0 flex items-center justify-between"
+                        >
+                          <div class="flex-1">
+                            <div class="font-medium text-gray-900" x-text="suggestion.name"></div>
+                            <div class="text-sm text-gray-500" x-text="suggestion.category"></div>
+                            <div class="text-xs text-gray-400" x-text="`Stock: ${suggestion.stock} | Barcode: ${suggestion.barcode}`"></div>
+                          </div>
+                          <div class="text-right">
+                            <div class="font-bold text-ocean-600" x-text="`ZMW${suggestion.price}`"></div>
+                            <div class="text-xs text-gray-400" x-text="suggestion.source"></div>
+                          </div>
+                        </div>
+                      </template>
+                      <div 
+                        x-show="searchSuggestions.length === 0 && searchQuery"
+                        class="px-4 py-3 text-gray-500 text-center"
+                      >
+                        No products found
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -310,13 +338,13 @@
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-2">Customer</label>
                   <div class="flex space-x-2">
-                    <select x-model="selectedCustomer" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+                    <select x-model="selectedCustomer" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" aria-label="Select customer">
                       <option value="">Walk-in Customer</option>
                       <template x-for="customer in customers" :key="customer.id">
                         <option :value="customer.id" x-text="customer.name"></option>
                       </template>
                     </select>
-                    <button @click="showAddCustomer = true" class="px-3 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
+                    <button @click="showAddCustomer = true" class="px-3 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700" title="Add new customer" aria-label="Add new customer">
                       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                       </svg>
@@ -333,6 +361,8 @@
                   @click="selectedCategory = category"
                   :class="selectedCategory === category ? 'bg-ocean-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
                   class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                  :title="`Filter by ${category}`"
+                  :aria-label="`Filter products by ${category}`"
                   x-text="category"
                   x-init="categories = ['All', 'Medications', 'Medical Supplies', 'Personal Care', 'Vitamins', 'First Aid']"
                 ></button>
@@ -341,25 +371,131 @@
 
             <!-- Products Grid -->
             <div class="bg-white rounded-lg shadow p-4 flex-1 overflow-hidden">
-              <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto max-h-96">
-                <template x-for="product in filteredProducts" :key="product.id">
-                  <div 
-                    @click="addToCart(product)"
-                    class="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-shadow cursor-pointer hover:border-ocean-300"
+              <!-- Inventory Status Header -->
+              <div class="flex justify-between items-center mb-4 pb-2 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-800">
+                  <i class="fas fa-box mr-2 text-ocean-500"></i>
+                  Inventory Items
+                </h3>
+                <div class="flex items-center space-x-4">
+                  <span class="text-sm text-gray-500">
+                    <i class="fas fa-database mr-1"></i>
+                    <span x-text="`${products.length} Total`"></span>
+                  </span>
+                  <span class="text-sm text-gray-500">
+                    <i class="fas fa-filter mr-1"></i>
+                    <span x-text="`${filteredProducts.length} Filtered`"></span>
+                  </span>
+                  <button 
+                    @click="syncInventoryData()"
+                    class="text-sm bg-ocean-100 text-ocean-700 px-3 py-1 rounded hover:bg-ocean-200"
+                    title="Refresh inventory"
                   >
-                    <div class="aspect-square bg-gray-100 rounded-lg mb-2 flex items-center justify-center">
-                      <svg class="h-8 w-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
-                      </svg>
+                    <i class="fas fa-sync-alt mr-1"></i>
+                    Refresh
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Products Grid with Loading State -->
+              <div class="relative">
+                <div x-show="products.length === 0" class="text-center py-12">
+                  <i class="fas fa-box-open text-4xl text-gray-300 mb-4"></i>
+                  <p class="text-gray-500">Loading inventory items...</p>
+                </div>
+                
+                <div x-show="products.length > 0 && filteredProducts.length === 0 && searchQuery" class="text-center py-12">
+                  <i class="fas fa-search text-4xl text-gray-300 mb-4"></i>
+                  <p class="text-gray-500">No products found for "<span x-text="searchQuery" class="font-medium"></span>"</p>
+                  <button 
+                    @click="searchQuery = ''; searchSuggestions = []"
+                    class="mt-2 text-ocean-600 hover:text-ocean-700"
+                  >
+                    Clear search
+                  </button>
+                </div>
+                
+                <div x-show="products.length > 0 && filteredProducts.length === 0 && selectedCategory !== 'All'" class="text-center py-12">
+                  <i class="fas fa-filter text-4xl text-gray-300 mb-4"></i>
+                  <p class="text-gray-500">No products in the "<span x-text="selectedCategory" class="font-medium"></span>" category</p>
+                  <button 
+                    @click="selectedCategory = 'All'"
+                    class="mt-2 text-ocean-600 hover:text-ocean-700"
+                  >
+                    Show all categories
+                  </button>
+                </div>
+                
+                <div 
+                  x-show="products.length > 0 && filteredProducts.length > 0"
+                  class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 overflow-y-auto max-h-96"
+                >
+                  <template x-for="product in filteredProducts" :key="product.id">
+                    <div 
+                      @click="addToCart(product)"
+                      class="border border-gray-200 rounded-lg p-3 hover:shadow-md transition-all cursor-pointer hover:border-ocean-300 hover:scale-105 relative group"
+                      :class="{
+                        'opacity-50': product.stock === 0,
+                        'border-red-200 bg-red-50': product.stock <= product.reorderLevel,
+                        'border-green-200 bg-green-50': product.stock > product.reorderLevel * 2
+                      }"
+                    >
+                      <!-- Stock Status Indicator -->
+                      <div class="absolute top-2 right-2">
+                        <span 
+                          x-show="product.stock === 0"
+                          class="px-2 py-1 bg-red-500 text-white text-xs rounded-full"
+                        >
+                          Out of Stock
+                        </span>
+                        <span 
+                          x-show="product.stock > 0 && product.stock <= product.reorderLevel"
+                          class="px-2 py-1 bg-orange-500 text-white text-xs rounded-full"
+                        >
+                          Low Stock
+                        </span>
+                      </div>
+                      
+                      <!-- Product Image Placeholder -->
+                      <div class="aspect-square bg-gray-100 rounded-lg mb-2 flex items-center justify-center group-hover:bg-ocean-50">
+                        <i class="fas fa-pills text-2xl text-gray-400 group-hover:text-ocean-500"></i>
+                      </div>
+                      
+                      <!-- Product Info -->
+                      <h3 class="font-medium text-sm text-gray-900 truncate" x-text="product.name" :title="product.name"></h3>
+                      <p class="text-xs text-gray-500 truncate" x-text="product.category" :title="product.category"></p>
+                      
+                      <!-- Source Badge -->
+                      <div class="flex items-center justify-between mt-2">
+                        <span 
+                          class="text-xs px-2 py-1 rounded-full"
+                          :class="{
+                            'bg-blue-100 text-blue-700': product.source === 'tenant-admin',
+                            'bg-green-100 text-green-700': product.source === 'pharmacist',
+                            'bg-purple-100 text-purple-700': product.sources && product.sources.length > 1
+                          }"
+                          x-text="product.sources && product.sources.length > 1 ? 'Merged' : product.source"
+                        ></span>
+                      </div>
+                      
+                      <div class="mt-2 flex justify-between items-center">
+                        <div>
+                          <span class="text-sm font-bold text-gray-900" x-text="`ZMW${product.price}`"></span>
+                          <div class="text-xs text-gray-500" x-text="`Stock: ${product.stock}`"></div>
+                        </div>
+                        <button 
+                          @click.stop="addToCart(product)"
+                          class="w-8 h-8 bg-ocean-600 text-white rounded-full hover:bg-ocean-700 flex items-center justify-center"
+                          :disabled="product.stock === 0"
+                          :class="{ 'opacity-50 cursor-not-allowed': product.stock === 0 }"
+                          title="Add to cart"
+                        >
+                          <i class="fas fa-plus text-xs"></i>
+                        </button>
+                      </div>
                     </div>
-                    <h3 class="font-medium text-sm text-gray-900 truncate" x-text="product.name"></h3>
-                    <p class="text-xs text-gray-500 truncate" x-text="product.category"></p>
-                    <div class="mt-2 flex justify-between items-center">
-                      <span class="text-sm font-bold text-gray-900" x-text="'ZMW' + product.price"></span>
-                      <span class="text-xs text-gray-500" x-text="'Stock: ' + product.stock"></span>
-                    </div>
-                  </div>
-                </template>
+                  </template>
+                </div>
               </div>
             </div>
           </div>
@@ -449,38 +585,34 @@
                     <button 
                       @click="paymentMethod = 'cash'"
                       :class="paymentMethod === 'cash' ? 'bg-ocean-600 text-white' : 'bg-gray-100 text-gray-700'"
-                      class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                      class="px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center"
                     >
-                      <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                      </svg> Cash
+                      <i class="fas fa-money-bill-wave mr-2"></i>
+                      Cash
                     </button>
                     <button 
                       @click="paymentMethod = 'card'"
                       :class="paymentMethod === 'card' ? 'bg-ocean-600 text-white' : 'bg-gray-100 text-gray-700'"
-                      class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                      class="px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center"
                     >
-                      <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
-                      </svg> Card
+                      <i class="fas fa-credit-card mr-2"></i>
+                      Card
                     </button>
                     <button 
                       @click="paymentMethod = 'mobile'"
                       :class="paymentMethod === 'mobile' ? 'bg-ocean-600 text-white' : 'bg-gray-100 text-gray-700'"
-                      class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                      class="px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center"
                     >
-                      <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8m-4-18h.01M12 8.01V3m0 0l-4 4m4-4l-4 4m0 0V12.01M16 20.01a4 4 0 01-4-4 4 4 0 01-4-4z"></path>
-                      </svg> Mobile
+                      <i class="fas fa-mobile-alt mr-2"></i>
+                      Mobile
                     </button>
                     <button 
                       @click="paymentMethod = 'insurance'"
                       :class="paymentMethod === 'insurance' ? 'bg-ocean-600 text-white' : 'bg-gray-100 text-gray-700'"
-                      class="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                      class="px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center"
                     >
-                      <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.618 4.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                      </svg> Insurance
+                      <i class="fas fa-shield-alt mr-2"></i>
+                      Insurance
                     </button>
                   </div>
                 </div>
@@ -534,6 +666,7 @@
       return {
         mobileMenuOpen: false,
         searchQuery: '',
+        searchSuggestions: [],
         selectedCategory: 'All',
         selectedCustomer: '',
         paymentMethod: 'cash',
@@ -544,19 +677,119 @@
         showAddCustomer: false,
 
         init() {
+          // Initialize authentication
+          if (!window.umiAuth.initPageAuth('Cashier')) {
+            return; // Will redirect if not authenticated
+          }
+          
           this.loadProducts();
           this.loadCustomers();
+          this.startRealTimeSync();
+        },
+
+        // Real-time synchronization
+        startRealTimeSync() {
+          // Sync every 30 seconds
+          setInterval(() => {
+            this.syncInventoryData();
+          }, 30000);
+
+          // Listen for storage events (cross-tab sync)
+          window.addEventListener('storage', (e) => {
+            if (e.key === 'inventory-update') {
+              this.loadProducts();
+            }
+          });
+        },
+
+        async syncInventoryData() {
+          try {
+            // Fetch from both tenant admin and pharmacist endpoints
+            const [tenantData, pharmacistData] = await Promise.all([
+              this.fetchTenantAdminInventory(),
+              this.fetchPharmacistInventory()
+            ]);
+
+            // Merge and deduplicate inventory data
+            const mergedInventory = this.mergeInventoryData(tenantData, pharmacistData);
+            
+            // Update products if data has changed
+            if (JSON.stringify(mergedInventory) !== JSON.stringify(this.products)) {
+              this.products = mergedInventory;
+              // Notify other tabs of the update
+              localStorage.setItem('inventory-update', Date.now().toString());
+            }
+          } catch (error) {
+            console.error('Error syncing inventory data:', error);
+          }
+        },
+
+        async fetchTenantAdminInventory() {
+          try {
+            const response = await fetch('/api/tenantadmin/inventory/items');
+            if (response.ok) {
+              const data = await response.json();
+              return data.map(item => ({
+                id: item.id,
+                name: item.inventoryItemName || item.name,
+                category: item.category || 'Medications',
+                price: item.sellingPrice || item.price || 0,
+                stock: item.quantity || item.stock || 0,
+                barcode: item.batchNumber || item.barcode || '',
+                source: 'tenant-admin',
+                lastUpdated: item.updatedAt || new Date().toISOString()
+              }));
+            }
+          } catch (error) {
+            console.error('Error fetching tenant admin inventory:', error);
+          }
+          return [];
+        },
+
+        async fetchPharmacistInventory() {
+          try {
+            const response = await fetch('/api/pharmacist/inventory/items');
+            if (response.ok) {
+              const data = await response.json();
+              return data.map(item => ({
+                id: item.id,
+                name: item.inventoryItemName || item.name,
+                category: item.category || 'Medications',
+                price: item.sellingPrice || item.price || 0,
+                stock: item.quantity || item.stock || 0,
+                barcode: item.batchNumber || item.barcode || '',
+                source: 'pharmacist',
+                lastUpdated: item.updatedAt || new Date().toISOString()
+              }));
+            }
+          } catch (error) {
+            console.error('Error fetching pharmacist inventory:', error);
+          }
+          return [];
+        },
+
+        mergeInventoryData(tenantData, pharmacistData) {
+          const allItems = [...tenantData, ...pharmacistData];
+          const itemMap = new Map();
+
+          // Merge items, preferring the most recent data
+          allItems.forEach(item => {
+            const existing = itemMap.get(item.id);
+            if (!existing || new Date(item.lastUpdated) > new Date(existing.lastUpdated)) {
+              itemMap.set(item.id, {
+                ...item,
+                sources: existing ? [...(existing.sources || []), item.source].filter((v, i, a) => a.indexOf(v) === i) : [item.source]
+              });
+            }
+          });
+
+          return Array.from(itemMap.values());
         },
 
         async loadProducts() {
           try {
-            const response = await fetch('/api/tenantadmin/inventory/products');
-            if (response.ok) {
-              this.products = await response.json();
-            } else {
-              console.error('Failed to load products');
-              this.products = [];
-            }
+            // Use the new sync method instead of single endpoint
+            await this.syncInventoryData();
           } catch (error) {
             console.error('Error loading products:', error);
             this.products = [];
@@ -644,17 +877,46 @@
         },
 
         searchProducts() {
-          // Search functionality is handled by the computed property
+          // Generate search suggestions based on current query
+          if (this.searchQuery.length >= 2) {
+            this.searchSuggestions = this.products.filter(product => 
+              product.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+              product.barcode.includes(this.searchQuery) ||
+              product.category.toLowerCase().includes(this.searchQuery.toLowerCase())
+            ).sort((a, b) => {
+              // Prioritize exact name matches, then barcode matches
+                const aNameExact = a.name.toLowerCase() === this.searchQuery.toLowerCase();
+                const bNameExact = b.name.toLowerCase() === this.searchQuery.toLowerCase();
+                const aBarcodeExact = a.barcode === this.searchQuery;
+                const bBarcodeExact = b.barcode === this.searchQuery;
+                
+                if (aNameExact && !bNameExact) return -1;
+                if (!aNameExact && bNameExact) return 1;
+                if (aBarcodeExact && !bBarcodeExact) return -1;
+                if (!aBarcodeExact && bBarcodeExact) return 1;
+                
+                // Then sort by stock availability (higher stock first)
+                return b.stock - a.stock;
+            });
+          } else {
+            this.searchSuggestions = [];
+          }
+        },
+        
+        selectSuggestion(product) {
+          this.searchQuery = product.name;
+          this.searchSuggestions = [];
+          this.addToCart(product);
         },
 
         async processSale() {
           if (this.cart.length === 0) {
-            alert('Cart is empty!');
+            this.showNotification('Cart is empty!', 'error');
             return;
           }
 
           if (this.paymentMethod === 'cash' && this.cashReceived < this.total) {
-            alert('Insufficient cash received!');
+            this.showNotification('Insufficient cash received!', 'error');
             return;
           }
 
@@ -689,10 +951,10 @@
               console.log('Sale processed successfully:', result);
               
               // Show success message
-              alert('Sale completed successfully!');
+              this.showNotification('Sale completed successfully!', 'success');
               
               // Refresh products to get updated stock levels
-              await this.loadProducts();
+              await this.syncInventoryData();
               
               // Clear cart and reset
               this.clearCart();
@@ -701,16 +963,42 @@
             } else {
               const error = await response.json();
               console.error('Sale processing failed:', error);
-              alert('Failed to process sale: ' + (error.error || 'Unknown error'));
+              this.showNotification('Failed to process sale: ' + (error.error || 'Unknown error'), 'error');
             }
           } catch (error) {
             console.error('Error processing sale:', error);
-            alert('Error processing sale. Please try again.');
+            this.showNotification('Error processing sale. Please try again.', 'error');
           }
         },
 
+        // Notification system
+        showNotification(message, type = 'info') {
+          const notification = document.createElement('div');
+          notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            'bg-blue-500 text-white'
+          }`;
+          notification.textContent = message;
+          
+          document.body.appendChild(notification);
+          
+          // Animate in
+          setTimeout(() => {
+            notification.classList.add('translate-x-0');
+          }, 100);
+          
+          // Remove after 3 seconds
+          setTimeout(() => {
+            notification.classList.add('translate-x-full', 'opacity-0');
+            setTimeout(() => {
+              document.body.removeChild(notification);
+            }, 300);
+          }, 3000);
+        },
+
         logout() {
-          window.location.href = '../auth/signin.html';
+          window.umiLogout();
         }
       }
     }

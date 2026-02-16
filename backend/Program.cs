@@ -12,7 +12,22 @@ using UmiHealthPOS.Services;
 using UmiHealthPOS.Middleware;
 using Npgsql;
 
+// Developer: Sepio Corp
+// Umi Health POS System - Backend Application
+
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure hosts
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(8080);
+});
+
+// Configure allowed hosts
+builder.Configuration.AddInMemoryCollection(new[]
+{
+    new KeyValuePair<string, string>("AllowedHosts", "*")
+});
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -65,21 +80,27 @@ builder.Services.AddScoped<IStockTransactionRepository, StockTransactionReposito
 
 // Add business services
 builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<ISubscriptionHistoryService, SubscriptionHistoryService>();
+builder.Services.AddScoped<IBillingService, BillingService>();
+builder.Services.AddScoped<IPatientService, PatientService>();
 
 // Add data seeder
 builder.Services.AddScoped<DataSeeder>();
+builder.Services.AddScoped<SubscriptionDataSeeder>();
+builder.Services.AddScoped<CategoryDataSeeder>();
 
 var app = builder.Build();
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
-app.UseAuthentication();
-app.UseBranchIsolation();
-app.UseInactivityCheck();
-app.UseAuthorization();
+// app.UseAuthentication();
+// app.UseBranchIsolation();
+// app.UseInactivityCheck();
+// app.UseAuthorization();
 
 // Map SignalR hubs
 app.MapHub<DashboardHub>("/dashboardHub");
+app.MapHub<PatientHub>("/patientHub");
 
 app.MapControllers();
 
@@ -87,6 +108,17 @@ app.MapControllers();
 if (app.Environment.IsDevelopment())
 {
     await DataSeeder.SeedDataAsync(app.Services);
+    using (var scope = app.Services.CreateScope())
+    {
+        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        await CategoryDataSeeder.SeedCategoriesAsync(context);
+        
+        // Seed pharmacist dashboard sample data
+        var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
+        var seederLogger = loggerFactory.CreateLogger<PharmacistDashboardSeeder>();
+        var pharmacistSeeder = new PharmacistDashboardSeeder(context, seederLogger);
+        await pharmacistSeeder.SeedSampleDataAsync();
+    }
 }
 
 app.Run();

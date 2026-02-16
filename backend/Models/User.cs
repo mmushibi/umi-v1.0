@@ -4,7 +4,38 @@ namespace UmiHealthPOS.Models
 {
     public class User
     {
-        public string Id { get; set; } = string.Empty;
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(6)]
+        public string TenantId { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(200)]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(200)]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(255)]
+        public string PasswordHash { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(50)]
+        public string Role { get; set; } = string.Empty;
+
+        public bool IsActive { get; set; } = true;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? LastLoginAt { get; set; }
+
+        public DateTime? UpdatedAt { get; set; }
+
+        // Legacy fields for backward compatibility
+        public string IdLegacy { get; set; } = string.Empty;
 
         [Required]
         [StringLength(100)]
@@ -16,19 +47,11 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(200)]
-        public string Email { get; set; } = string.Empty;
-
-        [Required]
-        [StringLength(200)]
         public string NormalizedEmail { get; set; } = string.Empty;
 
         [Required]
         [StringLength(100)]
         public string PhoneNumber { get; set; } = string.Empty;
-
-        [Required]
-        [StringLength(50)]
-        public string Role { get; set; } = string.Empty;
 
         public string Department { get; set; } = string.Empty;
 
@@ -36,9 +59,7 @@ namespace UmiHealthPOS.Models
 
         public DateTime? LastLogin { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAtLegacy { get; set; } = DateTime.UtcNow;
 
         public int? BranchId { get; set; }
 
@@ -57,8 +78,6 @@ namespace UmiHealthPOS.Models
         [StringLength(100)]
         public string RegistrationNumber { get; set; } = string.Empty;
 
-        public bool IsActive { get; set; } = true;
-
         public bool EmailConfirmed { get; set; } = false;
 
         public bool PhoneNumberConfirmed { get; set; } = false;
@@ -67,9 +86,6 @@ namespace UmiHealthPOS.Models
 
         public DateTime? LockoutEnd { get; set; }
 
-        // Password hash (not included in exports)
-        public string PasswordHash { get; set; } = string.Empty;
-
         // Status field
         public string Status { get; set; } = "active";
 
@@ -77,13 +93,11 @@ namespace UmiHealthPOS.Models
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; }
 
-        // Tenant ID for multi-tenancy
-        public string? TenantId { get; set; }
-
         // Navigation properties
+        public virtual Tenant Tenant { get; set; } = null!;
         public virtual ICollection<UserBranch> UserBranches { get; set; } = new List<UserBranch>();
-
         public virtual Branch Branch { get; set; } = null!;
+        public virtual ICollection<Sale> Sales { get; set; } = new List<Sale>();
     }
 
     public class CreateUserRequest
@@ -102,12 +116,18 @@ namespace UmiHealthPOS.Models
         [StringLength(20)]
         public string Phone { get; set; } = string.Empty;
 
+        [StringLength(500)]
+        public string Address { get; set; } = string.Empty;
+
         [Required]
         [StringLength(50)]
         public string Role { get; set; } = string.Empty;
 
+        [Required]
+        public string PharmacyId { get; set; } = string.Empty;
+
         [StringLength(100)]
-        public string? Branch { get; set; }
+        public string? Branch { get; set; } = string.Empty;
 
         [Required]
         [StringLength(100)]
@@ -120,11 +140,39 @@ namespace UmiHealthPOS.Models
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
-        public string? Branch { get; set; }
+        public string PharmacyId { get; set; } = string.Empty;
+        public string PharmacyName { get; set; } = string.Empty;
+        public string? Branch { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty;
         public DateTime? LastLogin { get; set; }
         public DateTime CreatedAt { get; set; }
+    }
+
+    public class UpdateStatusRequest
+    {
+        [Required]
+        [StringLength(20)]
+        public string Status { get; set; } = string.Empty;
+    }
+
+    public class PharmacySearchResult
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string City { get; set; } = string.Empty;
+        public string Province { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public List<PharmacyBranchInfo> Branches { get; set; } = new List<PharmacyBranchInfo>();
+    }
+
+    public class PharmacyBranchInfo
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = string.Empty;
     }
 
     public class SignupRequest

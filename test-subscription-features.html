@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Subscription Features</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div x-data="testApp()" class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Subscription Management Test</h1>
+        
+        <!-- Test Results -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">API Test Results</h2>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between p-3 border rounded">
+                    <span>Load Subscription Plans</span>
+                    <span :class="testResults.plansLoaded ? 'text-green-600' : 'text-red-600'" 
+                          x-text="testResults.plansLoaded ? '✓ Success' : '✗ Failed'"></span>
+                </div>
+                <div class="flex items-center justify-between p-3 border rounded">
+                    <span>Load Application Features</span>
+                    <span :class="testResults.featuresLoaded ? 'text-green-600' : 'text-red-600'" 
+                          x-text="testResults.featuresLoaded ? '✓ Success' : '✗ Failed'"></span>
+                </div>
+                <div class="flex items-center justify-between p-3 border rounded">
+                    <span>Create Subscription Plan</span>
+                    <span :class="testResults.planCreated ? 'text-green-600' : 'text-red-600'" 
+                          x-text="testResults.planCreated ? '✓ Success' : '✗ Failed'"></span>
+                </div>
+                <div class="flex items-center justify-between p-3 border rounded">
+                    <span>Create Application Feature</span>
+                    <span :class="testResults.featureCreated ? 'text-green-600' : 'text-red-600'" 
+                          x-text="testResults.featureCreated ? '✓ Success' : '✗ Failed'"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Data Display -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Subscription Plans -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Subscription Plans</h3>
+                <div class="space-y-2">
+                    <template x-for="plan in subscriptionPlans" :key="plan.id">
+                        <div class="p-3 border rounded">
+                            <div class="font-medium" x-text="plan.name"></div>
+                            <div class="text-sm text-gray-600">K<span x-text="plan.price"></span> / month</div>
+                            <div class="text-xs text-gray-500" x-text="plan.maxUsers + ' users, ' + plan.maxBranches + ' branches'"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Application Features -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">Application Features</h3>
+                <div class="space-y-2 max-h-96 overflow-y-auto">
+                    <template x-for="feature in applicationFeatures" :key="feature.id">
+                        <div class="p-3 border rounded">
+                            <div class="font-medium" x-text="feature.name"></div>
+                            <div class="text-xs text-gray-500" x-text="feature.category + ' • ' + feature.module"></div>
+                            <div class="flex space-x-2 text-xs mt-1">
+                                <span :class="feature.basicPlan ? 'text-green-600' : 'text-red-600'" x-text="'Basic: ' + (feature.basicPlan ? '✓' : '✗')"></span>
+                                <span :class="feature.professionalPlan ? 'text-green-600' : 'text-red-600'" x-text="'Pro: ' + (feature.professionalPlan ? '✓' : '✗')"></span>
+                                <span :class="feature.enterprisePlan ? 'text-green-600' : 'text-red-600'" x-text="'Ent: ' + (feature.enterprisePlan ? '✓' : '✗')"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Controls -->
+        <div class="bg-white rounded-lg shadow p-6 mt-8">
+            <h3 class="text-lg font-semibold mb-4">Test Controls</h3>
+            <div class="flex space-x-4">
+                <button @click="runAllTests()" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                    Run All Tests
+                </button>
+                <button @click="clearResults()" 
+                        class="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700">
+                    Clear Results
+                </button>
+            </div>
+        </div>
+
+        <!-- Status Messages -->
+        <div x-show="statusMessage" 
+             x-transition.opacity
+             class="fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg"
+             :class="statusType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'">
+            <span x-text="statusMessage"></span>
+        </div>
+    </div>
+
+    <script>
+        function testApp() {
+            return {
+                subscriptionPlans: [],
+                applicationFeatures: [],
+                testResults: {
+                    plansLoaded: false,
+                    featuresLoaded: false,
+                    planCreated: false,
+                    featureCreated: false
+                },
+                statusMessage: '',
+                statusType: 'success',
+
+                async init() {
+                    await this.runAllTests();
+                },
+
+                async runAllTests() {
+                    this.clearResults();
+                    await this.testLoadSubscriptionPlans();
+                    await this.testLoadApplicationFeatures();
+                    await this.testCreateSubscriptionPlan();
+                    await this.testCreateApplicationFeature();
+                },
+
+                async testLoadSubscriptionPlans() {
+                    try {
+                        const response = await fetch('/api/superadmin/subscription-plans');
+                        if (response.ok) {
+                            this.subscriptionPlans = await response.json();
+                            this.testResults.plansLoaded = true;
+                            this.showStatus('Subscription plans loaded successfully', 'success');
+                        } else {
+                            this.testResults.plansLoaded = false;
+                            this.showStatus('Failed to load subscription plans', 'error');
+                        }
+                    } catch (error) {
+                        this.testResults.plansLoaded = false;
+                        this.showStatus('Error loading subscription plans: ' + error.message, 'error');
+                    }
+                },
+
+                async testLoadApplicationFeatures() {
+                    try {
+                        const response = await fetch('/api/superadmin/application-features');
+                        if (response.ok) {
+                            this.applicationFeatures = await response.json();
+                            this.testResults.featuresLoaded = true;
+                            this.showStatus('Application features loaded successfully', 'success');
+                        } else {
+                            this.testResults.featuresLoaded = false;
+                            this.showStatus('Failed to load application features', 'error');
+                        }
+                    } catch (error) {
+                        this.testResults.featuresLoaded = false;
+                        this.showStatus('Error loading application features: ' + error.message, 'error');
+                    }
+                },
+
+                async testCreateSubscriptionPlan() {
+                    try {
+                        const testPlan = {
+                            name: 'Test Plan ' + Date.now(),
+                            price: 1999,
+                            maxUsers: 10,
+                            maxBranches: 2,
+                            maxStorageGB: 25,
+                            features: 'Test Feature 1;Test Feature 2;Test Feature 3'
+                        };
+
+                        const response = await fetch('/api/superadmin/subscription-plans', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(testPlan)
+                        });
+
+                        if (response.ok) {
+                            this.testResults.planCreated = true;
+                            this.showStatus('Test subscription plan created successfully', 'success');
+                            // Refresh plans list
+                            await this.testLoadSubscriptionPlans();
+                        } else {
+                            this.testResults.planCreated = false;
+                            this.showStatus('Failed to create test subscription plan', 'error');
+                        }
+                    } catch (error) {
+                        this.testResults.planCreated = false;
+                        this.showStatus('Error creating test subscription plan: ' + error.message, 'error');
+                    }
+                },
+
+                async testCreateApplicationFeature() {
+                    try {
+                        const testFeature = {
+                            name: 'Test Feature ' + Date.now(),
+                            description: 'A test feature for verification',
+                            category: 'Test',
+                            module: 'Testing',
+                            basicPlan: true,
+                            professionalPlan: true,
+                            enterprisePlan: false,
+                            sortOrder: 999
+                        };
+
+                        const response = await fetch('/api/superadmin/application-features', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(testFeature)
+                        });
+
+                        if (response.ok) {
+                            this.testResults.featureCreated = true;
+                            this.showStatus('Test application feature created successfully', 'success');
+                            // Refresh features list
+                            await this.testLoadApplicationFeatures();
+                        } else {
+                            this.testResults.featureCreated = false;
+                            this.showStatus('Failed to create test application feature', 'error');
+                        }
+                    } catch (error) {
+                        this.testResults.featureCreated = false;
+                        this.showStatus('Error creating test application feature: ' + error.message, 'error');
+                    }
+                },
+
+                clearResults() {
+                    this.testResults = {
+                        plansLoaded: false,
+                        featuresLoaded: false,
+                        planCreated: false,
+                        featureCreated: false
+                    };
+                    this.statusMessage = '';
+                },
+
+                showStatus(message, type) {
+                    this.statusMessage = message;
+                    this.statusType = type;
+                    setTimeout(() => {
+                        this.statusMessage = '';
+                    }, 3000);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

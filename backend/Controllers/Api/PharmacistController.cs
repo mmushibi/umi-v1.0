@@ -36,11 +36,11 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpGet("dashboard/stats")]
+        [ResponseCache(Duration = 30, Location = ResponseCacheLocation.Client, NoStore = false)]
         public async Task<ActionResult<PharmacistStats>> GetPharmacistStats()
         {
             try
             {
-                // Get user ID and tenant ID from claims for row-level security
                 var userId = GetCurrentUserId();
                 var tenantId = GetCurrentTenantId();
 
@@ -49,16 +49,29 @@ namespace UmiHealthPOS.Controllers.Api
                     return Unauthorized(new { error = "User not authenticated" });
                 }
 
-                // Get real statistics from prescription service
-                var prescriptions = await _prescriptionService.GetPrescriptionsAsync();
                 var today = DateTime.Today;
+                
+                // Use optimized queries with AsNoTracking for better performance
+                var prescriptionsTask = _context.Prescriptions
+                    .AsNoTracking()
+                    .Where(p => p.PrescriptionDate.HasValue && p.PrescriptionDate.Value.Date == today.Date)
+                    .ToListAsync();
+
+                var pendingTask = _context.Prescriptions
+                    .AsNoTracking()
+                    .Where(p => p.Status == "pending")
+                    .CountAsync();
+
+                await Task.WhenAll(prescriptionsTask, pendingTask);
+                
+                var prescriptions = await prescriptionsTask;
+                var pendingCount = await pendingTask;
 
                 var stats = new PharmacistStats
                 {
-                    PrescriptionsToday = prescriptions.Count(p => p.PrescriptionDate.Date == today.Date),
-                    PatientsToday = prescriptions.Where(p => p.PrescriptionDate.Date == today.Date)
-                                              .Select(p => p.PatientId).Distinct().Count(),
-                    PendingReviews = prescriptions.Count(p => p.Status == "pending"),
+                    PrescriptionsToday = prescriptions.Count,
+                    PatientsToday = prescriptions.Where(p => p.PatientId != 0).Select(p => p.PatientId).Distinct().Count(),
+                    PendingReviews = pendingCount,
                     LowStockItems = 0 // Will be implemented with inventory service integration
                 };
 
@@ -72,7 +85,8 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpGet("dashboard/recent-prescriptions")]
-        public async Task<ActionResult<List<RecentPrescription>>> GetRecentPrescriptions([FromQuery] int limit = 10)
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Client, NoStore = false)]
+        public async Task<ActionResult<List<RecentPrescription>>> GetRecentPrescriptions([FromQuery] int limit = 5)
         {
             try
             {
@@ -84,20 +98,21 @@ namespace UmiHealthPOS.Controllers.Api
                     return Unauthorized(new { error = "User not authenticated" });
                 }
 
-                var prescriptions = await _prescriptionService.GetPrescriptionsAsync();
-                var recentPrescriptions = prescriptions
+                // Use optimized query with AsNoTracking and limit to reduce payload
+                var recentPrescriptions = await _context.Prescriptions
+                    .AsNoTracking()
                     .OrderByDescending(p => p.CreatedAt)
                     .Take(limit)
                     .Select(p => new RecentPrescription
                     {
                         Id = p.Id,
-                        PatientName = p.PatientName,
-                        Medication = p.Medication,
-                        Status = p.Status,
+                        PatientName = p.PatientName ?? "Unknown Patient",
+                        Medication = p.Medication ?? "Unknown Medication",
+                        Status = p.Status ?? "Unknown",
                         CreatedAt = p.CreatedAt,
                         Timestamp = p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
                     })
-                    .ToList();
+                    .ToListAsync();
 
                 return Ok(recentPrescriptions);
             }

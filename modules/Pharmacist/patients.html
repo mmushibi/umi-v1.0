@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Patients - Pharmacist Portal - Umi Health</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.0/signalr.min.js"></script>
   <script>
     tailwind.config = {
       theme: {
@@ -285,9 +286,11 @@
                   placeholder="Name, ID, phone, email..."
                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
                 >
-                <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                  </svg>
+                </div>
               </div>
             </div>
             
@@ -328,7 +331,7 @@
             <div class="flex space-x-2">
               <button @click="showAddPatient = true" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
                 <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0 3h3m-3 6h.01M9 21h.01M12 12h.01M15 12h.01M12 12h-3.01m-6 0h-3.01m0-6h.01m6-6V3m0 0V3m0 0h6m-6 0h6m-3 0h3.01"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>Add Patient
               </button>
               <button @click="exportPatients()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
@@ -588,7 +591,7 @@
           <button type="submit"
                   class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
             <svg class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0 3h3m-3 6h.01M9 21h.01M12 12h.01M15 12h.01M12 12h-3.01m-6 0h-3.01m0-6h.01m6-6V3m0 0V3m0 0h6m-6 0h6m-3 0h3.01"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>Add Patient
           </button>
         </div>
@@ -624,10 +627,101 @@
           this.loadPatientsData();
         },
         
+        initializeSignalR() {
+          // Initialize SignalR connection for real-time patient updates
+          if (window.location.protocol === 'https:') {
+            this.connection = new signalR.HubConnectionBuilder()
+              .withUrl('/patientHub')
+              .withAutomaticReconnect()
+              .build();
+          } else {
+            this.connection = new signalR.HubConnectionBuilder()
+              .withUrl('/patientHub', { 
+                skipNegotiation: true,
+                transport: signalR.HttpTransportType.WebSockets 
+              })
+              .withAutomaticReconnect()
+              .build();
+          }
+
+          this.connection.start()
+            .then(() => {
+              console.log('SignalR Connected to Patient Hub');
+              this.connection.invoke('JoinPatientGroup');
+            })
+            .catch(err => {
+              console.error('SignalR Connection Error:', err);
+              // Don't show notification for connection errors as it's not critical
+            });
+
+          // Set up real-time event handlers
+          this.connection.on('PatientCreated', (patient) => {
+            console.log('New patient created:', patient);
+            this.patients.unshift({
+              ...patient,
+              patientId: patient.idNumber || 'PAT' + patient.id.toString().padStart(6, '0'),
+              age: patient.dateOfBirth ? this.calculateAge(patient.dateOfBirth) : 0,
+              bloodType: 'N/A',
+              registrationDate: patient.createdAt.split('T')[0],
+              status: 'active'
+            });
+            this.showNotification('New patient added successfully', 'success');
+          });
+
+          this.connection.on('PatientUpdated', (patient) => {
+            console.log('Patient updated:', patient);
+            const index = this.patients.findIndex(p => p.id === patient.id);
+            if (index !== -1) {
+              this.patients[index] = {
+                ...this.patients[index],
+                ...patient,
+                patientId: patient.idNumber || this.patients[index].patientId,
+                age: patient.dateOfBirth ? this.calculateAge(patient.dateOfBirth) : this.patients[index].age
+              };
+              this.showNotification('Patient updated successfully', 'success');
+            }
+          });
+
+          this.connection.on('PatientDeleted', (data) => {
+            console.log('Patient deleted:', data);
+            this.patients = this.patients.filter(p => p.id !== data.id);
+            this.showNotification('Patient deleted successfully', 'info');
+          });
+
+          this.connection.on('PatientDeactivated', (data) => {
+            console.log('Patient deactivated:', data);
+            const index = this.patients.findIndex(p => p.id === data.id);
+            if (index !== -1) {
+              this.patients[index].status = 'inactive';
+              this.showNotification('Patient deactivated (has prescriptions)', 'info');
+            }
+          });
+
+          this.connection.on('PatientsBulkImported', (data) => {
+            console.log('Patients bulk imported:', data);
+            this.showNotification(`${data.Count} patients imported successfully`, 'success');
+            this.loadPatientsData(); // Refresh the list
+          });
+
+          this.connection.onreconnected(() => {
+            console.log('SignalR Reconnected');
+            this.connection.invoke('JoinPatientGroup');
+          });
+
+          this.connection.onclose(() => {
+            console.log('SignalR Disconnected');
+          });
+        },
+        
         loadPatientsData() {
-          // Fetch patients from API (pharmacist access - can add/edit but not delete)
+          // Fetch patients from real backend API
           fetch('/api/tenantadmin/patients')
-            .then(response => response.json())
+            .then(response => {
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              return response.json();
+            })
             .then(data => {
               this.patients = data.map(p => ({
                 ...p,
@@ -637,10 +731,13 @@
                 registrationDate: p.createdAt.split('T')[0],
                 status: p.isActive ? 'active' : 'inactive'
               }));
+              
+              // Initialize SignalR connection for real-time updates
+              this.initializeSignalR();
             })
             .catch(error => {
               console.error('Error loading patients:', error);
-              this.showNotification('Error loading patients', 'error');
+              this.showNotification('Error loading patients: ' + error.message, 'error');
             });
         },
         
@@ -739,17 +836,34 @@
         },
         
         addPatient() {
+          // Validate required fields
+          if (!this.newPatient.name || !this.newPatient.name.trim()) {
+            this.showNotification('Patient name is required', 'error');
+            return;
+          }
+
+          if (!this.newPatient.phone || !this.newPatient.phone.trim()) {
+            this.showNotification('Phone number is required', 'error');
+            return;
+          }
+
           const patientData = {
-            name: this.newPatient.name,
-            idNumber: this.newPatient.idNumber,
-            phoneNumber: this.newPatient.phone,
-            email: this.newPatient.email,
+            name: this.newPatient.name.trim(),
+            idNumber: this.newPatient.idNumber?.trim() || '',
+            phoneNumber: this.newPatient.phone.trim(),
+            email: this.newPatient.email?.trim() || '',
             dateOfBirth: this.newPatient.dateOfBirth || null,
-            gender: this.newPatient.gender,
-            address: this.newPatient.address,
-            allergies: this.newPatient.allergies,
-            medicalHistory: this.newPatient.medicalHistory
+            gender: this.newPatient.gender || '',
+            address: this.newPatient.address?.trim() || '',
+            allergies: this.newPatient.allergies?.trim() || '',
+            medicalHistory: this.newPatient.medicalHistory?.trim() || ''
           };
+
+          // Show loading state
+          const submitButton = document.querySelector('button[type="submit"]');
+          const originalText = submitButton.innerHTML;
+          submitButton.innerHTML = '<svg class="h-5 w-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>Adding...';
+          submitButton.disabled = true;
 
           fetch('/api/tenantadmin/patients', {
             method: 'POST',
@@ -758,16 +872,28 @@
             },
             body: JSON.stringify(patientData)
           })
-          .then(response => response.json())
+          .then(response => {
+            if (!response.ok) {
+              return response.json().then(err => {
+                throw new Error(err.error || `HTTP error! status: ${response.status}`);
+              });
+            }
+            return response.json();
+          })
           .then(data => {
             this.showNotification('Patient added successfully', 'success');
             this.showAddPatient = false;
             this.resetNewPatient();
-            this.loadPatientsData();
+            // Data will be updated automatically via SignalR
           })
           .catch(error => {
             console.error('Error adding patient:', error);
-            this.showNotification('Error adding patient', 'error');
+            this.showNotification('Error adding patient: ' + error.message, 'error');
+          })
+          .finally(() => {
+            // Restore button state
+            submitButton.innerHTML = originalText;
+            submitButton.disabled = false;
           });
         },
 
@@ -786,20 +912,38 @@
         },
         
         exportPatients() {
+          // Show loading state
+          const exportButton = document.querySelector('button[onclick="exportPatients()"]');
+          const originalText = exportButton.innerHTML;
+          exportButton.innerHTML = '<svg class="h-5 w-5 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>Exporting...';
+          exportButton.disabled = true;
+
           fetch('/api/tenantadmin/patients/export-csv')
-            .then(response => response.blob())
+            .then(response => {
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              return response.blob();
+            })
             .then(blob => {
               const url = window.URL.createObjectURL(blob);
               const a = document.createElement('a');
               a.href = url;
               a.download = `patients_${new Date().toISOString().split('T')[0]}.csv`;
+              document.body.appendChild(a);
               a.click();
+              document.body.removeChild(a);
               window.URL.revokeObjectURL(url);
               this.showNotification('Patients exported successfully', 'success');
             })
             .catch(error => {
               console.error('Error exporting patients:', error);
-              this.showNotification('Error exporting patients', 'error');
+              this.showNotification('Error exporting patients: ' + error.message, 'error');
+            })
+            .finally(() => {
+              // Restore button state
+              exportButton.innerHTML = originalText;
+              exportButton.disabled = false;
             });
         },
         
@@ -820,6 +964,14 @@
         },
         
         logout() {
+          // Close SignalR connection if it exists
+          if (this.connection) {
+            this.connection.stop().catch(err => console.error('Error stopping SignalR connection:', err));
+          }
+          
+          // Direct logout - clear session and redirect
+          sessionStorage.clear();
+          localStorage.clear();
           window.location.href = '../auth/signin.html';
         }
       }

@@ -349,7 +349,7 @@ namespace UmiHealthPOS.Controllers.Api
                     Issuer = _configuration["Jwt:Issuer"],
                     Audience = _configuration["Jwt:Audience"],
                     SigningCredentials = new SigningCredentials(
-                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"])),
+                        new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT:Key configuration is missing"))),
                         SecurityAlgorithms.HmacSha256Signature)
                 };
 

@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en" x-data="controlledSubstancesPage()" x-init="init()">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Controlled Substance Oversight - Umi Health</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'dark-bg': '#11191f',
+            'light-bg': '#f4f3ec',
+            'yellow-accent': '#ffed90',
+            'orange-accent': '#ff9500',
+            'green-accent': '#34c759'
+          },
+          fontFamily: {
+            'instrument': ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+    
+    /* Responsive adjustments */
+    @media (max-width: 1024px) {
+      .detail-panel {
+        position: fixed;
+        right: 0;
+        top: 0;
+        height: 100vh;
+        z-index: 40;
+        transform: translateX(100%);
+        transition: transform 0.3s ease-in-out;
+      }
+      .detail-panel.open {
+        transform: translateX(0);
+      }
+    }
+    
+    /* Desktop visibility fix */
+    @media (min-width: 1025px) {
+      .detail-panel {
+        position: relative;
+        transform: none !important;
+        transition: none !important;
+      }
+    }
+    
+    /* Layout fixes */
+    .main-container {
+      overflow: hidden;
+    }
+    
+    .content-wrapper {
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="bg-light-bg text-gray-900 font-instrument">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Mobile Menu Overlay -->
+    <div x-show="mobileMenuOpen" x-transition.opacity
+         @click="mobileMenuOpen = false"
+         class="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"></div>
+
+<!-- Sidebar -->
+    <aside class="w-64 bg-dark-bg text-white flex flex-col fixed h-full z-30 transform transition-transform duration-300 ease-in-out lg:translate-x-0"
+           :class="{'-translate-x-full': !mobileMenuOpen, 'translate-x-0': mobileMenuOpen}">
+      <!-- Logo -->
+      <div class="p-6 border-b border-gray-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 bg-yellow-accent rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-dark-bg" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+            </svg>
+          </div>
+          <span class="text-xl font-semibold">UmiHealth</span>
+        </div>
+      </div>
+
+<!-- Navigation -->
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <a href="home.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="tenants.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <span>Tenants</span>
+        </a>
+        <a href="employees.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+          </svg>
+          <span>Employee Management</span>
+        </a>
+        <a href="billing.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          <span>Billing & Payments</span>
+        </a>
+        <a href="tenant-impersonation.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          <span>Tenant Impersonation</span>
+        </a>
+        <a href="controlled-substances.html" class="flex items-center space-x-3 rounded-lg bg-white text-dark-bg px-4 py-3 font-medium">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+          <span>Controlled Substances</span>
+        </a>
+        <a href="categories.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <span>Categories</span>
+        </a>
+        <a href="subscriptions.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          <span>Subscriptions</span>
+        </a>
+        <a href="audit-logs.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <span>Audit Logs</span>
+        </a>
+        <a href="rbac.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          <span>RBAC</span>
+        </a>
+        <a href="notifications.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          <span>Notifications</span>
+        </a>
+        <a href="settings.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+<!-- User Profile -->
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex items-center space-x-3">
+          <img src="https://picsum.photos/seed/superadmin/40/40.jpg" alt="Super Admin" class="w-10 h-10 rounded-full">
+          <div class="flex-1">
+            <p class="text-sm font-medium">Super Admin</p>
+            <p class="text-xs text-gray-400">admin@umihealth.com</p>
+          </div>
+          <button @click="logout()" class="text-gray-400 hover:text-white" title="Sign out">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+<!-- Main Content Area -->
+    <div class="flex-1 flex ml-0 lg:ml-64 overflow-hidden">
+      <!-- Main Content -->
+      <main class="flex-1 bg-light-bg p-4 lg:p-6 overflow-y-auto custom-scrollbar h-screen">
+        <!-- Mobile Header -->
+        <div class="lg:hidden flex items-center justify-between mb-4">
+          <button @click="mobileMenuOpen = true" class="text-gray-600 hover:text-gray-900" title="Open mobile menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <h1 class="text-lg font-semibold text-gray-900">Controlled Substance Oversight</h1>
+        </div>
+
+<!-- Desktop Header -->
+        <div class="hidden lg:block mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">Controlled Substance Oversight</h1>
+          <p class="text-gray-600">Monitor and manage controlled substances across all pharmacies</p>
+        </div>
+
+<!-- Compliance Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-red-100">
+                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Schedule II Drugs</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="dashboardStats.scheduleIICount"></p>
+                <p class="text-xs text-red-600">High monitoring</p>
+              </div>
+            </div>
+          </div>
+
+<div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-orange-100">
+                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Compliance Rate</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="`${dashboardStats.complianceRate}%`"></p>
+                <p class="text-xs text-green-600">Real-time data</p>
+              </div>
+            </div>
+          </div>
+
+<div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-yellow-accent">
+                <svg class="w-6 h-6 text-dark-bg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Pending Audits</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="dashboardStats.pendingAudits"></p>
+                <p class="text-xs text-yellow-accent">Due this week</p>
+              </div>
+            </div>
+          </div>
+
+<div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-blue-100">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Active Pharmacies</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="dashboardStats.activePharmacies"></p>
+                <p class="text-xs text-green-600">All compliant</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+<!-- Controlled Substances Table -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+            <h2 class="text-lg font-semibold text-gray-900">Controlled Substance Inventory</h2>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0">
+              <label class="sr-only" for="schedule-filter">Filter by schedule</label>
+              <select id="schedule-filter" x-model="selectedSchedule" @change="filterSubstances()" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-accent w-full sm:w-auto" title="Filter by schedule">
+                <option value="">All Schedules</option>
+                <option value="Schedule I">Schedule I</option>
+                <option value="Schedule II">Schedule II</option>
+                <option value="Schedule III">Schedule III</option>
+                <option value="Schedule IV">Schedule IV</option>
+                <option value="Schedule V">Schedule V</option>
+              </select>
+              <label class="sr-only" for="tenant-filter">Filter by tenant</label>
+              <select id="tenant-filter" x-model="selectedTenant" @change="filterSubstances()" class="px-4 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-accent w-full sm:w-auto" title="Filter by tenant">
+                <option value="">All Pharmacies</option>
+                <option value="MedCare Pharmacy">MedCare Pharmacy</option>
+                <option value="HealthPlus Medical">HealthPlus Medical</option>
+                <option value="City Pharmacy Ltd">City Pharmacy Ltd</option>
+              </select>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[1200px]">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Drug Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Schedule</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pharmacy</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Dispensed</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Compliance</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <template x-for="substance in filteredSubstances" :key="substance.id">
+                  <tr class="hover:bg-gray-50 cursor-pointer" 
+                      @click="selectSubstance(substance)"
+                      @contextmenu.prevent="showContextMenu($event, substance)">
+                    <td class="px-6 py-4">
+                      <div>
+                        <div class="text-sm font-medium text-gray-900" x-text="substance.name"></div>
+                        <div class="text-sm text-gray-500" x-text="substance.genericName"></div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                            :class="{
+                              'bg-red-100 text-red-800': substance.schedule === 'Schedule I',
+                              'bg-orange-100 text-orange-800': substance.schedule === 'Schedule II',
+                              'bg-yellow-100 text-yellow-800': substance.schedule === 'Schedule III',
+                              'bg-blue-100 text-blue-800': substance.schedule === 'Schedule IV',
+                              'bg-green-100 text-green-800': substance.schedule === 'Schedule V'
+                            }" x-text="substance.schedule"></span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900" x-text="substance.pharmacyName"></td>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                      <div class="flex items-center">
+                        <span x-text="substance.currentStock"></span>
+                        <span class="text-gray-500 ml-1" x-text="substance.unit"></span>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500" x-text="substance.lastDispensed"></td>
+                    <td class="px-6 py-4">
+                      <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                            :class="{
+                              'bg-green-100 text-green-800': substance.status === 'Compliant',
+                              'bg-yellow-100 text-yellow-800': substance.status === 'Review Required',
+                              'bg-red-100 text-red-800': substance.status === 'Non-Compliant'
+                            }" x-text="substance.status"></span>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="flex items-center">
+                        <div class="w-16 bg-gray-200 rounded-full h-2">
+                          <div class="bg-green-accent h-2 rounded-full" :style="`width: ${substance.complianceScore}%`"></div>
+                        </div>
+                        <span class="ml-2 text-sm text-gray-600" x-text="`${substance.complianceScore}%`"></span>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                      <button @click="viewDetails(substance)" class="text-blue-600 hover:text-blue-800 mr-3">
+                        View
+                      </button>
+                      <button @click="auditSubstance(substance)" class="text-orange-600 hover:text-orange-800">
+                        Audit
+                      </button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+
+    <!-- Detail Panel -->
+      <aside x-show="selectedSubstance" x-transition:enter="transition ease-in-out duration-300"
+             x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
+             :class="{'detail-panel': true, 'open': selectedSubstance}"
+             class="w-96 bg-white shadow-lg overflow-y-auto custom-scrollbar flex-shrink-0">
+        <template x-if="selectedSubstance">
+          <div>
+            <!-- Detail Header -->
+            <div class="p-6 border-b border-gray-200">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">Substance Details</h2>
+                <button @click="selectedSubstance = null" class="text-gray-400 hover:text-gray-600" title="Close substance details">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="flex items-center space-x-3">
+                <span class="px-3 py-1 text-sm font-semibold rounded-full"
+                      :class="{
+                        'bg-red-100 text-red-800': selectedSubstance.schedule === 'Schedule I',
+                        'bg-orange-100 text-orange-800': selectedSubstance.schedule === 'Schedule II',
+                        'bg-yellow-100 text-yellow-800': selectedSubstance.schedule === 'Schedule III',
+                        'bg-blue-100 text-blue-800': selectedSubstance.schedule === 'Schedule IV',
+                        'bg-green-100 text-green-800': selectedSubstance.schedule === 'Schedule V'
+                      }" x-text="selectedSubstance.schedule"></span>
+                <span class="px-3 py-1 text-sm font-semibold rounded-full"
+                      :class="{
+                        'bg-green-100 text-green-800': selectedSubstance.status === 'Compliant',
+                        'bg-yellow-100 text-yellow-800': selectedSubstance.status === 'Review Required',
+                        'bg-red-100 text-red-800': selectedSubstance.status === 'Non-Compliant'
+                      }" x-text="selectedSubstance.status"></span>
+              </div>
+            </div>
+
+<!-- Substance Info -->
+            <div class="p-6 border-b border-gray-200">
+              <div class="space-y-4">
+                <div>
+                  <h3 class="text-lg font-medium text-gray-900" x-text="selectedSubstance.name"></h3>
+                  <p class="text-sm text-gray-500" x-text="selectedSubstance.genericName"></p>
+                  <p class="text-sm text-gray-500 mt-1" x-text="`Registration: ${selectedSubstance.registrationNumber}`"></p>
+                </div>
+                <div class="space-y-2">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Schedule</span>
+                    <span class="font-medium" x-text="selectedSubstance.schedule"></span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Pharmacy</span>
+                    <span class="font-medium" x-text="selectedSubstance.pharmacyName"></span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Current Stock</span>
+                    <span class="font-medium" x-text="`${selectedSubstance.currentStock} ${selectedSubstance.unit}`"></span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Registration Number</span>
+                    <span class="font-medium" x-text="selectedSubstance.registrationNumber"></span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-gray-500">Last Dispensed</span>
+                    <span class="font-medium" x-text="selectedSubstance.lastDispensed"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+<!-- Compliance Information -->
+            <div class="p-6 border-b border-gray-200">
+              <h4 class="text-sm font-medium text-gray-900 mb-4">Compliance Information</h4>
+              <div class="space-y-3">
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Status</span>
+                  <span class="font-medium" x-text="selectedSubstance.status"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Compliance Score</span>
+                  <div class="flex items-center">
+                    <div class="w-16 bg-gray-200 rounded-full h-2">
+                      <div class="bg-green-accent h-2 rounded-full" :style="`width: ${selectedSubstance.complianceScore}%`"></div>
+                    </div>
+                    <span class="ml-2 text-sm text-gray-600" x-text="`${selectedSubstance.complianceScore}%`"></span>
+                  </div>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Last Audit</span>
+                  <span class="font-medium" x-text="selectedSubstance.lastAudit"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Next Audit Due</span>
+                  <span class="font-medium" x-text="selectedSubstance.nextAuditDue"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Dispensed This Month</span>
+                  <span class="font-medium" x-text="`${selectedSubstance.monthlyDispensed} ${selectedSubstance.unit}`"></span>
+                </div>
+              </div>
+            </div>
+
+<!-- Pharmacy Information -->
+            <div class="p-6 border-b border-gray-200">
+              <h4 class="text-sm font-medium text-gray-900 mb-4">Pharmacy Information</h4>
+              <div class="space-y-3">
+                <div class="flex items-center space-x-3">
+                  <img :src="selectedSubstance.pharmacyAvatar" :alt="selectedSubstance.pharmacyName" class="w-10 h-10 rounded-full">
+                  <div>
+                    <div class="text-sm font-medium text-gray-900" x-text="selectedSubstance.pharmacyName"></div>
+                    <div class="text-xs text-gray-500" x-text="selectedSubstance.pharmacyEmail"></div>
+                  </div>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">License Number</span>
+                  <span class="font-medium" x-text="selectedSubstance.pharmacyLicense"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Contact Phone</span>
+                  <span class="font-medium" x-text="selectedSubstance.pharmacyPhone"></span>
+                </div>
+              </div>
+            </div>
+
+<!-- Actions -->
+            <div class="p-6">
+              <div class="space-y-3">
+                <button @click="auditSubstance(selectedSubstance)" class="w-full px-4 py-2 bg-orange-accent text-dark-bg rounded-lg font-medium hover:bg-orange-300 transition-colors">
+                  Conduct Audit
+                </button>
+                <button @click="generateReport(selectedSubstance)" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+                  Generate Report
+                </button>
+                <button @click="viewAuditHistory(selectedSubstance)" class="w-full px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium transition-colors">
+                  View Audit History
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
+      </aside>
+    </div>
+
+    <!-- Right-Click Context Menu -->
+    <div x-show="contextMenu.show" 
+         x-transition:enter="transition ease-out duration-100"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-75"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         :style="`position: fixed; left: ${contextMenu.x}px; top: ${contextMenu.y}px; z-index: 1000;`"
+         @click.away="contextMenu.show = false"
+         class="bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[150px]">
+      <button @click="viewSubstanceDetails(contextMenu.substance)" 
+              class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+        </svg>
+        <span>View Details</span>
+      </button>
+      <button @click="auditSubstance(contextMenu.substance)" 
+              class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span>Conduct Audit</span>
+      </button>
+      <button @click="viewAuditHistory(contextMenu.substance)" 
+              class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span>Audit History</span>
+      </button>
+      <button @click="generateReport(contextMenu.substance)" 
+              class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v2a2 2 0 002 2h6a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+        </svg>
+        <span>Generate Report</span>
+      </button>
+      <div class="border-t border-gray-100 my-1"></div>
+      <button @click="viewPharmacyDetails(contextMenu.substance)" 
+              class="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+        </svg>
+        <span>View Pharmacy</span>
+      </button>
+    </div>
+
+    <!-- Audit Modal -->
+    <div x-show="showAuditModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div @click.away="showAuditModal = false" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 transform scale-90"
+           x-transition:enter-end="opacity-100 transform scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 transform scale-100"
+           x-transition:leave-end="opacity-0 transform scale-90"
+           class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-900">Audit: <span x-text="auditSubstance?.name"></span></h2>
+            <button @click="showAuditModal = false" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="mt-2 flex items-center space-x-4 text-sm text-gray-600">
+            <span>Pharmacy: <span class="font-medium" x-text="auditSubstance?.pharmacyName"></span></span>
+            <span>Schedule: <span class="font-medium" x-text="auditSubstance?.schedule"></span></span>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6">
+          <!-- Audit Form -->
+          <form @submit.prevent="submitAudit" class="space-y-6">
+            <!-- Current Stock Verification -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Current Stock Count *</label>
+                <input type="number" x-model="auditData.currentStock" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                       placeholder="Enter actual stock count">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">System Stock Count</label>
+                <input type="text" :value="auditSubstance?.currentStock + ' ' + auditSubstance?.unit" readonly
+                       class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600">
+              </div>
+            </div>
+
+            <!-- Audit Findings -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Audit Findings *</label>
+              <div class="space-y-2">
+                <label class="flex items-center">
+                  <input type="radio" x-model="auditData.finding" value="compliant" class="mr-2">
+                  <span class="text-sm">Compliant - Stock matches system records</span>
+                </label>
+                <label class="flex items-center">
+                  <input type="radio" x-model="auditData.finding" value="discrepancy" class="mr-2">
+                  <span class="text-sm">Discrepancy - Stock does not match system</span>
+                </label>
+                <label class="flex items-center">
+                  <input type="radio" x-model="auditData.finding" value="violation" class="mr-2">
+                  <span class="text-sm">Violation - Compliance issues found</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Discrepancy Details (if discrepancy or violation) -->
+            <div x-show="auditData.finding === 'discrepancy' || auditData.finding === 'violation'" class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Discrepancy Details *</label>
+                <textarea x-model="auditData.discrepancyDetails" rows="3"
+                         class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                         placeholder="Describe the discrepancy found..."></textarea>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Required Action</label>
+                <select x-model="auditData.requiredAction" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+                  <option value="">Select action</option>
+                  <option value="inventory_adjustment">Inventory Adjustment</option>
+                  <option value="investigation">Further Investigation</option>
+                  <option value="staff_training">Staff Training Required</option>
+                  <option value="report_authorities">Report to Authorities</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Compliance Check -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Compliance Checklist</label>
+              <div class="space-y-2">
+                <label class="flex items-center">
+                  <input type="checkbox" x-model="auditData.checklist.properStorage" class="mr-2">
+                  <span class="text-sm">Proper storage conditions maintained</span>
+                </label>
+                <label class="flex items-center">
+                  <input type="checkbox" x-model="auditData.checklist.accessLog" class="mr-2">
+                  <span class="text-sm">Access log properly maintained</span>
+                </label>
+                <label class="flex items-center">
+                  <input type="checkbox" x-model="auditData.checklist.documentation" class="mr-2">
+                  <span class="text-sm">All documentation complete and accurate</span>
+                </label>
+                <label class="flex items-center">
+                  <input type="checkbox" x-model="auditData.checklist.security" class="mr-2">
+                  <span class="text-sm">Security protocols followed</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Auditor Notes -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Auditor Notes</label>
+              <textarea x-model="auditData.notes" rows="4"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                       placeholder="Additional notes and observations..."></textarea>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="flex justify-end space-x-3">
+              <button type="button" @click="showAuditModal = false"
+                      class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                Cancel
+              </button>
+              <button type="submit"
+                      class="px-4 py-2 bg-yellow-accent text-dark-bg font-medium rounded-lg hover:bg-yellow-300 transition-colors">
+                Submit Audit
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit History Modal -->
+    <div x-show="showAuditHistoryModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div @click.away="showAuditHistoryModal = false" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 transform scale-90"
+           x-transition:enter-end="opacity-100 transform scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 transform scale-100"
+           x-transition:leave-end="opacity-0 transform scale-90"
+           class="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-900">Audit History: <span x-text="auditHistorySubstance?.name"></span></h2>
+            <button @click="showAuditHistoryModal = false" class="text-gray-400 hover:text-gray-600" title="Close audit history">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6">
+          <div class="space-y-4">
+            <template x-for="audit in auditHistory" :key="audit.id">
+              <div class="border border-gray-200 rounded-lg p-4">
+                <div class="flex justify-between items-start mb-2">
+                  <div>
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                          :class="{
+                            'bg-green-100 text-green-800': audit.finding === 'compliant',
+                            'bg-yellow-100 text-yellow-800': audit.finding === 'discrepancy',
+                            'bg-red-100 text-red-800': audit.finding === 'violation'
+                          }" x-text="audit.finding"></span>
+                    <span class="ml-2 text-sm text-gray-600" x-text="audit.date"></span>
+                  </div>
+                  <span class="text-sm font-medium" x-text="audit.auditor"></span>
+                </div>
+                <div class="text-sm text-gray-700 mb-2" x-text="audit.summary"></div>
+                <div x-show="audit.discrepancyDetails" class="text-sm text-gray-600 mb-2">
+                  <strong>Discrepancy:</strong> <span x-text="audit.discrepancyDetails"></span>
+                </div>
+                <div x-show="audit.requiredAction" class="text-sm text-gray-600">
+                  <strong>Action Required:</strong> <span x-text="audit.requiredAction"></span>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compliance Report Modal -->
+    <div x-show="showReportModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div @click.away="showReportModal = false" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 transform scale-90"
+           x-transition:enter-end="opacity-100 transform scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 transform scale-100"
+           x-transition:leave-end="opacity-0 transform scale-90"
+           class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-xl font-semibold text-gray-900">Compliance Report</h2>
+              <p class="text-sm text-gray-600 mt-1" x-show="reportData">
+                Report ID: <span class="font-mono" x-text="reportData?.reportId"></span> | 
+                Generated: <span x-text="reportData?.reportDate"></span>
+              </p>
+            </div>
+            <div class="flex items-center space-x-3">
+              <button x-show="reportData" @click="downloadReport()" 
+                      class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>Download PDF</span>
+              </button>
+              <button @click="showReportModal = false" class="text-gray-400 hover:text-gray-600">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6">
+          <!-- Loading State -->
+          <div x-show="reportLoading" class="flex flex-col items-center justify-center py-12">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-accent mb-4"></div>
+            <p class="text-gray-600">Generating comprehensive compliance report...</p>
+            <p class="text-sm text-gray-500 mt-2">This may take a few moments</p>
+          </div>
+
+          <!-- Report Content -->
+          <div x-show="!reportLoading && reportData" class="space-y-6">
+            <!-- Substance Overview -->
+            <div class="bg-gray-50 rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Substance Overview</h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <p class="text-sm text-gray-500">Substance Name</p>
+                  <p class="font-medium" x-text="reportData.substance.name"></p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Generic Name</p>
+                  <p class="font-medium" x-text="reportData.substance.genericName"></p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Schedule</p>
+                  <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                        :class="{
+                          'bg-red-100 text-red-800': reportData.substance.schedule === 'Schedule I',
+                          'bg-orange-100 text-orange-800': reportData.substance.schedule === 'Schedule II',
+                          'bg-yellow-100 text-yellow-800': reportData.substance.schedule === 'Schedule III',
+                          'bg-blue-100 text-blue-800': reportData.substance.schedule === 'Schedule IV',
+                          'bg-green-100 text-green-800': reportData.substance.schedule === 'Schedule V'
+                        }" x-text="reportData.substance.schedule"></span>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Pharmacy</p>
+                  <p class="font-medium" x-text="reportData.substance.pharmacyName"></p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Current Stock</p>
+                  <p class="font-medium" x-text="`${reportData.substance.currentStock} ${reportData.substance.unit}`"></p>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-500">Status</p>
+                  <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                        :class="{
+                          'bg-green-100 text-green-800': reportData.substance.status === 'Compliant',
+                          'bg-yellow-100 text-yellow-800': reportData.substance.status === 'Review Required',
+                          'bg-red-100 text-red-800': reportData.substance.status === 'Non-Compliant'
+                        }" x-text="reportData.substance.status"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Compliance Assessment -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div class="bg-white border border-gray-200 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Compliance Assessment</h3>
+                <div class="space-y-4">
+                  <div>
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="text-sm font-medium text-gray-700">Overall Compliance Score</span>
+                      <span class="text-lg font-bold" x-text="`${reportData.complianceScore}%`"></span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                      <div class="bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 h-3 rounded-full" 
+                           :style="`width: ${reportData.complianceScore}%`"></div>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p class="text-gray-500">Last Audit</p>
+                      <p class="font-medium" x-text="reportData.substance.lastAudit"></p>
+                    </div>
+                    <div>
+                      <p class="text-gray-500">Next Audit Due</p>
+                      <p class="font-medium" x-text="reportData.substance.nextAuditDue"></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Risk Assessment -->
+              <div class="bg-white border border-gray-200 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Risk Assessment</h3>
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium text-gray-700">Risk Level</span>
+                    <span class="px-3 py-1 text-sm font-bold rounded-full"
+                          :class="{
+                            'bg-red-100 text-red-800': reportData.riskAssessment.level === 'High',
+                            'bg-yellow-100 text-yellow-800': reportData.riskAssessment.level === 'Medium',
+                            'bg-green-100 text-green-800': reportData.riskAssessment.level === 'Low'
+                          }" x-text="reportData.riskAssessment.level"></span>
+                  </div>
+                  <div>
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="text-sm font-medium text-gray-700">Risk Score</span>
+                      <span class="text-lg font-bold" x-text="`${reportData.riskAssessment.score}/100`"></span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-3">
+                      <div class="bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 h-3 rounded-full" 
+                           :style="`width: ${reportData.riskAssessment.score}%`"></div>
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-700 mb-2">Risk Factors</p>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                      <template x-for="factor in reportData.riskAssessment.factors" :key="factor">
+                        <li class="flex items-start">
+                          <svg class="w-4 h-4 text-yellow-accent mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                          </svg>
+                          <span x-text="factor"></span>
+                        </li>
+                      </template>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Recommendations</h3>
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <template x-for="rec in reportData.recommendations" :key="rec.action">
+                      <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-4">
+                          <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                                :class="{
+                                  'bg-red-100 text-red-800': rec.priority === 'High',
+                                  'bg-yellow-100 text-yellow-800': rec.priority === 'Medium',
+                                  'bg-green-100 text-green-800': rec.priority === 'Low'
+                                }" x-text="rec.priority"></span>
+                        </td>
+                        <td class="px-4 py-4 text-sm text-gray-900" x-text="rec.action"></td>
+                        <td class="px-4 py-4 text-sm text-gray-500" x-text="rec.reason"></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Audit History Summary -->
+            <div class="bg-white border border-gray-200 rounded-lg p-6">
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Audit History</h3>
+              <div class="space-y-3">
+                <template x-for="audit in reportData.auditHistory.slice(0, 3)" :key="audit.id">
+                  <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center space-x-3">
+                      <div class="w-2 h-2 rounded-full"
+                           :class="{
+                             'bg-green-accent': audit.finding === 'compliant',
+                             'bg-yellow-accent': audit.finding === 'discrepancy',
+                             'bg-red-500': audit.finding === 'violation'
+                           }"></div>
+                      <div>
+                        <p class="text-sm font-medium text-gray-900" x-text="audit.date"></p>
+                        <p class="text-xs text-gray-500" x-text="audit.auditor"></p>
+                      </div>
+                    </div>
+                    <div class="text-right">
+                      <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                            :class="{
+                              'bg-green-100 text-green-800': audit.finding === 'compliant',
+                              'bg-yellow-100 text-yellow-800': audit.finding === 'discrepancy',
+                              'bg-red-100 text-red-800': audit.finding === 'violation'
+                            }" x-text="audit.finding"></span>
+                      <p class="text-xs text-gray-500 mt-1" x-text="audit.impact"></p>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+<script>
+    function controlledSubstancesPage() {
+      return {
+        mobileMenuOpen: false,
+        selectedSubstance: null,
+        selectedSchedule: '',
+        selectedTenant: '',
+        showAuditModal: false,
+        showAuditHistoryModal: false,
+        showReportModal: false,
+        reportLoading: false,
+        auditSubstance: null,
+        auditHistorySubstance: null,
+        reportSubstance: null,
+        reportData: null,
+        contextMenu: {
+          show: false,
+          x: 0,
+          y: 0,
+          substance: null
+        },
+        auditData: {
+          currentStock: '',
+          finding: 'compliant',
+          discrepancyDetails: '',
+          requiredAction: '',
+          notes: '',
+          checklist: {
+            properStorage: false,
+            accessLog: false,
+            documentation: false,
+            security: false
+          }
+        },
+        substances: [],
+        filteredSubstances: [],
+        tenants: [],
+        auditHistory: [],
+        // Dashboard statistics from real backend
+        dashboardStats: {
+          scheduleIICount: 0,
+          complianceRate: 0,
+          pendingAudits: 0,
+          activePharmacies: 0
+        },
+        async init() {
+          await Promise.all([
+            this.fetchSubstances(),
+            this.fetchTenants(),
+            this.fetchDashboardStats()
+          ]);
+        },
+        async fetchSubstances() {
+          try {
+            const response = await fetch('/api/superadmin/controlled-substances');
+            if (response.ok) {
+              this.substances = await response.json();
+              this.filteredSubstances = this.substances;
+              console.log('Successfully loaded substances from backend:', this.substances.length, 'items');
+            } else {
+              const errorData = await response.json();
+              console.error('Failed to fetch substances:', errorData);
+              this.showError('Failed to load controlled substances. Please try again.');
+            }
+          } catch (error) {
+            console.error('Error fetching substances:', error);
+            this.showError('Network error. Please check your connection.');
+          }
+        },
+        async fetchTenants() {
+          try {
+            const response = await fetch('/api/superadmin/tenants');
+            if (response.ok) {
+              const tenants = await response.json();
+              this.tenants = tenants;
+              console.log('Successfully loaded tenants from backend:', this.tenants.length, 'items');
+            } else {
+              const errorData = await response.json();
+              console.error('Failed to fetch tenants:', errorData);
+              this.showError('Failed to load tenant data.');
+            }
+          } catch (error) {
+            console.error('Error fetching tenants:', error);
+            this.showError('Network error loading tenant data.');
+          }
+        },
+        async fetchDashboardStats() {
+          try {
+            const response = await fetch('/api/superadmin/dashboard/stats');
+            if (response.ok) {
+              const stats = await response.json();
+              this.dashboardStats = {
+                scheduleIICount: stats.controlledSubstances || 0,
+                complianceRate: stats.complianceRate || 0,
+                pendingAudits: stats.pendingAudits || 0,
+                activePharmacies: stats.activeTenants || 0
+              };
+              console.log('Dashboard stats loaded:', this.dashboardStats);
+            } else {
+              console.error('Failed to fetch dashboard stats');
+              // Calculate from available data if API fails
+              this.calculateStatsFromData();
+            }
+          } catch (error) {
+            console.error('Error fetching dashboard stats:', error);
+            this.calculateStatsFromData();
+          }
+        },
+        calculateStatsFromData() {
+          // Calculate stats from substances data if API fails
+          if (this.substances.length > 0) {
+            this.dashboardStats.scheduleIICount = this.substances.filter(s => s.schedule === 'Schedule II').length;
+            this.dashboardStats.complianceRate = Math.round(
+              this.substances.reduce((sum, s) => sum + s.complianceScore, 0) / this.substances.length
+            );
+            this.dashboardStats.pendingAudits = this.substances.filter(s => {
+              const nextAudit = new Date(s.nextAuditDue);
+              const today = new Date();
+              const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+              return nextAudit <= weekFromNow;
+            }).length;
+            this.dashboardStats.activePharmacies = this.tenants.length;
+          }
+        },
+        showError(message) {
+          // Simple error notification
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+          errorDiv.textContent = message;
+          document.body.appendChild(errorDiv);
+          setTimeout(() => {
+            document.body.removeChild(errorDiv);
+          }, 5000);
+        },
+        filterSubstances() {
+          this.filteredSubstances = this.substances.filter(substance => {
+            const scheduleMatch = !this.selectedSchedule || substance.schedule === this.selectedSchedule;
+            const tenantMatch = !this.selectedTenant || substance.pharmacyName === this.selectedTenant;
+            return scheduleMatch && tenantMatch;
+          });
+        },
+        selectSubstance(substance) {
+          this.selectedSubstance = substance;
+        },
+        viewDetails(substance) {
+          this.selectedSubstance = substance;
+        },
+        showContextMenu(event, substance) {
+          this.contextMenu.substance = substance;
+          this.contextMenu.x = event.clientX;
+          this.contextMenu.y = event.clientY;
+          this.contextMenu.show = true;
+          
+          // Close context menu when clicking outside
+          document.addEventListener('click', () => {
+            this.contextMenu.show = false;
+          }, { once: true });
+        },
+        viewSubstanceDetails(substance) {
+          this.selectedSubstance = substance;
+          this.contextMenu.show = false;
+        },
+        auditSubstance(substance) {
+          this.auditSubstance = substance;
+          this.showAuditModal = true;
+          this.contextMenu.show = false;
+          
+          // Reset audit data
+          this.auditData = {
+            currentStock: substance.stock,
+            finding: 'compliant',
+            discrepancyDetails: '',
+            requiredAction: '',
+            notes: '',
+            checklist: {
+              properStorage: false,
+              accessLog: false,
+              documentation: false,
+              security: false
+            }
+          };
+        },
+        submitAudit() {
+          // Simulate API call to submit audit
+          console.log('Submitting audit for:', this.auditSubstance.name, this.auditData);
+          
+          // Show success message
+          alert(`Audit submitted successfully for ${this.auditSubstance.name} at ${this.auditSubstance.pharmacy}`);
+          
+          // Close modal
+          this.showAuditModal = false;
+          
+          // Update substance status based on audit findings
+          if (this.auditData.finding === 'violation') {
+            const substance = this.substances.find(s => s.id === this.auditSubstance.id);
+            if (substance) {
+              substance.status = 'Non-Compliant';
+              substance.compliance = Math.max(0, substance.compliance - 20);
+            }
+          } else if (this.auditData.finding === 'discrepancy') {
+            const substance = this.substances.find(s => s.id === this.auditSubstance.id);
+            if (substance) {
+              substance.status = 'Review Required';
+              substance.compliance = Math.max(0, substance.compliance - 10);
+            }
+          }
+        },
+        viewAuditHistory(substance) {
+          this.auditHistorySubstance = substance;
+          this.showAuditHistoryModal = true;
+          this.contextMenu.show = false;
+          
+          // Simulate fetching audit history from tenant API
+          this.fetchAuditHistory(substance);
+        },
+        async fetchAuditHistory(substance) {
+          try {
+            const response = await fetch(`/api/superadmin/controlled-substances/${substance.id}/audit-history`);
+            if (response.ok) {
+              this.auditHistory = await response.json();
+              console.log(`Successfully fetched ${this.auditHistory.length} audit records for ${substance.name}`);
+            } else {
+              const errorData = await response.json();
+              console.error('Failed to fetch audit history:', errorData);
+              this.auditHistory = [];
+              this.showError('Failed to load audit history.');
+            }
+          } catch (error) {
+            console.error('Error fetching audit history:', error);
+            this.auditHistory = [];
+            this.showError('Network error loading audit history.');
+          }
+        },
+        getTenantId(pharmacyName) {
+          // Map pharmacy names to tenant IDs
+          const tenantMap = {
+            'MedCare Pharmacy': 'tenant-001',
+            'HealthPlus Medical': 'tenant-002', 
+            'City Pharmacy Ltd': 'tenant-003'
+          };
+          return tenantMap[pharmacyName] || 'unknown';
+        },
+        async submitAudit() {
+          try {
+            // Validate audit data
+            if (!this.auditData.currentStock || !this.auditData.finding) {
+              throw new Error('Please fill in all required fields');
+            }
+            
+            if ((this.auditData.finding === 'discrepancy' || this.auditData.finding === 'violation') && !this.auditData.discrepancyDetails) {
+              throw new Error('Please provide discrepancy details for non-compliant findings');
+            }
+            
+            // Show loading state
+            const submitButton = document.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            submitButton.textContent = 'Submitting...';
+            submitButton.disabled = true;
+            
+            // Prepare audit data for API
+            const auditSubmission = {
+              currentStock: parseInt(this.auditData.currentStock),
+              finding: this.auditData.finding,
+              discrepancyDetails: this.auditData.discrepancyDetails,
+              requiredAction: this.auditData.requiredAction,
+              notes: this.auditData.notes,
+              properStorage: this.auditData.checklist.properStorage,
+              accessLog: this.auditData.checklist.accessLog,
+              documentation: this.auditData.checklist.documentation,
+              security: this.auditData.checklist.security
+            };
+            
+            // Call API
+            const response = await fetch(`/api/superadmin/controlled-substances/${this.auditSubstance.id}/audit`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(auditSubmission)
+            });
+            
+            if (response.ok) {
+              const auditResult = await response.json();
+              console.log('Audit submitted successfully:', auditResult);
+              
+              // Refresh substances data to get updated values
+              await this.fetchSubstances();
+              
+              // Refresh audit history
+              await this.fetchAuditHistory(this.auditSubstance);
+              
+              this.showSuccess(`Audit submitted successfully for ${this.auditSubstance.name}`);
+              this.showAuditModal = false;
+              this.resetAuditForm();
+            } else {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to submit audit');
+            }
+            
+          } catch (error) {
+            console.error('Error submitting audit:', error);
+            this.showError(`Failed to submit audit: ${error.message}`);
+          } finally {
+            // Reset button state
+            const submitButton = document.querySelector('button[type="submit"]');
+            if (submitButton) {
+              submitButton.textContent = originalText;
+              submitButton.disabled = false;
+            }
+          }
+        },
+        resetAuditForm() {
+          this.auditData = {
+            currentStock: '',
+            finding: 'compliant',
+            discrepancyDetails: '',
+            requiredAction: '',
+            notes: '',
+            checklist: {
+              properStorage: false,
+              accessLog: false,
+              documentation: false,
+              security: false
+            }
+          };
+        },
+        showSuccess(message) {
+          // Simple success notification
+          const successDiv = document.createElement('div');
+          successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+          successDiv.textContent = message;
+          document.body.appendChild(successDiv);
+          setTimeout(() => {
+            document.body.removeChild(successDiv);
+          }, 3000);
+        },
+        generateReport(substance) {
+          this.contextMenu.show = false;
+          this.generateComplianceReport(substance);
+        },
+        async generateComplianceReport(substance) {
+          try {
+            // Show loading state
+            this.showReportModal = true;
+            this.reportSubstance = substance;
+            this.reportData = null;
+            this.reportLoading = true;
+            
+            // Call API
+            const response = await fetch(`/api/superadmin/controlled-substances/${substance.id}/compliance-report`);
+            
+            if (response.ok) {
+              this.reportData = await response.json();
+              console.log('Report generated successfully:', this.reportData);
+            } else {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to generate report');
+            }
+            
+            this.reportLoading = false;
+            
+          } catch (error) {
+            console.error('Error generating report:', error);
+            this.reportLoading = false;
+            this.showError(`Failed to generate report: ${error.message}`);
+          }
+        },
+        async getAuditHistoryForReport(substance) {
+          try {
+            const response = await fetch(`/api/superadmin/controlled-substances/${substance.id}/audit-history`);
+            if (response.ok) {
+              const audits = await response.json();
+              return audits.map(audit => ({
+                ...audit,
+                impact: this.calculateAuditImpact(audit.finding)
+              }));
+            } else {
+              return [];
+            }
+          } catch (error) {
+            console.error('Error fetching audit history for report:', error);
+            return [];
+          }
+        },
+        calculateAuditImpact(finding) {
+          const impactMap = {
+            'compliant': 'No impact on compliance score',
+            'discrepancy': 'Minor impact - 10 point reduction',
+            'violation': 'Significant impact - 20 point reduction'
+          };
+          return impactMap[finding] || 'Unknown impact';
+        },
+        downloadReport() {
+          // Generate and download PDF report using real backend data
+          if (!this.reportData) {
+            this.showError('No report data available to download');
+            return;
+          }
+          
+          // Create a simple text report for now
+          const reportContent = `
+CONTROLLED SUBSTANCE COMPLIANCE REPORT
+========================================
+Report ID: ${this.reportData.reportId}
+Date: ${this.reportData.reportDate}
+Generated By: ${this.reportData.generatedBy}
+
+SUBSTANCE INFORMATION
+--------------------
+Name: ${this.reportData.substance.name}
+Generic Name: ${this.reportData.substance.genericName}
+Schedule: ${this.reportData.substance.schedule}
+Pharmacy: ${this.reportData.substance.pharmacyName}
+Registration Number: ${this.reportData.substance.registrationNumber}
+Current Stock: ${this.reportData.substance.currentStock} ${this.reportData.substance.unit}
+Status: ${this.reportData.substance.status}
+
+COMPLIANCE ASSESSMENT
+---------------------
+Overall Compliance Score: ${this.reportData.complianceScore}%
+Last Audit: ${this.reportData.substance.lastAudit}
+Next Audit Due: ${this.reportData.substance.nextAuditDue}
+
+RISK ASSESSMENT
+---------------
+Risk Level: ${this.reportData.riskAssessment.level}
+Risk Score: ${this.reportData.riskAssessment.score}/100
+Risk Factors:
+${this.reportData.riskAssessment.factors.map(f => `- ${f}`).join('\n')}
+
+RECOMMENDATIONS
+---------------
+${this.reportData.recommendations.map((rec, i) => `${i + 1}. ${rec.action} (Priority: ${rec.priority})
+   Reason: ${rec.reason}`).join('\n\n')}
+
+AUDIT HISTORY
+-------------
+${this.reportData.auditHistory.map((audit, i) => `${i + 1}. ${audit.date} - ${audit.auditor}
+   Finding: ${audit.finding}
+   Impact: ${audit.impact}
+   ${audit.discrepancyDetails ? `Details: ${audit.discrepancyDetails}` : ''}`).join('\n\n')}
+
+---
+This report was generated automatically by the Umi Health Controlled Substance Monitoring System.
+          `;
+          
+          // Create and download the file
+          const blob = new Blob([reportContent], { type: 'text/plain' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `controlled-substance-report-${this.reportSubstance.name.replace(/\s+/g, '-')}-${Date.now()}.txt`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          
+          this.showSuccess('Report downloaded successfully!');
+        },
+        viewPharmacyDetails(substance) {
+          this.contextMenu.show = false;
+          
+          // Navigate to pharmacy details or show pharmacy modal
+          console.log(`Viewing pharmacy details for ${substance.pharmacy}`);
+          alert(`Navigating to pharmacy details for ${substance.pharmacy}`);
+        },
+        logout() {
+          sessionStorage.clear();
+          localStorage.removeItem('umihealthUserRole');
+          window.location.href = '../auth/signin.html';
+        }
+      }
+    }
+  </script>
+</body>
+</html>

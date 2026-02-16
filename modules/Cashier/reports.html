@@ -29,6 +29,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="../../wwwroot/js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -80,12 +81,6 @@
             <span>Patients</span>
           </a>
           
-          <a href="sales.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-            </svg>
-            <span>Sales</span>
-          </a>
           
           <a href="payments.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,12 +177,6 @@
             <span>Patients</span>
           </a>
           
-          <a href="sales.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
-            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-            </svg>
-            <span>Sales</span>
-          </a>
           
           <a href="payments.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
             <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -413,7 +402,7 @@
             <div class="flex items-center">
               <div class="flex-shrink-0 bg-blue-100 rounded-lg p-3">
                 <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
               </div>
               <div class="ml-4">
@@ -601,6 +590,11 @@
         topProducts: [],
         
         init() {
+          // Initialize authentication
+          if (!window.umiAuth.initPageAuth('Cashier')) {
+            return; // Will redirect if not authenticated
+          }
+          
           this.loadBranches();
           this.initCharts();
           this.loadReportData();
@@ -894,7 +888,7 @@
         },
         
         logout() {
-          window.location.href = '../auth/signin.html';
+          window.umiLogout();
         },
         
         getMetricLabel(type) {
@@ -923,10 +917,24 @@
           
           switch (type) {
             case 'revenue':
+              value = this.totalRevenue;
+              // Only show currency prefix for sales reports, not patient reports
+              if (this.selectedReportType === 'sales') {
+                prefix = 'ZMW ';
+                suffix = value.toFixed(2);
+              } else {
+                suffix = value.toString();
+              }
+              break;
             case 'orderValue':
-              value = type === 'revenue' ? this.totalRevenue : this.avgOrderValue;
-              prefix = 'ZMW ';
-              suffix = value.toFixed(2);
+              value = this.avgOrderValue;
+              // Only show currency prefix for sales reports, not patient reports
+              if (this.selectedReportType === 'sales') {
+                prefix = 'ZMW ';
+                suffix = value.toFixed(2);
+              } else {
+                suffix = value.toString();
+              }
               break;
             case 'sales':
               value = this.totalSales;

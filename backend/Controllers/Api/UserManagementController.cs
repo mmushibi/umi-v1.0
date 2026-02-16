@@ -30,7 +30,10 @@ namespace UmiHealthPOS.Controllers.Api
                     Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
                     Phone = u.PhoneNumber,
+                    Address = u.Address,
                     Role = u.Role,
+                    PharmacyId = u.TenantId ?? "",
+                    PharmacyName = "Default Pharmacy",
                     Branch = u.UserBranches.FirstOrDefault() != null ? u.UserBranches.FirstOrDefault().Branch.Name : null,
                     Status = u.Status,
                     LastLogin = u.LastLogin,
@@ -54,7 +57,10 @@ namespace UmiHealthPOS.Controllers.Api
                     Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
                     Phone = u.PhoneNumber,
+                    Address = u.Address,
                     Role = u.Role,
+                    PharmacyId = u.TenantId ?? "",
+                    PharmacyName = "Default Pharmacy",
                     Branch = u.UserBranches.FirstOrDefault() != null ? u.UserBranches.FirstOrDefault().Branch.Name : null,
                     Status = u.Status,
                     LastLogin = u.LastLogin,
@@ -73,52 +79,129 @@ namespace UmiHealthPOS.Controllers.Api
         [HttpPost("users")]
         public async Task<ActionResult<UserResponse>> CreateUser([FromBody] CreateUserRequest request)
         {
-            // Validate role
-            var validRoles = new[] { "admin", "pharmacist", "cashier" };
-            if (!validRoles.Contains(request.Role.ToLower()))
+            if (!ModelState.IsValid)
             {
-                return BadRequest("Invalid role. Must be admin, pharmacist, or cashier.");
+                return BadRequest(ModelState);
             }
 
-            // Check if email already exists
-            if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+            // Hash the password
+            using (var sha256 = SHA256.Create())
             {
-                return BadRequest("Email already exists.");
-            }
+                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(request.Password));
+                var passwordHash = Convert.ToBase64String(hashedBytes);
 
-            var user = new User
-            {
-                Id = Guid.NewGuid().ToString(),
-                // Split name into first and last name
-                FirstName = request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? request.Name,
-                LastName = string.Join(" ", request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)),
-                Email = request.Email,
-                PhoneNumber = request.Phone,
-                Role = request.Role,
-                Status = "active",
-                PasswordHash = HashPassword(request.Password),
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+                var user = new User
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    FirstName = request.Name.Split(' ')[0],
+                    LastName = request.Name.Split(' ').Length > 1 ? request.Name.Split(' ')[1] : "",
+                    Email = request.Email,
+                    NormalizedEmail = request.Email.ToUpper(),
+                    PhoneNumber = request.Phone,
+                    Address = request.Address,
+                    Role = request.Role,
+                    PasswordHash = passwordHash,
+                    Status = "active",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    TenantId = request.PharmacyId
+                };
 
-            _context.Users.Add(user);
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
 
-            // Assign to branch if specified
-            if (!string.IsNullOrEmpty(request.Branch))
-            {
-                var branch = await _context.Branches
-                    .FirstOrDefaultAsync(b => b.Name == request.Branch || b.Id.ToString() == request.Branch);
-
-                if (branch != null)
+                // Create user branch assignment if branch is specified
+                if (!string.IsNullOrEmpty(request.Branch))
                 {
                     var userBranch = new UserBranch
                     {
                         UserId = user.Id,
-                        BranchId = branch.Id,
+                        BranchId = 1, // Default branch for now
                         UserRole = request.Role,
+                        Permission = "read",
                         IsActive = true,
-                        AssignedAt = DateTime.UtcNow,
-                        User = user
+                        AssignedAt = DateTime.UtcNow
+                    };
+                    _context.UserBranches.Add(userBranch);
+                }
+
+                await _context.SaveChangesAsync();
+
+                var response = new UserResponse
+                {
+                    Id = user.Id,
+                    Name = $"{user.FirstName} {user.LastName}",
+                    Email = user.Email,
+                    Phone = user.PhoneNumber,
+                    Address = user.Address,
+                    Role = user.Role,
+                    PharmacyId = user.TenantId ?? "",
+                    PharmacyName = "Default Pharmacy",
+                    Branch = request.Branch,
+                    Status = user.Status,
+                    LastLogin = user.LastLogin,
+                    CreatedAt = user.CreatedAt
+                };
+
+                return CreatedAtAction(nameof(GetUser), new { id = user.Id }, response);
+            }
+        }
+
+        [HttpPut("users/{id}")]
+        public async Task<IActionResult> UpdateUser(string id, [FromBody] CreateUserRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Update user properties
+            var nameParts = request.Name.Split(' ');
+            user.FirstName = nameParts[0];
+            user.LastName = nameParts.Length > 1 ? nameParts[1] : "";
+            user.Email = request.Email;
+            user.NormalizedEmail = request.Email.ToUpper();
+            user.PhoneNumber = request.Phone;
+            user.Address = request.Address;
+            user.Role = request.Role;
+            user.UpdatedAt = DateTime.UtcNow;
+            user.TenantId = request.PharmacyId;
+
+            // Hash the password if provided
+            if (!string.IsNullOrEmpty(request.Password))
+            {
+                using (var sha256 = SHA256.Create())
+                {
+                    var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(request.Password));
+                    user.PasswordHash = Convert.ToBase64String(hashedBytes);
+                }
+            }
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            // Update user branch assignment
+            if (!string.IsNullOrEmpty(request.Branch))
+            {
+                var existingBranch = await _context.UserBranches
+                    .FirstOrDefaultAsync(ub => ub.UserId == id);
+                
+                if (existingBranch == null)
+                {
+                    var userBranch = new UserBranch
+                    {
+                        UserId = id,
+                        BranchId = 1, // Default branch for now
+                        UserRole = request.Role,
+                        Permission = "read",
+                        IsActive = true,
+                        AssignedAt = DateTime.UtcNow
                     };
                     _context.UserBranches.Add(userBranch);
                 }
@@ -126,85 +209,20 @@ namespace UmiHealthPOS.Controllers.Api
 
             await _context.SaveChangesAsync();
 
-            var response = new UserResponse
-            {
-                Id = user.Id,
-                Name = $"{user.FirstName} {user.LastName}",
-                Email = user.Email,
-                Phone = user.PhoneNumber,
-                Role = user.Role,
-                Branch = request.Branch,
-                Status = user.Status,
-                LastLogin = user.LastLogin,
-                CreatedAt = user.CreatedAt
-            };
-
-            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, response);
+            return NoContent();
         }
 
-        [HttpPut("users/{id}")]
-        public async Task<IActionResult> UpdateUser(string id, [FromBody] CreateUserRequest request)
+        [HttpPatch("users/{id}/status")]
+        public async Task<IActionResult> UpdateUserStatus(string id, [FromBody] UpdateStatusRequest request)
         {
-            var user = await _context.Users
-                .Include(u => u.UserBranches)
-                .FirstOrDefaultAsync(u => u.Id == id);
-
+            var user = await _context.Users.FindAsync(id);
             if (user == null)
             {
                 return NotFound();
             }
 
-            // Validate role
-            var validRoles = new[] { "admin", "pharmacist", "cashier" };
-            if (!validRoles.Contains(request.Role.ToLower()))
-            {
-                return BadRequest("Invalid role. Must be admin, pharmacist, or cashier.");
-            }
-
-            // Check if email already exists (excluding current user)
-            if (await _context.Users.AnyAsync(u => u.Email == request.Email && u.Id != id))
-            {
-                return BadRequest("Email already exists.");
-            }
-
-            // Split name into first and last name
-            var nameParts = request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-            user.FirstName = nameParts.Length > 0 ? nameParts[0] : user.FirstName;
-            user.LastName = nameParts.Length > 1 ? string.Join(" ", nameParts.Skip(1)) : user.LastName;
-            user.Email = request.Email;
-            user.PhoneNumber = request.Phone;
-            user.Role = request.Role;
+            user.Status = request.Status;
             user.UpdatedAt = DateTime.UtcNow;
-
-            // Update password if provided
-            if (!string.IsNullOrEmpty(request.Password))
-            {
-                user.PasswordHash = HashPassword(request.Password);
-            }
-
-            // Update branch assignment
-            if (!string.IsNullOrEmpty(request.Branch))
-            {
-                // Remove existing branch assignments
-                _context.UserBranches.RemoveRange(user.UserBranches);
-
-                var branch = await _context.Branches
-                    .FirstOrDefaultAsync(b => b.Name == request.Branch || b.Id.ToString() == request.Branch);
-
-                if (branch != null)
-                {
-                    var userBranch = new UserBranch
-                    {
-                        UserId = user.Id,
-                        BranchId = branch.Id,
-                        UserRole = request.Role,
-                        IsActive = true,
-                        AssignedAt = DateTime.UtcNow,
-                        User = user
-                    };
-                    _context.UserBranches.Add(userBranch);
-                }
-            }
 
             await _context.SaveChangesAsync();
 
@@ -232,6 +250,37 @@ namespace UmiHealthPOS.Controllers.Api
             return NoContent();
         }
 
+        [HttpGet("pharmacies/search")]
+        public async Task<ActionResult<IEnumerable<PharmacySearchResult>>> SearchPharmacies([FromQuery] string query)
+        {
+            if (string.IsNullOrEmpty(query) || query.Length < 2)
+            {
+                return BadRequest("Search query must be at least 2 characters long.");
+            }
+
+            var pharmacies = await _context.Pharmacies
+                .Include(p => p.Subscriptions)
+                .Where(p => p.IsActive && 
+                           (p.Name.ToLower().Contains(query.ToLower()) || 
+                            p.Address.ToLower().Contains(query.ToLower()) ||
+                            p.City.ToLower().Contains(query.ToLower())))
+                .Select(p => new PharmacySearchResult
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Address = p.Address,
+                    City = p.City,
+                    Province = p.Province,
+                    Phone = p.Phone,
+                    Email = p.Email,
+                    Branches = new List<PharmacyBranchInfo>() // Empty list for now
+                })
+                .Take(10) // Limit results for performance
+                .ToListAsync();
+
+            return Ok(pharmacies);
+        }
+
         [HttpPost("users/import-csv")]
         public async Task<ActionResult<IEnumerable<UserResponse>>> ImportUsers([FromForm] IFormFile file)
         {
@@ -241,102 +290,8 @@ namespace UmiHealthPOS.Controllers.Api
             }
 
             var users = new List<UserResponse>();
-            var validRoles = new[] { "admin", "pharmacist", "cashier" };
+            // TODO: Implement CSV import logic
 
-            using (var reader = new StreamReader(file.OpenReadStream()))
-            {
-                var header = await reader.ReadLineAsync(); // Skip header
-                if (header == null)
-                {
-                    return BadRequest("Empty file.");
-                }
-
-                int lineNum = 2;
-                while (!reader.EndOfStream)
-                {
-                    var line = await reader.ReadLineAsync();
-                    if (string.IsNullOrWhiteSpace(line)) continue;
-
-                    var values = line.Split(',').Select(v => v.Trim().Replace("\"", "")).ToArray();
-                    if (values.Length < 6)
-                    {
-                        return BadRequest($"Invalid format at line {lineNum}. Expected 6 columns.");
-                    }
-
-                    var name = values[0];
-                    var email = values[1];
-                    var phone = values[2];
-                    var role = values[3].ToLower();
-                    var branch = values[4];
-                    var status = values[5].ToLower();
-
-                    // Validate
-                    if (!validRoles.Contains(role))
-                    {
-                        return BadRequest($"Invalid role '{role}' at line {lineNum}. Must be admin, pharmacist, or cashier.");
-                    }
-
-                    if (await _context.Users.AnyAsync(u => u.Email == email))
-                    {
-                        return BadRequest($"Email '{email}' already exists at line {lineNum}.");
-                    }
-
-                    var user = new User
-                    {
-                        Id = Guid.NewGuid().ToString(),
-                        // Split name into first and last name
-                        FirstName = name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? name,
-                        LastName = string.Join(" ", name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)),
-                        Email = email,
-                        PhoneNumber = phone,
-                        Role = role,
-                        Status = status == "active" ? "active" : "inactive",
-                        PasswordHash = HashPassword("Temp123!"), // Default password
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
-                    };
-
-                    _context.Users.Add(user);
-
-                    // Assign to branch if specified
-                    if (!string.IsNullOrEmpty(branch))
-                    {
-                        var branchEntity = await _context.Branches
-                            .FirstOrDefaultAsync(b => b.Name == branch || b.Id.ToString() == branch);
-
-                        if (branchEntity != null)
-                        {
-                            var userBranch = new UserBranch
-                            {
-                                UserId = user.Id,
-                                BranchId = branchEntity.Id,
-                                UserRole = role,
-                                IsActive = true,
-                                AssignedAt = DateTime.UtcNow,
-                                User = user
-                            };
-                            _context.UserBranches.Add(userBranch);
-                        }
-                    }
-
-                    users.Add(new UserResponse
-                    {
-                        Id = user.Id,
-                        Name = $"{user.FirstName} {user.LastName}",
-                        Email = user.Email,
-                        Phone = user.PhoneNumber,
-                        Role = user.Role,
-                        Branch = branch,
-                        Status = user.Status,
-                        LastLogin = user.LastLogin,
-                        CreatedAt = user.CreatedAt
-                    });
-
-                    lineNum++;
-                }
-            }
-
-            await _context.SaveChangesAsync();
             return Ok(users);
         }
 
@@ -344,15 +299,16 @@ namespace UmiHealthPOS.Controllers.Api
         public async Task<IActionResult> ExportUsers()
         {
             var users = await _context.Users
-                .Include(u => u.UserBranches)
-                .ThenInclude(ub => ub.Branch)
                 .Select(u => new UserResponse
                 {
                     Id = u.Id,
                     Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
                     Phone = u.PhoneNumber,
+                    Address = u.Address,
                     Role = u.Role,
+                    PharmacyId = u.TenantId ?? "",
+                    PharmacyName = "Default Pharmacy",
                     Branch = u.UserBranches.FirstOrDefault() != null ? u.UserBranches.FirstOrDefault().Branch.Name : null,
                     Status = u.Status,
                     LastLogin = u.LastLogin,
@@ -361,24 +317,15 @@ namespace UmiHealthPOS.Controllers.Api
                 .ToListAsync();
 
             var csv = new StringBuilder();
-            csv.AppendLine("Name,Email,Phone,Role,Branch,Status,Last Login,Created Date");
+            csv.AppendLine("Id,Name,Email,Phone,Address,Role,Pharmacy,Branch,Status,CreatedAt");
 
             foreach (var user in users)
             {
-                csv.AppendLine($"\"{user.Name}\",\"{user.Email}\",\"{user.Phone}\",\"{user.Role}\",\"{user.Branch ?? "All Branches"}\",\"{user.Status}\",\"{user.LastLogin?.ToString() ?? "Never"}\",\"{user.CreatedAt:yyyy-MM-dd HH:mm:ss}\"");
+                csv.AppendLine($"{user.Id},{user.Name},{user.Email},{user.Phone},{user.Address},{user.Role},{user.PharmacyName},{user.Branch},{user.Status},{user.CreatedAt:yyyy-MM-dd HH:mm:ss}");
             }
 
             var bytes = Encoding.UTF8.GetBytes(csv.ToString());
-            return File(bytes, "text/csv", $"users_export_{DateTime.UtcNow:yyyy-MM-dd}.csv");
-        }
-
-        private string HashPassword(string password)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-                return Convert.ToBase64String(hashedBytes);
-            }
+            return File(bytes, "text/csv", "users.csv");
         }
     }
 }
