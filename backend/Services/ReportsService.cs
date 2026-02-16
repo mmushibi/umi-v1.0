@@ -194,7 +194,7 @@ namespace UmiHealthPOS.Services
                 {
                     TotalItems = totalItems,
                     LowStockItems = lowStockItems,
-                    TotalValue = totalValue ?? 0m,
+                    TotalValue = totalValue,
                     Categories = categories.Count
                 },
                 Charts = new ChartData
@@ -226,7 +226,7 @@ namespace UmiHealthPOS.Services
             var totalPrescriptions = prescriptions.Count;
             var pendingPrescriptions = prescriptions.Count(p => p.Status == "Pending");
             var completedToday = prescriptions.Count(p => p.Status == "Completed" && p.FilledDate?.Date == DateTime.Today);
-            var totalValue = prescriptions.Sum(p => p.TotalCost);
+            var totalValue = prescriptions.Sum(p => p.TotalCost ?? 0m);
 
             // Medications breakdown
             var medications = prescriptions
@@ -250,7 +250,7 @@ namespace UmiHealthPOS.Services
                     TotalPrescriptions = totalPrescriptions,
                     PendingPrescriptions = pendingPrescriptions,
                     CompletedToday = completedToday,
-                    TotalValue = totalValue ?? 0m
+                    TotalValue = totalValue
                 },
                 Charts = new ChartData
                 {

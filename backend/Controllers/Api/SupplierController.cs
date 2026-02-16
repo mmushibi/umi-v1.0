@@ -301,11 +301,10 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Check for duplicate supplier code or registration number (excluding current supplier)
                 var duplicateSupplier = await _context.Suppliers
-                    .FirstOrDefaultAsync(s =>
+                    .FirstOrDefaultAsync(s => 
                         s.Id != id &&
                         s.TenantId == tenantId &&
-                        ((s.SupplierCode == request.SupplierCode) ||
-                         (s.RegistrationNumber == request.RegistrationNumber && !string.IsNullOrEmpty(request.RegistrationNumber))));
+                        (s.RegistrationNumber == request.RegistrationNumber && !string.IsNullOrEmpty(request.RegistrationNumber)));
 
                 if (duplicateSupplier != null)
                 {
@@ -346,8 +345,8 @@ namespace UmiHealthPOS.Controllers.Api
                 supplier.PaymentTerms = request.PaymentTerms;
                 supplier.CreditLimit = request.CreditLimit ?? 0;
                 supplier.CreditPeriod = request.CreditPeriod ?? 0;
-                supplier.DiscountTerms = request.DiscountTerms ?? 0;
-                supplier.EarlyPaymentDiscount = request.EarlyPaymentDiscount ?? 0;
+                supplier.DiscountTerms = request.DiscountTerms ?? "";
+                supplier.EarlyPaymentDiscount = request.EarlyPaymentDiscount ?? 0.0m;
                 supplier.SupplierCategory = request.SupplierCategory;
                 supplier.SupplierStatus = request.SupplierStatus;
                 supplier.PriorityLevel = request.PriorityLevel;

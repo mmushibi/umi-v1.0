@@ -72,12 +72,6 @@ builder.Services.AddCors(options =>
 // Add application services
 builder.Services.AddApplicationServices();
 
-// Add repositories
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
-builder.Services.AddScoped<ISaleRepository, SaleRepository>();
-builder.Services.AddScoped<IStockTransactionRepository, StockTransactionRepository>();
-
 // Add business services
 builder.Services.AddScoped<IInventoryService, InventoryService>();
 builder.Services.AddScoped<ISubscriptionHistoryService, SubscriptionHistoryService>();

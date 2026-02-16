@@ -11,13 +11,10 @@ namespace UmiHealthPOS.Configuration
             // Register services
             services.AddScoped<IDashboardService, DashboardService>();
             services.AddScoped<IDashboardNotificationService, DashboardNotificationService>();
-            services.AddScoped<ISuperAdminDashboardService, SuperAdminDashboardService>();
             services.AddScoped<IInventoryService, InventoryService>();
             services.AddScoped<IPrescriptionService, PrescriptionService>();
             services.AddScoped<IBranchService, BranchService>();
             services.AddScoped<ReportsService>();
-            services.AddScoped<IJwtService, JwtService>();
-            services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IPasswordService, PasswordService>();
             services.AddScoped<IWebSearchService, WebSearchService>();
