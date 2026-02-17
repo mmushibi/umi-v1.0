@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using UmiHealthPOS.Services;
 using UmiHealthPOS.Hubs;
+using UmiHealthPOS.Repositories;
 
 namespace UmiHealthPOS.Configuration
 {
@@ -9,18 +10,15 @@ namespace UmiHealthPOS.Configuration
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             // Register services
-            services.AddScoped<IDashboardService, DashboardService>();
-            services.AddScoped<IDashboardNotificationService, DashboardNotificationService>();
-            services.AddScoped<IInventoryService, InventoryService>();
-            services.AddScoped<IPrescriptionService, PrescriptionService>();
-            services.AddScoped<IBranchService, BranchService>();
-            services.AddScoped<ReportsService>();
+            // services.AddScoped<IDashboardService, DashboardService>();
+            // services.AddScoped<IDashboardNotificationService, DashboardNotificationService>();
+            // services.AddScoped<IInventoryService, InventoryService>();
+            // services.AddScoped<IPrescriptionService, PrescriptionService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IPasswordService, PasswordService>();
             services.AddScoped<IWebSearchService, WebSearchService>();
             services.AddScoped<ISepioAIService, SepioAIService>();
             services.AddScoped<ISessionTimeoutService, SessionTimeoutService>();
-            services.AddScoped<IZambianComplianceService, ZambianComplianceService>();
 
             // Add SignalR
             services.AddSignalR();

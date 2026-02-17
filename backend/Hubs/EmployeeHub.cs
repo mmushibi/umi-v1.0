@@ -29,7 +29,7 @@ namespace UmiHealthPOS.Hubs
 
         public async Task JoinTenantGroup(int tenantId)
         {
-            await Groups.AddToGroupAsync(tenantId.ToString());
+            await Groups.AddToGroupAsync(Context.ConnectionId, tenantId.ToString());
         }
     }
 }

@@ -128,22 +128,24 @@ namespace UmiHealthPOS.Data
                 // Create users
                 var users = new[]
                 {
-                    new User
+                    new UserAccount
                     {
+                        UserId = "john-doe-001",
                         FirstName = "John",
                         LastName = "Doe",
                         Email = "john.doe@umihealth.com",
                         PhoneNumber = "+260 977 111111",
-                        Role = "admin",
+                        Role = "TenantAdmin",
                         IsActive = true
                     },
-                    new User
+                    new UserAccount
                     {
+                        UserId = "jane-smith-002", 
                         FirstName = "Jane",
                         LastName = "Smith",
                         Email = "jane.smith@umihealth.com",
                         PhoneNumber = "+260 977 222222",
-                        Role = "admin",
+                        Role = "TenantAdmin",
                         IsActive = true
                     }
                 };
@@ -166,8 +168,7 @@ namespace UmiHealthPOS.Data
                         EndDate = DateTime.Now.AddDays(30),
                         Amount = 1350m,
                         Status = "active",
-                        IsActive = true,
-                        AutoRenew = true
+                        IsActive = true
                     },
                     new Subscription
                     {
@@ -177,8 +178,7 @@ namespace UmiHealthPOS.Data
                         EndDate = DateTime.Now.AddDays(35),
                         Amount = 4050m,
                         Status = "active",
-                        IsActive = true,
-                        AutoRenew = true
+                        IsActive = true
                     },
                     new Subscription
                     {
@@ -188,8 +188,7 @@ namespace UmiHealthPOS.Data
                         EndDate = DateTime.Now.AddDays(25),
                         Amount = 13500m,
                         Status = "active",
-                        IsActive = true,
-                        AutoRenew = true
+                        IsActive = true
                     },
                     new Subscription
                     {
@@ -199,8 +198,7 @@ namespace UmiHealthPOS.Data
                         EndDate = DateTime.Now.AddDays(10),
                         Amount = 1350m,
                         Status = "cancelled",
-                        IsActive = false,
-                        AutoRenew = false
+                        IsActive = false
                     }
                 };
 
@@ -240,7 +238,7 @@ namespace UmiHealthPOS.Data
                         NewPlan = "enterprise",
                         Amount = 13500m,
                         Notes = "Enterprise subscription",
-                        UserId = users.First(u => u.FirstName == "Jane").Id,
+                        UserId = users.First(u => u.FirstName == "Jane").UserId.ToString(),
                         CreatedAt = DateTime.Now.AddDays(-10)
                     },
                     new SubscriptionHistory
@@ -262,7 +260,7 @@ namespace UmiHealthPOS.Data
                         NewPlan = "professional",
                         Amount = 4050m,
                         Notes = "Upgraded from Basic",
-                        UserId = users.First(u => u.FirstName == "Jane").Id,
+                        UserId = users.First(u => u.FirstName == "Jane").UserId.ToString(),
                         CreatedAt = DateTime.Now.AddDays(-12)
                     },
                     new SubscriptionHistory

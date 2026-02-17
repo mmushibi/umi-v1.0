@@ -46,6 +46,7 @@ namespace UmiHealthPOS.Data
         public required DbSet<ShiftAssignment> ShiftAssignments { get; set; } = null!;
         public required DbSet<Employee> Employees { get; set; } = null!;
         public required DbSet<ControlledSubstanceAudit> ControlledSubstanceAudits { get; set; } = null!;
+        public required DbSet<Category> Categories { get; set; } = null!;
 
         // RBAC Entities
         public required DbSet<Role> Roles { get; set; } = null!;

@@ -56,10 +56,10 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 var query = _context.Suppliers
-                    .AsNoTracking()
                     .Where(s => s.TenantId == tenantId && s.IsActive)
                     .Include(s => s.Contacts)
-                    .Include(s => s.Products);
+                    .Include(s => s.Products)
+                    .AsNoTracking();
 
                 if (!string.IsNullOrEmpty(search))
                 {

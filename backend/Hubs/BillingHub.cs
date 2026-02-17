@@ -15,7 +15,7 @@ namespace UmiHealthPOS.Hubs
 
         public async Task JoinBillingGroup()
         {
-            await Groups.AddToGroup("BillingUpdates");
+            await Groups.AddToGroupAsync(Context.ConnectionId, "BillingUpdates");
             _logger.LogInformation("Client joined billing updates group");
         }
 

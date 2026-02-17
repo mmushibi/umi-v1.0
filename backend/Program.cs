@@ -72,16 +72,9 @@ builder.Services.AddCors(options =>
 // Add application services
 builder.Services.AddApplicationServices();
 
-// Add business services
-builder.Services.AddScoped<IInventoryService, InventoryService>();
-builder.Services.AddScoped<ISubscriptionHistoryService, SubscriptionHistoryService>();
-builder.Services.AddScoped<IBillingService, BillingService>();
-builder.Services.AddScoped<IPatientService, PatientService>();
-
 // DataSeeder removed due to static type conflicts
 // builder.Services.AddScoped<DataSeeder>();
 builder.Services.AddScoped<SubscriptionDataSeeder>();
-builder.Services.AddScoped<CategoryDataSeeder>();
 
 var app = builder.Build();
 
@@ -93,25 +86,18 @@ app.UseCors("AllowFrontend");
 // app.UseAuthorization();
 
 // Map SignalR hubs
-app.MapHub<DashboardHub>("/dashboardHub");
-app.MapHub<PatientHub>("/patientHub");
+// app.MapHub<DashboardHub>("/dashboardHub");
+// app.MapHub<PatientHub>("/patientHub");
 
 app.MapControllers();
 
 // Seed data in development
 if (app.Environment.IsDevelopment())
 {
-    await DataSeeder.SeedDataAsync(app.Services);
     using (var scope = app.Services.CreateScope())
     {
-        var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await CategoryDataSeeder.SeedCategoriesAsync(context);
-
-        // Seed pharmacist dashboard sample data
-        var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
-        var seederLogger = loggerFactory.CreateLogger<PharmacistDashboardSeeder>();
-        var pharmacistSeeder = new PharmacistDashboardSeeder(context, seederLogger);
-        await pharmacistSeeder.SeedSampleDataAsync();
+        // Data seeding is handled by DataSeeder static class
+        await DataSeeder.SeedDataAsync(scope.ServiceProvider);
     }
 }
 

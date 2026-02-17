@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Models;
-using UmiHealthPOS.Repositories;
 using UmiHealthPOS.Data;
 using Microsoft.AspNetCore.Http;
 

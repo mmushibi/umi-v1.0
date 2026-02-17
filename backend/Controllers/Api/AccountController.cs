@@ -34,7 +34,7 @@ namespace UmiHealthPOS.Controllers.Api
             if (user == null)
             {
                 // Return default user for testing
-                user = new Models.User
+                user = new Models.UserAccount
                 {
                     Id = 1,
                     FirstName = "Test",

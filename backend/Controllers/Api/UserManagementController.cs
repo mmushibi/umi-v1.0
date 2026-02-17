@@ -26,7 +26,7 @@ namespace UmiHealthPOS.Controllers.Api
                 .ThenInclude(ub => ub.Branch)
                 .Select(u => new UserResponse
                 {
-                    Id = u.Id,
+                    Id = u.Id.ToString(),
                     Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
                     Phone = u.PhoneNumber,
@@ -53,7 +53,7 @@ namespace UmiHealthPOS.Controllers.Api
                 .Where(u => u.Id == id)
                 .Select(u => new UserResponse
                 {
-                    Id = u.Id,
+                    Id = u.Id.ToString(),
                     Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
                     Phone = u.PhoneNumber,
@@ -129,7 +129,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 var response = new UserResponse
                 {
-                    Id = user.Id,
+                    Id = user.Id.ToString(),
                     Name = $"{user.FirstName} {user.LastName}",
                     Email = user.Email,
                     Phone = user.PhoneNumber,
@@ -301,7 +301,7 @@ namespace UmiHealthPOS.Controllers.Api
             var users = await _context.Users
                 .Select(u => new UserResponse
                 {
-                    Id = u.Id,
+                    Id = u.Id.ToString(),
                     Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
                     Phone = u.PhoneNumber,

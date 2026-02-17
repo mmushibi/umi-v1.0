@@ -171,6 +171,16 @@ namespace UmiHealthPOS.Models
 
         public bool IsActive { get; set; } = true;
 
+        [StringLength(100)]
+        public string? PhoneNumber { get; set; }
+
+        [StringLength(100)]
+        public string? Department { get; set; }
+
+        public bool TwoFactorEnabled { get; set; } = false;
+
+        public DateTime? LastLogin { get; set; }
+
         public DateTime? LastLoginAt { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -1621,6 +1631,48 @@ namespace UmiHealthPOS.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    }
+
+    public class Category
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(200)]
+        public string Name { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(50)]
+        public string Code { get; set; } = string.Empty;
+
+        [StringLength(500)]
+        public string Description { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(20)]
+        public string Status { get; set; } = "Active"; // "Active", "Pending", "Inactive"
+
+        [StringLength(100)]
+        public string ColorClass { get; set; } = "bg-blue-100 text-blue-600";
+
+        public int ItemCount { get; set; } = 0;
+
+        public int TenantUsage { get; set; } = 0;
+
+        [StringLength(200)]
+        public string? RequestedBy { get; set; } // For pending categories
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime? ApprovedAt { get; set; }
+
+        public string? ApprovedBy { get; set; }
+
+        // Navigation properties
+        public virtual ICollection<CategorySync> CategorySyncs { get; set; } = new List<CategorySync>();
+        public virtual ICollection<TenantCategory> TenantCategories { get; set; } = new List<TenantCategory>();
     }
 
     public class CategorySync

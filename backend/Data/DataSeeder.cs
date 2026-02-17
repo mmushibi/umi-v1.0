@@ -15,7 +15,7 @@ namespace UmiHealthPOS.Data
         {
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<DataSeeder>>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<SubscriptionDataSeeder>>();
 
             await new SubscriptionDataSeeder(context, logger).SeedSubscriptionDataAsync();
 
@@ -23,6 +23,33 @@ namespace UmiHealthPOS.Data
             {
                 // Ensure database is created
                 await context.Database.EnsureCreatedAsync();
+
+                // Seed Roles and Permissions first
+                if (!await context.Roles.AnyAsync())
+                {
+                    var roles = new[]
+                    {
+                        new Role { Name = "TenantAdmin", Description = "Tenant Administrator", Level = "High", IsSystem = true },
+                        new Role { Name = "Pharmacist", Description = "Pharmacist", Level = "Medium", IsSystem = true },
+                        new Role { Name = "Cashier", Description = "Cashier", Level = "Low", IsSystem = true }
+                    };
+                    await context.Roles.AddRangeAsync(roles);
+                    await context.SaveChangesAsync();
+                    logger.LogInformation("Seeded {Count} roles", roles.Length);
+                }
+
+                if (!await context.Permissions.AnyAsync())
+                {
+                    var permissions = new[]
+                    {
+                        new Permission { Name = "admin", DisplayName = "Admin Access", Category = "System", Description = "Full administrative access", IsSystem = true },
+                        new Permission { Name = "write", DisplayName = "Write Access", Category = "Data", Description = "Read and write access", IsSystem = true },
+                        new Permission { Name = "read", DisplayName = "Read Access", Category = "Data", Description = "Read-only access", IsSystem = true }
+                    };
+                    await context.Permissions.AddRangeAsync(permissions);
+                    await context.SaveChangesAsync();
+                    logger.LogInformation("Seeded {Count} permissions", permissions.Length);
+                }
 
                 // Seed Branches
                 if (!await context.Branches.AnyAsync())
@@ -76,73 +103,45 @@ namespace UmiHealthPOS.Data
                     var branches = await context.Branches.ToListAsync();
                     var users = new[]
                     {
-                        new User
+                        new UserAccount
                         {
-                            Id = "admin-user-001",
+                            UserId = "admin-user-001",
                             FirstName = "Admin",
                             LastName = "User",
                             Email = "admin@umihealth.com",
-                            NormalizedEmail = "ADMIN@UMIHEALTH.COM",
                             PhoneNumber = "+260976543212",
                             Role = "TenantAdmin",
                             Department = "Management",
-                            PasswordHash = "AQAAAAEAACcQAAAAEKqgkTvtFvYFGj2Z8qZ7vK9d8X7r5J3gH2f9L1kN8oM=", // Hashed "Admin123!"
                             BranchId = branches[0].Id,
-                            Address = "123 Admin Street, Lusaka",
-                            City = "Lusaka",
-                            Country = "Zambia",
-                            LicenseNumber = "ZMP-2023-001",
-                            RegistrationNumber = "ZMR-2023-001",
                             IsActive = true,
-                            EmailConfirmed = true,
-                            PhoneNumberConfirmed = true,
-                            Status = "active",
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
                         },
-                        new User
+                        new UserAccount
                         {
-                            Id = "pharmacist-001",
+                            UserId = "pharmacist-001",
                             FirstName = "Grace",
                             LastName = "Chilufya",
                             Email = "grace@umihealth.com",
-                            NormalizedEmail = "GRACE@UMIHEALTH.COM",
                             PhoneNumber = "+260976543213",
                             Role = "Pharmacist",
                             Department = "Pharmacy",
-                            PasswordHash = "AQAAAAEAACcQAAAAEKqgkTvtFvYFGj2Z8qZ7vK9d8X7r5J3gH2f9L1kN8oM=", // Hashed "Admin123!"
                             BranchId = branches[0].Id,
-                            Address = "456 Pharmacist Street, Lusaka",
-                            City = "Lusaka",
-                            Country = "Zambia",
-                            LicenseNumber = "ZMP-2023-002",
-                            RegistrationNumber = "ZMR-2023-002",
                             IsActive = true,
-                            EmailConfirmed = true,
-                            PhoneNumberConfirmed = true,
-                            Status = "active",
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
                         },
-                        new User
+                        new UserAccount
                         {
-                            Id = "cashier-001",
+                            UserId = "cashier-001",
                             FirstName = "John",
                             LastName = "Banda",
                             Email = "john@umihealth.com",
-                            NormalizedEmail = "JOHN@UMIHEALTH.COM",
                             PhoneNumber = "+260976543214",
                             Role = "Cashier",
                             Department = "Sales",
-                            PasswordHash = "AQAAAAEAACcQAAAAEKqgkTvtFvYFGj2Z8qZ7vK9d8X7r5J3gH2f9L1kN8oM=", // Hashed "Admin123!"
                             BranchId = branches[0].Id,
-                            Address = "789 Cashier Street, Lusaka",
-                            City = "Lusaka",
-                            Country = "Zambia",
                             IsActive = true,
-                            EmailConfirmed = true,
-                            PhoneNumberConfirmed = true,
-                            Status = "active",
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
                         }
@@ -158,42 +157,44 @@ namespace UmiHealthPOS.Data
                 {
                     var users = await context.Users.ToListAsync();
                     var branches = await context.Branches.ToListAsync();
+                    var roles = await context.Roles.ToListAsync();
+                    var permissions = await context.Permissions.ToListAsync();
 
                     var userBranches = new[]
                     {
                         new UserBranch
                         {
-                            UserId = users[0].Id, // Admin user
+                            UserId = users[0].UserId, // Admin user
                             BranchId = branches[0].Id, // Main branch
-                            UserRole = "TenantAdmin",
-                            Permission = "admin",
+                            UserRole = roles.First(r => r.Name == "TenantAdmin"),
+                            Permission = permissions.First(p => p.Name == "admin"),
                             IsActive = true,
                             AssignedAt = DateTime.UtcNow
                         },
                         new UserBranch
                         {
-                            UserId = users[0].Id, // Admin user
+                            UserId = users[0].UserId, // Admin user
                             BranchId = branches[1].Id, // Kitwe branch
-                            UserRole = "TenantAdmin",
-                            Permission = "admin",
+                            UserRole = roles.First(r => r.Name == "TenantAdmin"),
+                            Permission = permissions.First(p => p.Name == "admin"),
                             IsActive = true,
                             AssignedAt = DateTime.UtcNow
                         },
                         new UserBranch
                         {
-                            UserId = users[1].Id, // Pharmacist user
+                            UserId = users[1].UserId, // Pharmacist user
                             BranchId = branches[0].Id, // Main branch
-                            UserRole = "Pharmacist",
-                            Permission = "write",
+                            UserRole = roles.First(r => r.Name == "Pharmacist"),
+                            Permission = permissions.First(p => p.Name == "write"),
                             IsActive = true,
                             AssignedAt = DateTime.UtcNow
                         },
                         new UserBranch
                         {
-                            UserId = users[2].Id, // Cashier user
+                            UserId = users[2].UserId, // Cashier user
                             BranchId = branches[0].Id, // Main branch
-                            UserRole = "Cashier",
-                            Permission = "read",
+                            UserRole = roles.First(r => r.Name == "Cashier"),
+                            Permission = permissions.First(p => p.Name == "read"),
                             IsActive = true,
                             AssignedAt = DateTime.UtcNow
                         }

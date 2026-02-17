@@ -31,13 +31,42 @@
     <Compile Remove="Controllers\Api\RBACController.cs" />
     <Compile Remove="Controllers\Api\SubscriptionHistoryController.cs" />
     <Compile Remove="Controllers\Api\DatabaseTestController.cs" />
+    <Compile Remove="Controllers\Api\ClinicalController.cs" />
+    <Compile Remove="Controllers\Api\ShiftManagementController.cs" />
+    <Compile Remove="Controllers\Api\AccountController.cs" />
+    <Compile Remove="Controllers\Api\ComplianceController.cs" />
+    <Compile Remove="Controllers\Api\PrescriptionController.cs" />
     <Compile Remove="Controllers\EmployeeController.cs" />
     <Compile Remove="Data\CategoryDataSeeder.cs" />
+    <Compile Remove="Data\SalesDataSeeder.cs" />
     <Compile Remove="Repositories\Repositories.cs" />
     <Compile Remove="Services\SuperAdminDashboardService.cs" />
     <Compile Remove="Services\SubscriptionHistoryService.cs" />
     <Compile Remove="Services\JwtService.cs" />
     <Compile Remove="Services\EmployeeService.cs" />
+    <Compile Remove="Services\ZambianComplianceService.cs" />
+    <Compile Remove="Services\SubscriptionService.cs" />
+    <Compile Remove="Tests\DatabaseIntegrationTest.cs" />
+    <Compile Remove="Services\PrescriptionService.cs" />
+    <Compile Remove="Services\ISubscriptionService.cs" />
+    <Compile Remove="Models\DTOs\TenantDTOs.cs" />
+    <Compile Remove="Services\PatientService.cs" />
+    <Compile Remove="Controllers\Api\ReportsController.cs" />
+    <Compile Remove="Controllers\Api\CashierController.cs" />
+    <Compile Remove="Controllers\Api\SettingsController.cs" />
+    <Compile Remove="Services\InventoryService.cs" />
+    <Compile Remove="Services\BranchService.cs" />
+    <Compile Remove="Controllers\Api\BranchController.cs" />
+    <Compile Remove="Controllers\Api\InventoryController.cs" />
+    <Compile Remove="Services\ReportsService.cs" />
+    <Compile Remove="Models\Dashboard\DashboardModels.cs" />
+    <Compile Remove="Models\Dashboard\SuperAdminDashboardModels.cs" />
+    <Compile Remove="Services\DashboardNotificationService.cs" />
+    <Compile Remove="Services\DashboardService.cs" />
+    <Compile Remove="Models\User.cs" />
+    <Compile Remove="Services\BillingService.cs" />
+    <Compile Remove="Controllers\Api\UserManagementController.cs" />
+    <Compile Remove="Models\TenantImpersonation.cs" />
   </ItemGroup>
 
 </Project>
