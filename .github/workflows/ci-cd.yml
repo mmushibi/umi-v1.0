@@ -30,6 +30,8 @@ env:
   # Use Docker Hub as fallback if GHCR permissions are not available
   DOCKER_HUB_REGISTRY: docker.io
   DOCKER_HUB_IMAGE: umihealthpos
+  # Production domain
+  PRODUCTION_DOMAIN: umihealth.zm
 
 jobs:
   lint-and-format:
@@ -302,9 +304,10 @@ jobs:
       run: |
         echo "Deploying to production environment..."
         echo "Backend image built successfully (not pushed due to permissions)"
+        echo "Production domain: ${{ env.PRODUCTION_DOMAIN }}"
         echo "Tag: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:main-${{ github.sha }}"
         # Add your production deployment commands here
-        # Example: docker run -d --name umi-backend ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:main-${{ github.sha }}
+        # Example: docker run -d --name umi-backend -e DOMAIN=${{ env.PRODUCTION_DOMAIN }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:main-${{ github.sha }}
 
   deploy-azure:
     needs: docker-build
@@ -338,6 +341,7 @@ jobs:
       run: |
         echo "Deploying to Azure Web App..."
         echo "Backend image built successfully (not pushed due to permissions)"
+        echo "Production domain: ${{ env.PRODUCTION_DOMAIN }}"
         echo "Would deploy image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:main-${{ github.sha }}"
         echo "Note: Configure Azure Container Registry or use alternative deployment method"
         # Original deployment command (commented out due to registry permissions):

@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en" x-data="userManagement()" x-init="init()">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>User Management - Sales Operations - Umi Health</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ocean: {
+              50: '#eff9ff',
+              100: '#d6f0ff',
+              200: '#b5e0ff',
+              300: '#86c8ff',
+              400: '#55a7f5',
+              500: '#2f88db',
+              600: '#1c6db8',
+              700: '#165697',
+              800: '#183f6f',
+              900: '#142f55'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="../../wwwroot/js/auth.js"></script>
+</head>
+<body class="bg-gray-50 text-slate-800">
+  <div class="flex h-screen">
+    <!-- Mobile Menu Overlay -->
+    <div x-show="mobileMenuOpen" x-transition.opacity
+         @click="mobileMenuOpen = false"
+         class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"></div>
+    
+    <!-- Sidebar -->
+    <aside x-show="mobileMenuOpen" x-transition:enter="transition ease-in-out duration-300"
+           x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
+           x-transition:leave="transition ease-in-out duration-300"
+           x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full"
+           class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform lg:hidden lg:transform-none lg:static lg:inset-0">
+      <div class="p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col items-center space-y-2">
+            <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
+          </div>
+          <button @click="mobileMenuOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700" title="Close menu">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <nav class="mt-8">
+        <div class="px-4 space-y-2">
+          <a href="home.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+            <span>Home</span>
+          </a>
+          
+          <a href="user-management.html" class="flex items-center space-x-3 text-gray-700 bg-ocean-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5 text-ocean-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+            <span>User Management</span>
+          </a>
+          
+          <a href="subscription-management.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <span>Subscriptions</span>
+          </a>
+          
+          <a href="subscription-history.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Subscription History</span>
+          </a>
+          
+          <a href="account.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            <span>Account</span>
+          </a>
+        </div>
+        
+        <div class="mt-8 px-4">
+          <div class="border-t pt-4">
+            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full" title="Logout">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+              </svg>
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Desktop Sidebar (Always Visible) -->
+    <aside class="hidden lg:block w-64 bg-white shadow-lg">
+      <div class="p-4">
+        <div class="flex flex-col items-center space-y-2">
+          <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
+          <span class="text-xl font-semibold text-ocean-800">Sales Operations</span>
+        </div>
+      </div>
+      
+      <nav class="mt-8">
+        <div class="px-4 space-y-2">
+          <a href="home.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+            <span>Home</span>
+          </a>
+          
+          <a href="user-management.html" class="flex items-center space-x-3 text-gray-700 bg-ocean-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5 text-ocean-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+            </svg>
+            <span>User Management</span>
+          </a>
+          
+          <a href="subscription-management.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <span>Subscriptions</span>
+          </a>
+          
+          <a href="subscription-history.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Subscription History</span>
+          </a>
+          
+          <a href="account.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            <span>Account</span>
+          </a>
+        </div>
+        
+        <div class="mt-8 px-4">
+          <div class="border-t pt-4">
+            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full" title="Logout">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+              </svg>
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header -->
+      <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="px-6 py-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <!-- Mobile menu button -->
+              <button @click="mobileMenuOpen = true" class="lg:hidden text-gray-500 hover:text-gray-700" title="Open menu">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+              </button>
+              
+              <!-- Mobile logo -->
+              <div class="lg:hidden flex items-center space-x-2">
+                <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
+                <span class="text-xl font-semibold text-ocean-800">Sales Operations</span>
+              </div>
+              
+              <!-- Desktop title -->
+              <h1 class="hidden lg:block text-2xl font-semibold text-gray-900">User Management</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+              <button @click="openAddUserModal()" class="bg-ocean-600 text-white px-4 py-2 rounded-lg hover:bg-ocean-700 flex items-center space-x-2" title="Add new user">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                <span>Add User</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <!-- Filters -->
+        <div class="bg-white rounded-lg shadow mb-6">
+          <div class="p-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+                <input type="text" x-model="searchTerm" @input="searchUsersRealtime()" placeholder="Search users..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <select x-model="selectedRole" @change="filterUsers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Filter by user role">
+                  <option value="">All Roles</option>
+                  <option value="tenant-admin">Tenant Admin</option>
+                  <option value="cashier">Cashier</option>
+                  <option value="pharmacist">Pharmacist</option>
+                  <option value="management">Management</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select x-model="selectedStatus" @change="filterUsers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Filter by user status">
+                  <option value="">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+                <select x-model="selectedBranch" @change="filterUsers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Filter by branch">
+                  <option value="">All Branches</option>
+                  <option value="branch-1">Branch 1</option>
+                  <option value="branch-2">Branch 2</option>
+                  <option value="branch-3">Branch 3</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Users Table -->
+        <div class="bg-white rounded-lg shadow">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Users</h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Branch</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <template x-for="user in filteredUsers" :key="user.id">
+                  <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <div class="flex items-center">
+                        <div class="h-10 w-10 flex-shrink-0">
+                            <div class="h-10 w-10 rounded-full bg-ocean-100 flex items-center justify-center">
+                              <span class="text-sm font-medium text-ocean-600" x-text="user.fullNames.charAt(0).toUpperCase()"></span>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                          <div class="text-sm font-medium text-gray-900" x-text="user.fullNames"></div>
+                          <div class="text-sm text-gray-500" x-text="user.email"></div>
+                          <div class="text-sm text-gray-500" x-text="user.phone"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                            :class="getRoleBadgeClass(user.role)" x-text="getRoleLabel(user.role)"></span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="user.branch"></td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                            :class="getStatusBadgeClass(user.status)" x-text="user.status.charAt(0).toUpperCase() + user.status.slice(1)"></span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="user.created"></td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button @click="editUser(user)" class="text-ocean-600 hover:text-ocean-900 mr-3" title="Edit user">Edit</button>
+                      <button @click="toggleUserStatus(user)" class="text-yellow-600 hover:text-yellow-900 mr-3" x-text="user.status === 'active' ? 'Suspend' : 'Activate'" title="Toggle user status"></button>
+                      <button @click="confirmDelete(user)" class="text-red-600 hover:text-red-900" title="Delete user">Delete</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div x-show="showDeleteModal" x-transition.opacity class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">
+        <div class="mt-3">
+          <h3 class="text-lg font-medium text-gray-900">Confirm Delete</h3>
+          <div class="mt-4">
+            <p class="text-sm text-gray-600">Are you sure you want to delete this user?</p>
+            <div class="mt-2 p-3 bg-red-50 rounded-lg">
+              <p class="font-medium text-gray-900" x-text="userToDelete ? userToDelete.fullNames : ''"></p>
+              <p class="text-sm text-gray-500" x-text="userToDelete ? userToDelete.email : ''"></p>
+            </div>
+            <p class="mt-3 text-sm text-red-600">This action cannot be undone.</p>
+          </div>
+          <div class="mt-6 flex justify-end space-x-3">
+            <button @click="closeDeleteModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400" title="Cancel deletion">Cancel</button>
+            <button @click="executeDelete()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" title="Confirm deletion">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add/Edit User Modal -->
+    <div x-show="showUserModal" x-transition.opacity class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-lg bg-white">
+        <div class="mt-3">
+          <h3 class="text-lg font-medium text-gray-900" x-text="editingUser ? 'Edit User' : 'Add New User'"></h3>
+          <div class="mt-4 space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Full Names</label>
+              <input type="text" x-model="userForm.fullNames" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Enter full names" placeholder="Enter full names" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input type="email" x-model="userForm.email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Enter email address" placeholder="Enter email address" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+              <input type="tel" x-model="userForm.phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Enter phone number" placeholder="Enter phone number" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
+              <textarea x-model="userForm.address" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Enter address" placeholder="Enter address" required></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+              <select x-model="userForm.role" @change="onRoleChange()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Select user role" required>
+                <option value="">Select Role</option>
+                <option value="tenant-admin">Tenant Admin</option>
+                <option value="cashier">Cashier</option>
+                <option value="pharmacist">Pharmacist</option>
+                <option value="management">Management</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Pharmacy</label>
+              <div class="relative">
+                <input type="text" x-model="pharmacySearch" @input="searchPharmacies()" @focus="showPharmacyDropdown = true" placeholder="Search pharmacy..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" required>
+                <div x-show="showPharmacyDropdown && filteredPharmacies.length > 0" @click.away="showPharmacyDropdown = false" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  <template x-for="pharmacy in filteredPharmacies" :key="pharmacy.id">
+                    <div @click="selectPharmacy(pharmacy)" class="px-3 py-2 hover:bg-gray-100 cursor-pointer">
+                      <div class="font-medium" x-text="pharmacy.name"></div>
+                      <div class="text-sm text-gray-500" x-text="pharmacy.address"></div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+            <div x-show="selectedPharmacy && selectedPharmacy.branches && selectedPharmacy.branches.length > 1">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
+              <select x-model="userForm.branch" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Select branch">
+                <option value="">Select Branch</option>
+                <template x-for="branch in selectedPharmacy.branches" :key="branch.id">
+                  <option :value="branch.name" x-text="branch.name"></option>
+                </template>
+              </select>
+            </div>
+            <div x-show="!editingUser">
+              <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+              <div class="relative">
+                <input :type="showPassword ? 'text' : 'password'" x-model="userForm.password" placeholder="Enter password" class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" required>
+                <button type="button" @click="showPassword = !showPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center" :aria-label="showPassword ? 'Hide password' : 'Show password'" :title="showPassword ? 'Hide password' : 'Show password'">
+                  <svg x-show="!showPassword" class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                  </svg>
+                  <svg x-show="showPassword" class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="mt-6 flex justify-end space-x-3">
+            <button @click="closeUserModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400" title="Cancel">Cancel</button>
+            <button @click="saveUser()" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700" title="Save user">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function userManagement() {
+      return {
+        mobileMenuOpen: false,
+        showUserModal: false,
+        showDeleteModal: false,
+        editingUser: null,
+        userToDelete: null,
+        showPassword: false,
+        searchTerm: '',
+        selectedRole: '',
+        selectedStatus: '',
+        selectedBranch: '',
+        pharmacySearch: '',
+        showPharmacyDropdown: false,
+        selectedPharmacy: null,
+        users: [],
+        filteredUsers: [],
+        
+        init() {
+          this.loadUsers(); // Load real data from backend
+        },
+        
+        filterUsers() {
+          this.filteredUsers = this.users.filter(user => {
+            const matchesSearch = !this.searchTerm || 
+              user.fullNames.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+              user.email.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+              user.phone.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+              user.address.toLowerCase().includes(this.searchTerm.toLowerCase());
+            const matchesRole = !this.selectedRole || user.role === this.selectedRole;
+            const matchesStatus = !this.selectedStatus || user.status === this.selectedStatus;
+            const matchesBranch = !this.selectedBranch || user.branch.toLowerCase().includes(this.selectedBranch.toLowerCase());
+            
+            return matchesSearch && matchesRole && matchesStatus && matchesBranch;
+          });
+        },
+        
+        searchUsersRealtime() {
+          if (this.searchTerm.length >= 2) {
+            // Simulate API call for real-time search
+            setTimeout(() => {
+              this.filterUsers();
+            }, 300);
+          } else {
+            this.filterUsers();
+          }
+        },
+        
+        async searchPharmacies() {
+          if (this.pharmacySearch.length < 2) {
+            this.filteredPharmacies = [];
+            return;
+          }
+          
+          try {
+            const response = await fetch(`/api/usermanagement/pharmacies/search?query=${encodeURIComponent(this.pharmacySearch)}`);
+            if (response.ok) {
+              const data = await response.json();
+              this.filteredPharmacies = data;
+            } else {
+              console.error('Error searching pharmacies:', response.statusText);
+              this.filteredPharmacies = [];
+            }
+          } catch (error) {
+            console.error('Error searching pharmacies:', error);
+            this.filteredPharmacies = [];
+          }
+        },
+        
+        selectPharmacy(pharmacy) {
+          this.selectedPharmacy = pharmacy;
+          this.userForm.pharmacy = pharmacy;
+          this.pharmacySearch = pharmacy.name;
+          this.showPharmacyDropdown = false;
+          
+          // Auto-select branch if only one branch exists
+          if (pharmacy.branches && pharmacy.branches.length === 1) {
+            this.userForm.branch = pharmacy.branches[0].name;
+          } else {
+            this.userForm.branch = '';
+          }
+        },
+        
+        onRoleChange() {
+          // Reset pharmacy and branch when role changes
+          this.selectedPharmacy = null;
+          this.pharmacySearch = '';
+          this.userForm.pharmacy = '';
+          this.userForm.branch = '';
+        },
+        
+        openAddUserModal() {
+          this.editingUser = null;
+          this.userForm = { fullNames: '', email: '', phone: '', address: '', role: '', pharmacy: '', branch: '', password: '' };
+          this.selectedPharmacy = null;
+          this.pharmacySearch = '';
+          this.showUserModal = true;
+        },
+        
+        editUser(user) {
+          this.editingUser = user;
+          this.userForm = { ...user, password: '' };
+          this.selectedPharmacy = user.pharmacy;
+          this.pharmacySearch = user.pharmacy ? user.pharmacy.name : '';
+          this.showUserModal = true;
+        },
+        
+        closeUserModal() {
+          this.showUserModal = false;
+          this.editingUser = null;
+          this.userForm = { fullNames: '', email: '', phone: '', address: '', role: '', pharmacy: '', branch: '', password: '' };
+          this.selectedPharmacy = null;
+          this.pharmacySearch = '';
+        },
+        
+        async loadUsers() {
+          try {
+            const response = await fetch('/api/usermanagement/users');
+            if (response.ok) {
+              const data = await response.json();
+              this.users = data;
+              this.filteredUsers = data;
+            } else {
+              console.error('Error loading users:', response.statusText);
+            }
+          } catch (error) {
+            console.error('Error loading users:', error);
+          }
+        },
+        
+        async saveUser() {
+          try {
+            const userRequest = {
+              name: this.userForm.fullNames,
+              email: this.userForm.email,
+              phone: this.userForm.phone,
+              address: this.userForm.address,
+              role: this.userForm.role,
+              pharmacyId: this.userForm.pharmacy?.id || '',
+              branch: this.userForm.branch,
+              password: this.userForm.password
+            };
+
+            let response;
+            if (this.editingUser) {
+              response = await fetch(`/api/usermanagement/users/${this.editingUser.id}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userRequest)
+              });
+            } else {
+              response = await fetch('/api/usermanagement/users', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(userRequest)
+              });
+            }
+
+            if (response.ok) {
+              await this.loadUsers();
+              this.closeUserModal();
+              this.showNotification(this.editingUser ? 'User updated successfully' : 'User created successfully', 'success');
+            } else {
+              const errorText = await response.text();
+              this.showNotification(`Error: ${errorText}`, 'error');
+            }
+          } catch (error) {
+            console.error('Error saving user:', error);
+            this.showNotification('Error saving user', 'error');
+          }
+        },
+        
+        async toggleUserStatus(user) {
+          try {
+            const newStatus = user.status === 'active' ? 'suspended' : 'active';
+            const response = await fetch(`/api/usermanagement/users/${user.id}/status`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ status: newStatus })
+            });
+
+            if (response.ok) {
+              await this.loadUsers();
+              this.showNotification(`User ${newStatus} successfully`, 'success');
+            } else {
+              const errorText = await response.text();
+              this.showNotification(`Error: ${errorText}`, 'error');
+            }
+          } catch (error) {
+            console.error('Error toggling user status:', error);
+            this.showNotification('Error updating user status', 'error');
+          }
+        },
+        
+        confirmDelete(user) {
+          this.userToDelete = user;
+          this.showDeleteModal = true;
+        },
+        
+        closeDeleteModal() {
+          this.showDeleteModal = false;
+          this.userToDelete = null;
+        },
+        
+        async executeDelete() {
+          if (this.userToDelete) {
+            try {
+              const response = await fetch(`/api/usermanagement/users/${this.userToDelete.id}`, {
+                method: 'DELETE'
+              });
+
+              if (response.ok) {
+                await this.loadUsers();
+                this.closeDeleteModal();
+                this.showNotification('User deleted successfully', 'success');
+              } else {
+                const errorText = await response.text();
+                this.showNotification(`Error: ${errorText}`, 'error');
+              }
+            } catch (error) {
+              console.error('Error deleting user:', error);
+              this.showNotification('Error deleting user', 'error');
+            }
+          }
+        },
+        
+        getRoleLabel(role) {
+          const labels = {
+            'tenant-admin': 'Tenant Admin',
+            'cashier': 'Cashier',
+            'pharmacist': 'Pharmacist',
+            'management': 'Management'
+          };
+          return labels[role] || role;
+        },
+        
+        getRoleBadgeClass(role) {
+          const classes = {
+            'tenant-admin': 'bg-purple-100 text-purple-800',
+            'cashier': 'bg-blue-100 text-blue-800',
+            'pharmacist': 'bg-green-100 text-green-800',
+            'management': 'bg-yellow-100 text-yellow-800'
+          };
+          return classes[role] || 'bg-gray-100 text-gray-800';
+        },
+        
+        getStatusBadgeClass(status) {
+          const classes = {
+            'active': 'bg-green-100 text-green-800',
+            'inactive': 'bg-gray-100 text-gray-800',
+            'suspended': 'bg-red-100 text-red-800'
+          };
+          return classes[status] || 'bg-gray-100 text-gray-800';
+        },
+        
+        showNotification(message, type = 'info') {
+          // Simple notification system - you can enhance this with a proper toast component
+          const notification = document.createElement('div');
+          notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            'bg-blue-500 text-white'
+          }`;
+          notification.textContent = message;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            document.body.removeChild(notification);
+          }, 3000);
+        },
+        
+        logout() {
+          window.location.reload();
+        },
+        
+        init() {
+          // Initialize page data
+          this.loadUsers();
+        }
+      }
+    }
+  </script>
+</body>
+</html>

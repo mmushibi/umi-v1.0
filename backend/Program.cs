@@ -27,8 +27,11 @@ builder.WebHost.ConfigureKestrel(options =>
     options.ListenAnyIP(8080);
 });
 
-// Configure allowed hosts
-builder.Configuration.AddInMemoryCollection([new("AllowedHosts", "*")]);
+// Configure allowed hosts based on environment
+var allowedHosts = builder.Environment.IsProduction() 
+    ? "umihealth.zm,www.umihealth.zm,api.umihealth.zm" 
+    : "*";
+builder.Configuration.AddInMemoryCollection([new("AllowedHosts", allowedHosts)]);
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -63,7 +66,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins([.. builder.Configuration["Frontend:AllowedOrigins"]?.Split(',') ?? ["http://localhost:3000"]])
+        var origins = builder.Environment.IsProduction()
+            ? "https://umihealth.zm,https://www.umihealth.zm"
+            : builder.Configuration["Frontend:AllowedOrigins"] ?? "http://localhost:3000";
+        
+        policy.WithOrigins(origins.Split(','))
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();

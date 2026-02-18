@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en" x-data="auditLogsPage()" x-init="init()">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>System-Wide Audit Logs - Umi Health</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'dark-bg': '#11191f',
+            'light-bg': '#f4f3ec',
+            'yellow-accent': '#ffed90',
+            'orange-accent': '#ff9500',
+            'green-accent': '#34c759'
+          },
+          fontFamily: {
+            'instrument': ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="../../wwwroot/js/auth.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+  </style>
+</head>
+<body class="bg-light-bg text-gray-900 font-instrument">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Mobile Menu Overlay -->
+    <div x-show="mobileMenuOpen" x-transition.opacity
+         @click="mobileMenuOpen = false"
+         class="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"></div>
+
+<!-- Sidebar -->
+    <aside class="w-64 bg-dark-bg text-white flex flex-col fixed h-full z-30 transform transition-transform duration-300 ease-in-out lg:translate-x-0"
+           :class="{'-translate-x-full': !mobileMenuOpen, 'translate-x-0': mobileMenuOpen}">
+      <!-- Logo -->
+      <div class="p-6 border-b border-gray-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 bg-yellow-accent rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-dark-bg" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+            </svg>
+          </div>
+          <span class="text-xl font-semibold">UmiHealth</span>
+        </div>
+      </div>
+
+<!-- Navigation -->
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <a href="home.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="tenants.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <span>Tenants</span>
+        </a>
+        <a href="employees.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+          </svg>
+          <span>Employee Management</span>
+        </a>
+        <a href="billing.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          <span>Billing & Payments</span>
+        </a>
+        <a href="tenant-impersonation.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          <span>Tenant Impersonation</span>
+        </a>
+        <a href="controlled-substances.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+          <span>Controlled Substances</span>
+        </a>
+        <a href="categories.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <span>Categories</span>
+        </a>
+        <a href="subscriptions.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          <span>Subscriptions</span>
+        </a>
+        <a href="audit-logs.html" class="flex items-center space-x-3 rounded-lg bg-white text-dark-bg px-4 py-3 font-medium">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <span>Audit Logs</span>
+        </a>
+        <a href="rbac.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          <span>RBAC</span>
+        </a>
+        <a href="notifications.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          <span>Notifications</span>
+        </a>
+        <a href="settings.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+<!-- User Profile -->
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex items-center space-x-3">
+          <img src="https://picsum.photos/seed/superadmin/40/40.jpg" alt="Super Admin" title="Super Admin" class="w-10 h-10 rounded-full">
+          <div class="flex-1">
+            <p class="text-sm font-medium">Super Admin</p>
+            <p class="text-xs text-gray-400">admin@umihealth.com</p>
+          </div>
+          <button @click="logout()" class="text-gray-400 hover:text-white" title="Sign out">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+<!-- Main Content Area -->
+    <div class="flex-1 ml-0 lg:ml-64">
+      <!-- Main Content -->
+      <main class="flex-1 bg-light-bg p-4 lg:p-6 overflow-y-auto custom-scrollbar h-screen">
+        <!-- Mobile Header -->
+        <div class="lg:hidden flex items-center justify-between mb-4">
+          <button @click="mobileMenuOpen = true" class="text-gray-600 hover:text-gray-900" title="Open mobile menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <h1 class="text-lg font-semibold text-gray-900">Audit Logs</h1>
+        </div>
+
+<!-- Desktop Header -->
+        <div class="hidden lg:block mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">System-Wide Audit Logs</h1>
+          <p class="text-gray-600">Immutable record of every login, data export, and high-risk action</p>
+        </div>
+
+<!-- Filters -->
+        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div class="flex flex-col lg:flex-row gap-4">
+            <div class="flex-1">
+              <label class="sr-only" for="search-logs">Search logs</label>
+              <input type="text" id="search-logs" placeholder="Search logs..." 
+                     x-model="searchQuery" @input="filterLogs()"
+                     class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+            </div>
+            <select x-model="selectedAction" @change="filterLogs()" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" title="Filter by action">
+              <option value="">All Actions</option>
+              <option value="Login">Login</option>
+              <option value="Data Export">Data Export</option>
+              <option value="Delete">Delete</option>
+              <option value="Modify">Modify</option>
+              <option value="High Risk">High Risk</option>
+            </select>
+            <select x-model="selectedTenant" @change="filterLogs()" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" title="Filter by tenant">
+              <option value="">All Tenants</option>
+              <option value="MedCare Pharmacy">MedCare Pharmacy</option>
+              <option value="HealthPlus Medical">HealthPlus Medical</option>
+              <option value="City Pharmacy Ltd">City Pharmacy Ltd</option>
+            </select>
+            <input type="date" x-model="dateFilter" @change="filterLogs()" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" title="Filter by date">
+            <button @click="exportLogs()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium">
+              Export
+            </button>
+          </div>
+        </div>
+
+<!-- Logs Table -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-900">Recent Activity</h2>
+            <div class="text-sm text-gray-500">
+              Showing <span x-text="filteredLogs.length"></span> of <span x-text="logs.length"></span> entries
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[1000px]">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timestamp</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Resource</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">IP Address</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Level</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <template x-for="log in filteredLogs" :key="log.id">
+                  <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 text-sm text-gray-900" x-text="log.timestamp"></td>
+                    <td class="px-6 py-4">
+                      <div class="flex items-center">
+                        <img :src="log.userAvatar" :alt="log.user" :title="log.user" class="w-6 h-6 rounded-full mr-2">
+                        <div>
+                          <div class="text-sm font-medium text-gray-900" x-text="log.user"></div>
+                          <div class="text-sm text-gray-500" x-text="log.role"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900 cursor-pointer hover:text-blue-600 hover:underline" 
+                        x-text="log.tenant" 
+                        @click="showTenantDetails(log.tenant)"
+                        @contextmenu.prevent="showContextMenu($event, log)"></td>
+                    <td class="px-6 py-4 text-sm text-gray-900" x-text="log.action"></td>
+                    <td class="px-6 py-4 text-sm text-gray-900" x-text="log.resource"></td>
+                    <td class="px-6 py-4 text-sm font-mono text-gray-500" x-text="log.ipAddress"></td>
+                    <td class="px-6 py-4">
+                      <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                            :class="{
+                              'bg-green-100 text-green-800': log.riskLevel === 'Low',
+                              'bg-yellow-accent text-dark-bg': log.riskLevel === 'Medium',
+                              'bg-red-100 text-red-800': log.riskLevel === 'High'
+                            }" x-text="log.riskLevel"></span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Context Menu -->
+  <div x-show="contextMenuOpen" 
+       x-transition.opacity
+       :style="`position: fixed; left: ${contextMenuX}px; top: ${contextMenuY}px; z-index: 1000;`"
+       @click.stop
+       class="bg-white rounded-lg shadow-lg border border-gray-200 py-2 min-w-[160px]">
+    <button @click="copyLogDetails(contextMenuLog)" 
+            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+      </svg>
+      <span>Copy Details</span>
+    </button>
+    <button @click="viewLogDetails(contextMenuLog)" 
+            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+      </svg>
+      <span>View Details</span>
+    </button>
+  </div>
+
+  <!-- Tenant Details Modal -->
+  <div x-show="tenantDetailsModalOpen" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+       @click="tenantDetailsModalOpen = false">
+    <div @click.away="tenantDetailsModalOpen = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform scale-90"
+         x-transition:enter-end="opacity-100 transform scale-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform scale-100"
+         x-transition:leave-end="opacity-0 transform scale-90"
+         class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" @click.stop>
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-900">Tenant Details</h2>
+            <button @click="tenantDetailsModalOpen = false" class="text-gray-400 hover:text-gray-600" title="Close modal">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="mt-2 text-sm text-gray-600">
+            <span>Showing recent activity for: <span class="font-medium" x-text="selectedTenant"></span></span>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+      <div class="p-6">
+        <div class="space-y-4">
+          <div>
+            <h4 class="text-sm font-medium text-gray-500 mb-1">Tenant Name</h4>
+            <p class="text-gray-900" x-text="selectedTenant"></p>
+          </div>
+          <div>
+            <h4 class="text-sm font-medium text-gray-500 mb-1">Recent Activity</h4>
+            <div class="space-y-2">
+              <template x-for="log in logs.filter(log => log.tenant === selectedTenant).slice(0, 5)" :key="log.id">
+                <div class="bg-gray-50 rounded-lg p-3">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <p class="text-sm font-medium text-gray-900" x-text="log.action"></p>
+                      <p class="text-xs text-gray-500" x-text="log.resource"></p>
+                    </div>
+                    <div class="text-right">
+                      <p class="text-xs text-gray-500" x-text="log.timestamp"></p>
+                      <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                            :class="{
+                              'bg-green-100 text-green-800': log.riskLevel === 'Low',
+                              'bg-yellow-accent text-dark-bg': log.riskLevel === 'Medium',
+                              'bg-red-100 text-red-800': log.riskLevel === 'High'
+                            }" x-text="log.riskLevel"></span>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Log Details Modal -->
+  <div x-show="logDetailsModalOpen" 
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-end p-4"
+       @click="logDetailsModalOpen = false">
+    <div @click.away="logDetailsModalOpen = false"
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-x-full"
+         x-transition:enter-end="opacity-100 transform translate-x-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-x-0"
+         x-transition:leave-end="opacity-0 transform translate-x-full"
+         class="bg-white rounded-l-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto" @click.stop>
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-900">Log Entry Details</h2>
+            <button @click="logDetailsModalOpen = false" class="text-gray-400 hover:text-gray-600" title="Close modal">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="mt-2 flex items-center space-x-4 text-sm text-gray-600">
+            <span>Action: <span class="font-medium" x-text="selectedLog?.action"></span></span>
+            <span>Risk Level: <span class="font-medium" x-text="selectedLog?.riskLevel"></span></span>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+      <div class="p-6" x-show="selectedLog">
+        <div class="space-y-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 class="text-sm font-medium text-gray-500 mb-1">Timestamp</h4>
+              <p class="text-gray-900" x-text="selectedLog?.timestamp"></p>
+            </div>
+            <div>
+              <h4 class="text-sm font-medium text-gray-500 mb-1">Risk Level</h4>
+              <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                    :class="{
+                      'bg-green-100 text-green-800': selectedLog?.riskLevel === 'Low',
+                      'bg-yellow-accent text-dark-bg': selectedLog?.riskLevel === 'Medium',
+                      'bg-red-100 text-red-800': selectedLog?.riskLevel === 'High'
+                    }" x-text="selectedLog?.riskLevel"></span>
+            </div>
+            <div>
+              <h4 class="text-sm font-medium text-gray-500 mb-1">User</h4>
+              <div class="flex items-center space-x-2">
+                <img :src="selectedLog?.userAvatar" :alt="selectedLog?.user" class="w-8 h-8 rounded-full" :title="selectedLog?.user" :aria-label="selectedLog?.user">
+                <div>
+                  <p class="text-gray-900" x-text="selectedLog?.user"></p>
+                  <p class="text-sm text-gray-500" x-text="selectedLog?.role"></p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h4 class="text-sm font-medium text-gray-500 mb-1">Tenant</h4>
+              <p class="text-gray-900" x-text="selectedLog?.tenant"></p>
+            </div>
+            <div>
+              <h4 class="text-sm font-medium text-gray-500 mb-1">Action</h4>
+              <p class="text-gray-900" x-text="selectedLog?.action"></p>
+            </div>
+            <div>
+              <h4 class="text-sm font-medium text-gray-500 mb-1">Resource</h4>
+              <p class="text-gray-900" x-text="selectedLog?.resource"></p>
+            </div>
+            <div class="md:col-span-2">
+              <h4 class="text-sm font-medium text-gray-500 mb-1">IP Address</h4>
+              <p class="text-gray-900 font-mono" x-text="selectedLog?.ipAddress"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div x-show="notificationOpen" 
+       x-transition.opacity
+       x-transition.scale.origin.top.right
+       class="fixed top-4 right-4 z-50 max-w-sm">
+    <div class="bg-white rounded-lg shadow-lg border border-gray-200 p-4">
+      <div class="flex items-center space-x-3">
+        <div class="flex-shrink-0">
+          <svg x-show="notificationType === 'success'" class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <svg x-show="notificationType === 'warning'" class="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+          <svg x-show="notificationType === 'error'" class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          <svg x-show="notificationType === 'info'" class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <p class="text-sm text-gray-900" x-text="notificationMessage"></p>
+        </div>
+        <button @click="notificationOpen = false" class="text-gray-400 hover:text-gray-600" title="Dismiss notification">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+<script>
+    function auditLogsPage() {
+      return {
+        mobileMenuOpen: false,
+        searchQuery: '',
+        selectedAction: '',
+        selectedTenant: '',
+        dateFilter: '',
+        contextMenuOpen: false,
+        contextMenuX: 0,
+        contextMenuY: 0,
+        contextMenuLog: null,
+        tenantDetailsModalOpen: false,
+        logDetailsModalOpen: false,
+        selectedLog: null,
+        selectedTenantDetails: null,
+        notificationOpen: false,
+        notificationMessage: '',
+        notificationType: 'info',
+        logs: [
+          {
+            id: 1,
+            timestamp: '2024-02-14 14:35:22',
+            user: 'Sarah Wilson',
+            userAvatar: 'https://picsum.photos/seed/sarah/100/100.jpg',
+            role: 'Pharmacist',
+            tenant: 'MedCare Pharmacy',
+            action: 'Data Export',
+            resource: 'Inventory Report',
+            ipAddress: '192.168.1.100',
+            riskLevel: 'Medium'
+          },
+          {
+            id: 2,
+            timestamp: '2024-02-14 14:32:15',
+            user: 'John Doe',
+            userAvatar: 'https://picsum.photos/seed/john/100/100.jpg',
+            role: 'Tenant Admin',
+            tenant: 'HealthPlus Medical',
+            action: 'Delete',
+            resource: 'Transaction #12345',
+            ipAddress: '192.168.1.101',
+            riskLevel: 'High'
+          },
+          {
+            id: 3,
+            timestamp: '2024-02-14 14:28:45',
+            user: 'Mary Phiri',
+            userAvatar: 'https://picsum.photos/seed/mary/100/100.jpg',
+            role: 'Cashier',
+            tenant: 'City Pharmacy Ltd',
+            action: 'Login',
+            resource: 'System Access',
+            ipAddress: '192.168.1.102',
+            riskLevel: 'Low'
+          },
+          {
+            id: 4,
+            timestamp: '2024-02-14 14:25:10',
+            user: 'James Banda',
+            userAvatar: 'https://picsum.photos/seed/james/100/100.jpg',
+            role: 'Super Admin',
+            tenant: 'System',
+            action: 'Modify',
+            resource: 'User Permissions',
+            ipAddress: '192.168.1.1',
+            riskLevel: 'High'
+          },
+          {
+            id: 5,
+            timestamp: '2024-02-14 14:22:33',
+            user: 'Esther Kalu',
+            userAvatar: 'https://picsum.photos/seed/esther/100/100.jpg',
+            role: 'Pharmacist',
+            tenant: 'QuickMeds',
+            action: 'Modify',
+            resource: 'Drug Prices',
+            ipAddress: '192.168.1.103',
+            riskLevel: 'Medium'
+          }
+        ],
+        get filteredLogs() {
+          let filtered = this.logs;
+
+if (this.searchQuery) {
+            const query = this.searchQuery.toLowerCase();
+            filtered = filtered.filter(log => 
+              log.user.toLowerCase().includes(query) ||
+              log.action.toLowerCase().includes(query) ||
+              log.resource.toLowerCase().includes(query) ||
+              log.tenant.toLowerCase().includes(query)
+            );
+          }
+
+if (this.selectedAction) {
+            filtered = filtered.filter(log => log.action === this.selectedAction);
+          }
+
+if (this.selectedTenant) {
+            filtered = filtered.filter(log => log.tenant === this.selectedTenant);
+          }
+
+if (this.dateFilter) {
+            filtered = filtered.filter(log => log.timestamp.startsWith(this.dateFilter));
+          }
+
+return filtered;
+        },
+        init() {
+          // Initialize audit logs
+        },
+        filterLogs() {
+          // Filter is reactive via computed property
+        },
+        exportLogs() {
+          const filteredData = this.filteredLogs;
+          
+          if (filteredData.length === 0) {
+            this.showNotification('No data to export', 'warning');
+            return;
+          }
+
+          // Create CSV content
+          const headers = ['Timestamp', 'User', 'Role', 'Tenant', 'Action', 'Resource', 'IP Address', 'Risk Level'];
+          const csvContent = [
+            headers.join(','),
+            ...filteredData.map(log => [
+              `"${log.timestamp}"`,
+              `"${log.user}"`,
+              `"${log.role}"`,
+              `"${log.tenant}"`,
+              `"${log.action}"`,
+              `"${log.resource}"`,
+              `"${log.ipAddress}"`,
+              `"${log.riskLevel}"`
+            ].join(','))
+          ].join('\n');
+
+          // Create and download file
+          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+          const link = document.createElement('a');
+          const url = URL.createObjectURL(blob);
+          link.setAttribute('href', url);
+          link.setAttribute('download', `audit-logs-${new Date().toISOString().split('T')[0]}.csv`);
+          link.style.visibility = 'hidden';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          this.showNotification('Audit logs exported successfully', 'success');
+        },
+        logout() {
+          sessionStorage.clear();
+          localStorage.removeItem('umihealthUserRole');
+          window.location.href = '../auth/signin.html';
+        },
+        showTenantDetails(tenantName) {
+          this.selectedTenant = tenantName;
+          this.tenantDetailsModalOpen = true;
+        },
+        showContextMenu(event, log) {
+          this.contextMenuLog = log;
+          this.contextMenuX = event.clientX;
+          this.contextMenuY = event.clientY;
+          this.contextMenuOpen = true;
+          
+          // Close context menu when clicking elsewhere
+          document.addEventListener('click', this.closeContextMenu);
+        },
+        closeContextMenu() {
+          this.contextMenuOpen = false;
+          document.removeEventListener('click', this.closeContextMenu);
+        },
+        copyLogDetails(log) {
+          const details = `Timestamp: ${log.timestamp}\nUser: ${log.user} (${log.role})\nTenant: ${log.tenant}\nAction: ${log.action}\nResource: ${log.resource}\nIP Address: ${log.ipAddress}\nRisk Level: ${log.riskLevel}`;
+          navigator.clipboard.writeText(details);
+          this.showNotification('Log details copied to clipboard', 'success');
+          this.closeContextMenu();
+        },
+        viewLogDetails(log) {
+          this.selectedLog = log;
+          this.logDetailsModalOpen = true;
+          this.closeContextMenu();
+        },
+        showNotification(message, type = 'info') {
+          this.notificationMessage = message;
+          this.notificationType = type;
+          this.notificationOpen = true;
+          setTimeout(() => {
+            this.notificationOpen = false;
+          }, 3000);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

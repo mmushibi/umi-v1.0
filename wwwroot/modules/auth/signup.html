@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en" x-data="signupFlow()" x-init="init()">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create your Umi Health account</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ocean: {
+              50: '#eff9ff',
+              100: '#d6f0ff',
+              200: '#b5e0ff',
+              300: '#86c8ff',
+              400: '#55a7f5',
+              500: '#2f88db',
+              600: '#1c6db8',
+              700: '#165697',
+              800: '#183f6f',
+              900: '#142f55'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    [x-cloak] {
+      display: none !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-ocean-100 via-white to-white text-slate-800">
+  <div class="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 py-12 md:flex-row md:items-center">
+    <div class="flex-1 space-y-6">
+      <a href="../../index.html" class="inline-flex items-center gap-2 text-ocean-700">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12l7.5-7.5M3 12h18" />
+        </svg>
+        Back to homepage
+      </a>
+      <h1 class="text-4xl font-bold text-slate-900">Set up your Umi Health workspace</h1>
+      <p class="max-w-xl text-base text-slate-600">Complete the three-step onboarding to launch your pharmacy platform. You can invite colleagues once you land in the dashboard.</p>
+      <div class="grid gap-4 sm:grid-cols-3">
+        <template x-for="(step, index) in steps" :key="step.title">
+          <div class="rounded-2xl border p-4" :class="currentStep === index ? 'border-ocean-500 bg-white shadow-lg' : 'border-slate-200 bg-white/70'">
+            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-ocean-500" x-text="`Step ${index + 1}`"></p>
+            <h3 class="mt-2 text-lg font-semibold text-slate-900" x-text="step.title"></h3>
+            <p class="mt-1 text-sm text-slate-500" x-text="step.description"></p>
+          </div>
+        </template>
+      </div>
+      <p class="text-xs text-slate-500">Need help? Email <a href="mailto:onboarding@umihealth.com" class="font-semibold text-ocean-600">onboarding@umihealth.com</a></p>
+    </div>
+
+    <div class="flex-1">
+      <div class="rounded-3xl bg-white/90 p-8 shadow-[0_35px_90px_-45px_rgba(31,97,141,0.5)] backdrop-blur">
+        <div class="mb-6 flex rounded-full bg-slate-100 p-1 text-sm font-semibold text-slate-500">
+          <button type="button" class="flex-1 rounded-full px-4 py-2 transition"
+            :class="mode === 'signup' ? 'bg-white text-ocean-600 shadow' : 'hover:text-slate-700'"
+            @click="switchMode('signup')">
+            Create account
+          </button>
+          <button type="button" class="flex-1 rounded-full px-4 py-2 transition"
+            :class="mode === 'login' ? 'bg-white text-ocean-600 shadow' : 'hover:text-slate-700'"
+            @click="switchMode('login')">
+            Sign in
+          </button>
+        </div>
+
+        <div x-show="mode === 'signup'" x-cloak>
+        <template x-if="currentStep === 0">
+          <section>
+            <h2 class="text-2xl font-semibold text-slate-900">Choose your plan</h2>
+            <p class="mt-2 text-sm text-slate-500">Pick the tier that suits your branch network. You can change later.</p>
+            <div class="mt-6 space-y-4">
+              <template x-for="plan in plans" :key="plan.code">
+                <button type="button" @click="selectPlan(plan)"
+                  class="w-full rounded-2xl border p-4 text-left transition"
+                  :class="plan.code === form.plan ? 'border-ocean-500 bg-ocean-50 shadow-inner shadow-ocean-200' : 'border-slate-200 hover:border-ocean-300'">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h3 class="text-lg font-semibold text-slate-900" x-text="plan.name"></h3>
+                      <p class="text-sm text-slate-500" x-text="plan.description"></p>
+                    </div>
+                  </div>
+                </button>
+              </template>
+            </div>
+            <div class="mt-8 flex justify-end">
+              <button type="button" class="rounded-full bg-ocean-500 px-6 py-2 text-sm font-semibold text-white hover:bg-ocean-600 disabled:cursor-not-allowed disabled:bg-slate-300" :disabled="!form.plan" @click="next()">
+                Continue
+              </button>
+            </div>
+          </section>
+        </template>
+
+        <template x-if="currentStep === 1">
+          <section>
+            <h2 class="text-2xl font-semibold text-slate-900">Pharmacy details</h2>
+            <p class="mt-2 text-sm text-slate-500">Tell us about your organisation so we can configure your tenancy.</p>
+            <form class="mt-6 space-y-5">
+              <div>
+                <label class="text-sm font-semibold text-slate-700">Pharmacy or organisation name</label>
+                <input type="text" x-model="form.organization" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="Eg. Wellness Care Group">
+              </div>
+              <div>
+                <label class="text-sm font-semibold text-slate-700">Primary email</label>
+                <input type="email" x-model="form.email" @input="handleIdentifierInput(form.email, 'signup')"
+                  class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100"
+                  placeholder="you@pharmacy.com">
+                <div x-show="signupMatch" x-cloak
+                  class="mt-3 rounded-xl border border-ocean-200 bg-ocean-50/80 p-3 text-xs text-ocean-700">
+                  <p class="font-semibold">This email is already registered.</p>
+                  <p class="mt-1">
+                    Role:
+                    <span class="font-semibold" x-text="formatRole(signupMatch.role)"></span>
+                  </p>
+                  <p class="mt-1">Permissions:
+                    <span x-text="signupMatch.permissions.join(', ')"></span>
+                  </p>
+                  <button type="button"
+                    class="mt-3 inline-flex items-center gap-1 rounded-full bg-ocean-500 px-4 py-2 text-xs font-semibold text-white hover:bg-ocean-600"
+                    @click="switchMode('login'); loginForm.identifier = signupMatch.email; handleIdentifierInput(loginForm.identifier, 'login')">
+                    Switch to sign in
+                  </button>
+                </div>
+              </div>
+              <div class="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label class="text-sm font-semibold text-slate-700">First name</label>
+                  <input type="text" x-model="form.firstName" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="Maria">
+                </div>
+                <div>
+                  <label class="text-sm font-semibold text-slate-700">Last name</label>
+                  <input type="text" x-model="form.lastName" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="Nkhoma">
+                </div>
+              </div>
+              <div class="flex justify-between">
+                <button type="button" class="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 hover:border-ocean-300" @click="prev()">Back</button>
+                <button type="button" class="rounded-full bg-ocean-500 px-6 py-2 text-sm font-semibold text-white hover:bg-ocean-600 disabled:cursor-not-allowed disabled:bg-slate-300" :disabled="!stepTwoValid" @click="next()">Continue</button>
+              </div>
+            </form>
+          </section>
+        </template>
+
+        <template x-if="currentStep === 2">
+          <section>
+            <h2 class="text-2xl font-semibold text-slate-900">Secure your account</h2>
+            <p class="mt-2 text-sm text-slate-500">Create a password for the admin profile. We’ll log you into the dashboard once done.</p>
+            <form class="mt-6 space-y-5" @submit.prevent="submit">
+              <div>
+                <label class="text-sm font-semibold text-slate-700">Password</label>
+                <input type="password" x-model="form.password" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="Minimum 8 characters">
+              </div>
+              <div>
+                <label class="text-sm font-semibold text-slate-700">Confirm password</label>
+                <input type="password" x-model="form.confirmPassword" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="Re-enter password">
+              </div>
+              <div x-show="error" class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600" x-text="error"></div>
+              <div x-show="success" class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600" x-text="success"></div>
+              <div class="flex items-center justify-between">
+                <button type="button" class="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 hover:border-ocean-300" @click="prev()">Back</button>
+                <button type="submit" class="rounded-full bg-ocean-500 px-6 py-2 text-sm font-semibold text-white hover:bg-ocean-600 disabled:cursor-not-allowed disabled:bg-slate-300" :disabled="loading">
+                  <span x-show="!loading">Create account</span>
+                  <span x-show="loading" class="flex items-center gap-2">
+                    <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                    </svg>
+                    Processing...
+                  </span>
+                </button>
+              </div>
+            </form>
+            <p class="mt-6 text-xs text-slate-500">By continuing you agree to Umi Health's <a href="#" class="text-ocean-500">terms</a> and <a href="#" class="text-ocean-500">privacy policy</a>.</p>
+            <p class="mt-2 text-xs text-slate-500">Review the
+              <button type="button" data-modal-target="signupTermsModal"
+                class="font-semibold text-ocean-600 underline-offset-2 transition hover:text-ocean-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-500">
+                Terms & Privacy Policy
+              </button>
+              before creating an account.
+            </p>
+          </section>
+        </template>
+        </div>
+
+        <div x-show="mode === 'login'" x-cloak>
+          <form class="space-y-5" @submit.prevent="login">
+            <div>
+              <label class="text-sm font-semibold text-slate-700">Email or username</label>
+              <input type="text" x-model="loginForm.identifier"
+                @input="handleIdentifierInput(loginForm.identifier, 'login')"
+                class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100"
+                placeholder="you@pharmacy.com or username">
+            </div>
+            <div>
+              <label class="flex items-center justify-between text-sm font-semibold text-slate-700">
+                <span>Password</span>
+              </label>
+              <input type="password" x-model="loginForm.password"
+                class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100"
+                placeholder="********">
+            </div>
+            <div class="flex items-center justify-between text-sm text-slate-600">
+              <label class="flex items-center gap-2">
+                <input type="checkbox" x-model="loginForm.remember"
+                  class="h-4 w-4 rounded border-slate-300 text-ocean-500 focus:ring-ocean-400">
+                <span>Remember me</span>
+              </label>
+            </div>
+            <div x-show="loginError" x-cloak
+              class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600"
+              x-text="loginError"></div>
+            <div x-show="loginSuccess" x-cloak
+              class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600"
+              x-text="loginSuccess"></div>
+            <button type="submit"
+              class="w-full rounded-full bg-ocean-500 py-3 text-sm font-semibold text-white hover:bg-ocean-600 disabled:cursor-not-allowed disabled:bg-slate-300"
+              :disabled="loginLoading">
+              <span x-show="!loginLoading">Sign in</span>
+              <span x-show="loginLoading" class="flex items-center justify-center gap-2">
+                <svg class="h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                Checking credentials...
+              </span>
+            </button>
+          </form>
+
+          <div class="mt-6 rounded-2xl border border-ocean-100 bg-ocean-50/60 p-4 text-sm text-slate-600"
+            x-show="matchedAccount" x-cloak>
+            <p class="font-semibold text-slate-700">Matched account</p>
+            <p class="mt-1 text-xs text-slate-500" x-text="matchedAccount.email"></p>
+            <dl class="mt-3 space-y-2 text-xs text-slate-600">
+              <div class="flex items-center gap-2">
+                <dt class="font-semibold text-slate-700">Role:</dt>
+                <dd x-text="formatRole(matchedAccount.role)"></dd>
+              </div>
+              <div>
+                <dt class="font-semibold text-slate-700">Permissions:</dt>
+                <dd class="mt-1 leading-relaxed" x-text="matchedAccount.permissions.join(', ')"></dd>
+              </div>
+              <div class="flex items-center gap-2">
+                <dt class="font-semibold text-slate-700">Workspace:</dt>
+                <dd x-text="matchedAccount.tenantName || 'Your Workspace'"></dd>
+              </div>
+            </dl>
+          </div>
+
+        </div>
+      </div>
+      <p class="mt-6 text-center text-sm text-slate-600">Prefer the standalone sign-in page?
+        <a href="./signin.html" class="font-semibold text-ocean-600">Open dedicated signin</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    function signupFlow() {
+      const roleDefaults = {
+        admin: [
+          'view_dashboard', 'view_customers', 'view_inventory',
+          'view_payments', 'view_pos', 'view_prescriptions',
+          'view_reports', 'view_settings', 'manage_users',
+          'manage_inventory', 'manage_customers', 'generate_reports',
+          'process_sales', 'manage_settings'
+        ],
+        pharmacist: [
+          'view_dashboard', 'view_inventory', 'view_prescriptions',
+          'manage_inventory', 'manage_prescriptions', 'view_reports'
+        ],
+        cashier: [
+          'view_pos', 'view_customers', 'view_inventory',
+          'process_sales', 'manage_customers'
+        ],
+        superadmin: [
+          'view_dashboard', 'manage_users', 'manage_settings',
+          'view_reports', 'view_inventory', 'view_pos'
+        ]
+      };
+
+      return {
+        mode: 'signup',
+        currentStep: 0,
+        loading: false,
+        error: '',
+        success: '',
+        loginLoading: false,
+        loginError: '',
+        loginSuccess: '',
+        apiBase: '',
+        devMode: false,
+        devUsersKey: 'umihealthUsers',
+        roleDefaults,
+        matchedAccount: null,
+        signupMatch: null,
+        loginForm: {
+          identifier: '',
+          password: '',
+          remember: true
+        },
+        form: {
+          plan: '',
+          organization: '',
+          email: '',
+          firstName: '',
+          lastName: '',
+          password: '',
+          confirmPassword: ''
+        },
+        plans: [
+          { code: 'starter', name: 'Starter', description: 'Single-branch pharmacies digitise POS & inventory.' },
+          { code: 'professional', name: 'Professional', description: 'Multi-branch operations with analytics and support.' },
+          { code: 'enterprise', name: 'Enterprise', description: 'Unlimited network with dedicated support & integrations.' }
+        ],
+        steps: [
+          { title: 'Select plan', description: 'Choose the subscription that fits your growth.' },
+          { title: 'Organisation details', description: 'Tell us about your main pharmacy branch.' },
+          { title: 'Create credentials', description: 'Secure admin access to the Umi Health dashboard.' }
+        ],
+        init() {
+          this.apiBase = window.location.origin;
+          this.devMode = this.determineDevMode();
+        },
+        switchMode(target) {
+          this.mode = target;
+          if (target === 'signup') {
+            this.loginError = '';
+            this.loginSuccess = '';
+            this.loginLoading = false;
+          } else {
+            this.error = '';
+            this.success = '';
+            this.loading = false;
+          }
+        },
+        selectPlan(plan) {
+          this.form.plan = plan.code;
+        },
+        get stepTwoValid() {
+          return this.form.organization && this.form.email && this.form.firstName && this.form.lastName;
+        },
+        next() {
+          if (this.currentStep < this.steps.length - 1) {
+            this.currentStep += 1;
+          }
+        },
+        prev() {
+          if (this.currentStep > 0) {
+            this.currentStep -= 1;
+          }
+        },
+        handleIdentifierInput(value, context = 'login') {
+          const match = this.findAccount(value);
+          if (context === 'login') {
+            this.matchedAccount = match;
+            if (match && !this.loginForm.password && match.password) {
+              this.loginForm.password = match.password;
+            }
+          } else {
+            this.signupMatch = match;
+          }
+        },
+        formatRole(role) {
+          if (!role) return 'Unknown';
+          return role.charAt(0).toUpperCase() + role.slice(1);
+        },
+        async login() {
+          this.loginError = '';
+          this.loginSuccess = '';
+          if (!this.loginForm.identifier) {
+            this.loginError = 'Please enter an email address or username.';
+            return;
+          }
+          if (!this.loginForm.password) {
+            this.loginError = 'Please enter your password.';
+            return;
+          }
+          this.loginLoading = true;
+          const identifier = this.loginForm.identifier.trim();
+          try {
+            if (!this.devMode) {
+              const response = await fetch(`${this.apiBase}/api/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: identifier,
+                  password: this.loginForm.password
+                })
+              });
+              const result = await response.json();
+              if (!response.ok) {
+                this.loginError = result.message ?? 'Invalid email or password.';
+                return;
+              }
+              const role = result.role || result.userRole || this.matchedAccount?.role || 'admin';
+              const permissions = result.permissions || this.roleDefaults[role] || [];
+              this.persistSession({
+                tenantId: result.tenantId,
+                userId: result.userId,
+                accessToken: result.accessToken,
+                refreshToken: result.refreshToken,
+                plan: result.plan,
+                email: result.email ?? identifier,
+                name: result.name,
+                tenantName: result.tenantName
+              }, { role, permissions, remember: this.loginForm.remember });
+              this.loginSuccess = 'Welcome back! Redirecting...';
+            } else {
+              const account = this.findAccount(identifier);
+              if (!account) {
+                this.loginError = 'No account found with that email or username.';
+                return;
+              }
+              if (!this.verifyAccountCredentials(account, this.loginForm.password)) {
+                this.loginError = 'Incorrect password for the selected account.';
+                return;
+              }
+              this.persistSession(account, {
+                role: account.role,
+                permissions: account.permissions,
+                remember: this.loginForm.remember
+              });
+              this.loginSuccess = `Welcome back, ${account.firstName || account.username}! Redirecting...`;
+            }
+            setTimeout(() => {
+              this.redirectToDashboard(role);
+            }, 1200);
+          } catch (error) {
+            console.error(error);
+            this.loginError = 'Unable to sign in right now. Please try again.';
+          } finally {
+            this.loginLoading = false;
+          }
+        },
+        async submit() {
+          this.error = '';
+          this.success = '';
+
+          if (this.form.password.length < 8) {
+            this.error = 'Password must be at least 8 characters.';
+            return;
+          }
+
+          if (this.form.password !== this.form.confirmPassword) {
+            this.error = 'Passwords do not match.';
+            return;
+          }
+
+          this.loading = true;
+          try {
+            if (!this.devMode) {
+              const response = await fetch(`${this.apiBase}/api/auth/signup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  organizationName: this.form.organization,
+                  firstName: this.form.firstName,
+                  lastName: this.form.lastName,
+                  email: this.form.email,
+                  password: this.form.password
+                })
+              });
+
+              const result = await response.json();
+
+              if (!response.ok) {
+                this.error = result.message ?? 'Account creation failed. Please try again.';
+                return;
+              }
+
+              const role = this.signupMatch?.role || 'admin';
+              const permissions = this.signupMatch?.permissions || this.roleDefaults[role] || [];
+
+              this.persistSession({
+                tenantId: result.tenantId,
+                userId: result.userId,
+                accessToken: result.accessToken,
+                refreshToken: result.refreshToken,
+                plan: this.form.plan || result.plan,
+                email: this.form.email,
+                name: `${this.form.firstName} ${this.form.lastName}`,
+                tenantName: this.form.organization,
+                isTrial: result.isTrial || false,
+                trialEndDate: result.trialEndDate || null
+              }, { role, permissions, remember: true });
+              this.success = result.isTrial ? 
+                'Account created! Your 14-day trial has started. Redirecting to dashboard...' : 
+                'Account created! Redirecting to dashboard...';
+            } else {
+              const account = this.persistDevAccount();
+              this.persistSession(account, {
+                role: account.role,
+                permissions: account.permissions,
+                remember: true
+              });
+              this.success = 'Account created Redirecting...';
+            }
+
+            setTimeout(() => {
+              this.redirectToDashboard('admin'); // New signups default to tenant admin
+            }, 1500);
+          } catch (err) {
+            console.error(err);
+            if (this.devMode) {
+              const account = this.persistDevAccount();
+              this.persistSession(account, {
+                role: account.role,
+                permissions: account.permissions,
+                remember: true
+              });
+              this.success = 'Account created Redirecting...';
+              setTimeout(() => {
+                this.redirectToDashboard('admin'); // New signups default to tenant admin
+              }, 1500);
+            } else {
+              this.error = 'Network error. Please check your connection and try again.';
+            }
+          } finally {
+            this.loading = false;
+          }
+        },
+        findAccount(identifier) {
+          if (!identifier) return null;
+          const value = identifier.trim().toLowerCase();
+          if (!value) return null;
+          const users = JSON.parse(localStorage.getItem(this.devUsersKey) ?? '[]');
+          const userMatch = users.find(user =>
+            user.email?.toLowerCase() === value || user.username?.toLowerCase() === value
+          );
+          if (!userMatch) return null;
+          const role = userMatch.role || 'admin';
+          return {
+            email: userMatch.email,
+            username: userMatch.username || userMatch.email?.split('@')[0],
+            passwordHash: userMatch.password,
+            role,
+            permissions: userMatch.permissions || this.roleDefaults[role] || [],
+            firstName: userMatch.firstName,
+            lastName: userMatch.lastName,
+            tenantName: userMatch.tenantName || this.form.organization,
+            tenantId: userMatch.tenantId,
+            userId: userMatch.userId || this.generateId(),
+            plan: userMatch.plan || 'starter'
+          };
+        },
+        verifyAccountCredentials(account, password) {
+          if (!account || !password) return false;
+          if (account.password) {
+            return account.password === password;
+          }
+          if (account.passwordHash) {
+            return account.passwordHash === this.hashPassword(password);
+          }
+          return false;
+        },
+        determineDevMode() {
+          const override = localStorage.getItem('umihealthDevMode');
+          if (override === 'true') return true;
+          if (override === 'false') return false;
+          return ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        },
+        persistSession(session, options = {}) {
+          const {
+            tenantId,
+            userId,
+            plan,
+            email,
+            name,
+            tenantName,
+            accessToken,
+            refreshToken
+          } = session;
+          const { role = 'admin', permissions = [], remember = true } = options;
+          const safePermissions = permissions?.length ? permissions : (this.roleDefaults[role] || []);
+          const combinedSession = {
+            tenantId,
+            userId,
+            plan,
+            email,
+            name,
+            tenantName,
+            role,
+            permissions: safePermissions
+          };
+
+          sessionStorage.setItem('userRole', role);
+          sessionStorage.setItem('userPermissions', JSON.stringify(safePermissions));
+          if (email) sessionStorage.setItem('userEmail', email);
+          if (name) sessionStorage.setItem('userName', name);
+          if (tenantName) sessionStorage.setItem('umihealthTenantName', tenantName);
+          if (tenantId) sessionStorage.setItem('umihealthTenantId', tenantId);
+          if (userId) sessionStorage.setItem('umihealthUserId', userId);
+          sessionStorage.setItem('umihealth_user_session', JSON.stringify(combinedSession));
+
+          if (remember) {
+            if (tenantId) localStorage.setItem('umihealthTenantId', tenantId);
+            if (userId) localStorage.setItem('umihealthUserId', userId);
+            if (plan) localStorage.setItem('umihealthPlan', plan);
+            if (email) localStorage.setItem('umihealthEmail', email);
+            if (name) localStorage.setItem('umihealthUserName', name);
+            if (tenantName) localStorage.setItem('umihealthTenantName', tenantName);
+            localStorage.setItem('umihealth_user_session', JSON.stringify(combinedSession));
+            if (accessToken) localStorage.setItem('umihealth_auth_token', accessToken);
+            if (refreshToken) localStorage.setItem('umihealth_refresh_token', refreshToken);
+          } else {
+            if (accessToken) sessionStorage.setItem('umihealth_auth_token', accessToken);
+            if (refreshToken) sessionStorage.setItem('umihealth_refresh_token', refreshToken);
+          }
+        },
+        persistDevAccount() {
+          const tenantId = this.generateId();
+          const userId = this.generateId();
+          const username = this.form.email ? this.form.email.split('@')[0] : `user-${Math.random().toString(36).slice(2, 6)}`;
+          const role = 'admin';
+          const permissions = [...this.roleDefaults[role]];
+          const users = JSON.parse(localStorage.getItem(this.devUsersKey) ?? '[]');
+          users.push({
+            tenantId,
+            userId,
+            email: this.form.email,
+            username,
+            firstName: this.form.firstName,
+            lastName: this.form.lastName,
+            plan: this.form.plan,
+            password: this.hashPassword(this.form.password),
+            tenantName: this.form.organization,
+            role,
+            permissions
+          });
+          localStorage.setItem(this.devUsersKey, JSON.stringify(users));
+          return {
+            tenantId,
+            userId,
+            plan: this.form.plan,
+            email: this.form.email,
+            name: `${this.form.firstName} ${this.form.lastName}`,
+            tenantName: this.form.organization,
+            role,
+            permissions
+          };
+        },
+        verifyAccountCredentials(account, password) {
+          if (!account || !password) return false;
+          if (account.password) {
+            return account.password === password;
+          }
+          if (account.passwordHash) {
+            return account.passwordHash === this.hashPassword(password);
+          }
+          return false;
+        },
+        hashPassword(value) {
+          try {
+            return btoa(value);
+          } catch {
+            return value;
+          }
+        },
+        generateId() {
+          if (window.crypto?.randomUUID) {
+            return window.crypto.randomUUID();
+          }
+          return 'dev-' + Math.random().toString(36).slice(2, 10);
+        },
+        redirectToDashboard(role) {
+          const rolePaths = {
+            'admin': '../Tenant-Admin/home.html',
+            'pharmacist': '../Pharmacist/home.html',
+            'cashier': '../Cashier/home.html',
+            'operations': '../Operations/home.html',
+            'superadmin': '../Super-Admin/home.html'
+          };
+          
+          // Store user role for dashboard verification
+          if (role) {
+            localStorage.setItem('umihealthUserRole', role);
+            sessionStorage.setItem('umihealthUserRole', role);
+          }
+          
+          if (rolePaths[role]) {
+            window.location.href = rolePaths[role];
+          } else {
+            // Fallback to tenant admin if role not recognized
+            window.location.href = '../Tenant-Admin/home.html';
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Terms modal -->
+  <div id="signupTermsModal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 px-4 py-6 backdrop-blur">
+    <div class="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-slate-900">Umi Health Terms & Privacy</h2>
+          <p class="mt-2 text-sm text-slate-600">Understand the policy governing tenant creation and account access.</p>
+        </div>
+        <button type="button" data-modal-close="signupTermsModal" aria-label="Close"
+          class="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-500">
+          <span class="material-symbols-rounded" aria-hidden="true">close</span>
+        </button>
+      </div>
+      <div class="mt-4 space-y-4 text-sm text-slate-600">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700">Tenant Responsibility</h3>
+          <p>The person creating a workspace is designated as the accountable administrator for billing, security, and
+            compliance notifications.</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700">Data Collection</h3>
+          <p>Umi Health stores business, user, and transactional data in Sepio Corp managed infrastructure. Data is encrypted
+            in transit and at rest.</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700">Privacy</h3>
+          <p>Personally identifiable information is processed according to regional privacy laws. Audit trails retain
+            account activity for 24 months.</p>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" data-modal-close="signupTermsModal"
+          class="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-ocean-500 hover:text-ocean-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-500">
+          Close
+        </button>
+        <a href="https://www.sepiocorp.com/trust" target="_blank" rel="noopener"
+          class="rounded-full bg-ocean-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-ocean-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-500">
+          View full policy
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const triggers = document.querySelectorAll('[data-modal-target]');
+      const closeButtons = document.querySelectorAll('[data-modal-close]');
+
+      const openModal = (id) => {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      };
+
+      const closeModal = (id) => {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+      };
+
+      triggers.forEach((trigger) => {
+        trigger.addEventListener('click', () => {
+          openModal(trigger.getAttribute('data-modal-target'));
+        });
+      });
+
+      closeButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          closeModal(button.getAttribute('data-modal-close'));
+        });
+      });
+
+      document.querySelectorAll('[id$="Modal"]').forEach((modal) => {
+        modal.addEventListener('click', (event) => {
+          if (event.target === modal) {
+            closeModal(modal.id);
+          }
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>

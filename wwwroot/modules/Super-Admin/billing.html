@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en" x-data="billingPage()" x-init="init()">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Billing & Payments - Umi Health</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'dark-bg': '#11191f',
+            'light-bg': '#f4f3ec',
+            'yellow-accent': '#ffed90',
+            'orange-accent': '#ff9500',
+            'green-accent': '#34c759'
+          },
+          fontFamily: {
+            'instrument': ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="../../wwwroot/js/auth.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+  </style>
+</head>
+<body class="bg-light-bg text-gray-900 font-instrument">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Mobile Menu Overlay -->
+    <div x-show="mobileMenuOpen" x-transition.opacity
+         @click="mobileMenuOpen = false"
+         class="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"></div>
+
+<!-- Sidebar -->
+    <aside class="w-64 bg-dark-bg text-white flex flex-col fixed h-full z-30 transform transition-transform duration-300 ease-in-out lg:translate-x-0"
+           :class="{'-translate-x-full': !mobileMenuOpen, 'translate-x-0': mobileMenuOpen}">
+      <!-- Logo -->
+      <div class="p-6 border-b border-gray-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 bg-yellow-accent rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-dark-bg" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+            </svg>
+          </div>
+          <span class="text-xl font-semibold">UmiHealth</span>
+        </div>
+      </div>
+
+<!-- Navigation -->
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <a href="home.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="tenants.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <span>Tenants</span>
+        </a>
+        <a href="employees.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+          </svg>
+          <span>Employee Management</span>
+        </a>
+        <a href="billing.html" class="flex items-center space-x-3 rounded-lg bg-white text-dark-bg px-4 py-3 font-medium">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          <span>Billing & Payments</span>
+        </a>
+        <a href="tenant-impersonation.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          <span>Tenant Impersonation</span>
+        </a>
+        <a href="controlled-substances.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+          <span>Controlled Substances</span>
+        </a>
+        <a href="categories.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <span>Categories</span>
+        </a>
+        <a href="subscriptions.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          <span>Subscriptions</span>
+        </a>
+        <a href="audit-logs.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <span>Audit Logs</span>
+        </a>
+        <a href="rbac.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          <span>RBAC</span>
+        </a>
+        <a href="notifications.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          <span>Notifications</span>
+        </a>
+        <a href="settings.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+<!-- User Profile -->
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex items-center space-x-3">
+          <img src="https://picsum.photos/seed/superadmin/40/40.jpg" alt="Super Admin" class="w-10 h-10 rounded-full">
+          <div class="flex-1">
+            <p class="text-sm font-medium">Super Admin</p>
+            <p class="text-xs text-gray-400">admin@umihealth.com</p>
+          </div>
+          <button @click="logout()" class="text-gray-400 hover:text-white" title="Sign out">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+<!-- Main Content Area -->
+    <div class="flex-1 ml-0 lg:ml-64">
+      <!-- Main Content -->
+      <main class="flex-1 bg-light-bg p-4 lg:p-6 overflow-y-auto custom-scrollbar h-screen">
+        <!-- Mobile Header -->
+        <div class="lg:hidden flex items-center justify-between mb-4">
+          <button @click="mobileMenuOpen = true" class="text-gray-600 hover:text-gray-900" title="Open mobile menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <h1 class="text-lg font-semibold text-gray-900">Billing & Payments</h1>
+        </div>
+
+<!-- Desktop Header -->
+        <div class="hidden lg:block mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">Billing & Payments</h1>
+          <p class="text-gray-600">Manage transactions, invoices, and payment processing</p>
+        </div>
+
+<!-- Revenue Overview -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-green-100">
+                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Monthly Revenue</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="billingSummary?.monthlyRevenue || 'K0'">K0</p>
+                <p class="text-xs text-green-600" x-text="billingSummary?.revenueGrowth || '+0% from last month'">+0% from last month</p>
+              </div>
+            </div>
+          </div>
+
+<div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-blue-100">
+                <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Pending Invoices</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="billingSummary?.pendingInvoices || '0'">0</p>
+                <p class="text-xs text-orange-600" x-text="`K${billingSummary?.pendingAmount || '0'} outstanding`">K0 outstanding</p>
+              </div>
+            </div>
+          </div>
+
+<div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-yellow-accent">
+                <svg class="w-6 h-6 text-dark-bg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Overdue</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="billingSummary?.overdueInvoices || '0'">0</p>
+                <p class="text-xs text-red-600" x-text="`K${billingSummary?.overdueAmount || '0'} overdue`">K0 overdue</p>
+              </div>
+            </div>
+          </div>
+
+<div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center">
+              <div class="p-3 rounded-full bg-purple-100">
+                <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Payment Success Rate</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="billingSummary?.paymentSuccessRate || '0%'">0%</p>
+                <p class="text-xs text-green-600" x-text="billingSummary?.successRateImprovement || '+0% improvement'">+0% improvement</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+<!-- Filters and Search -->
+        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div class="flex flex-col lg:flex-row gap-4">
+            <div class="flex-1 relative">
+              <label class="sr-only" for="search-invoices">Search invoices</label>
+              <input type="text" id="search-invoices" 
+                     x-model="searchQuery" 
+                     @input="handleSearch($event.target.value)"
+                     @focus="showSuggestions = true"
+                     @blur="setTimeout(() => showSuggestions = false, 200)"
+                     placeholder="Search invoices by number, tenant, or amount..." 
+                     class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+              <!-- Search Suggestions Dropdown -->
+              <div x-show="showSuggestions && searchSuggestions.length > 0" 
+                   x-transition:enter="transition ease-out duration-100"
+                   x-transition:enter-start="opacity-0 scale-95"
+                   x-transition:enter-end="opacity-100 scale-100"
+                   class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                <template x-for="suggestion in searchSuggestions" :key="suggestion.id">
+                  <div @click="selectSuggestion(suggestion)" 
+                       class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <div class="font-medium text-gray-900" x-text="suggestion.number"></div>
+                        <div class="text-sm text-gray-500" x-text="`${suggestion.tenant} - ${suggestion.amount}`"></div>
+                      </div>
+                      <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                            :class="{
+                              'bg-green-accent text-white': suggestion.status === 'Paid',
+                              'bg-yellow-accent text-dark-bg': suggestion.status === 'Pending',
+                              'bg-red-100 text-red-800': suggestion.status === 'Overdue',
+                              'bg-orange-accent text-white': suggestion.status === 'Failed'
+                            }" x-text="suggestion.status"></span>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2 sm:gap-4">
+              <select x-model="statusFilter" @change="applyFilters()" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent w-full sm:w-auto" title="Filter by status">
+                <option value="">All Status</option>
+                <option value="Paid">Paid</option>
+                <option value="Pending">Pending</option>
+                <option value="Overdue">Overdue</option>
+                <option value="Failed">Failed</option>
+              </select>
+              <select x-model="dateFilter" @change="applyFilters()" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent w-full sm:w-auto" title="Filter by date range">
+                <option value="">All Time</option>
+                <option value="30">Last 30 Days</option>
+                <option value="90">Last 3 Months</option>
+                <option value="180">Last 6 Months</option>
+                <option value="365">Last Year</option>
+              </select>
+              <button @click="generateInvoice()" class="px-4 py-2 bg-yellow-accent hover:bg-yellow-300 text-dark-bg rounded-lg font-medium w-full sm:w-auto">
+                Generate Invoice
+              </button>
+            </div>
+          </div>
+        </div>
+
+<!-- Invoices Table -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Recent Invoices</h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[800px]">
+              <thead class="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <template x-for="invoice in filteredInvoices" :key="invoice.id">
+                  <tr class="hover:bg-gray-50 cursor-pointer" 
+                      @contextmenu.prevent="showContextMenu($event, invoice)">
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900" x-text="invoice.number"></td>
+                    <td class="px-6 py-4">
+                      <div class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors" 
+                           @click="showTenantBillingHistory(invoice)">
+                        <img :src="invoice.tenantAvatar" :alt="invoice.tenant" class="w-8 h-8 rounded-full mr-3">
+                        <div class="flex-1">
+                          <div class="text-sm font-medium text-gray-900 hover:text-yellow-accent transition-colors" x-text="invoice.tenant"></div>
+                          <div class="text-sm text-gray-500" x-text="invoice.plan"></div>
+                        </div>
+                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                      </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm font-medium text-gray-900" x-text="invoice.amount"></td>
+                    <td class="px-6 py-4 text-sm text-gray-500" x-text="invoice.dueDate"></td>
+                    <td class="px-6 py-4">
+                      <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                            :class="{
+                              'bg-green-accent text-white': invoice.status === 'Paid',
+                              'bg-yellow-accent text-dark-bg': invoice.status === 'Pending',
+                              'bg-red-100 text-red-800': invoice.status === 'Overdue',
+                              'bg-orange-accent text-white': invoice.status === 'Failed'
+                            }" x-text="invoice.status"></span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                      <div class="flex space-x-2">
+                        <button @click="viewInvoice(invoice)" class="text-yellow-accent hover:text-yellow-600">View</button>
+                        <button @click="sendReminder(invoice)" class="text-blue-600 hover:text-blue-800" x-show="invoice.status !== 'Paid'">Remind</button>
+                        <button @click="issueCredit(invoice)" class="text-green-600 hover:text-green-800">Credit</button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+<!-- Failed Payments Section -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mt-6">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">Failed Payments</h2>
+          <div class="space-y-4">
+            <template x-for="payment in failedPayments" :key="payment.id">
+              <div class="border border-red-200 rounded-lg p-4 bg-red-50">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="flex items-center space-x-3">
+                      <span class="text-sm font-medium text-gray-900" x-text="payment.tenant"></span>
+                      <span class="text-sm text-gray-500" x-text="payment.amount"></span>
+                      <span class="px-2 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full">Failed</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-1" x-text="payment.reason"></p>
+                  </div>
+                  <div class="flex space-x-2">
+                    <button @click="retryPayment(payment)" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg">
+                      Retry
+                    </button>
+                    <button @click="contactTenant(payment)" class="px-3 py-1 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-lg">
+                      Contact
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+<!-- Invoice Modal -->
+  <div x-show="showInvoiceModal" x-transition.opacity class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto" @click.away="showInvoiceModal = false">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Generate Invoice</h3>
+        <button @click="showInvoiceModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <form @submit.prevent="saveInvoice()">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="tenant-select">Select Tenant</label>
+            <select id="tenant-select" x-model="newInvoice.tenantId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+              <option value="">Choose a tenant...</option>
+              <template x-for="tenant in tenants" :key="tenant.id">
+                <option :value="tenant.id" x-text="`${tenant.company} - ${tenant.plan}`"></option>
+              </template>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="invoice-amount">Amount (K)</label>
+            <input type="number" id="invoice-amount" x-model="newInvoice.amount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="due-date">Due Date</label>
+            <input type="date" id="due-date" x-model="newInvoice.dueDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="invoice-notes">Notes</label>
+            <textarea id="invoice-notes" x-model="newInvoice.notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"></textarea>
+          </div>
+        </div>
+        <div class="flex justify-end space-x-3 mt-6">
+          <button type="button" @click="showInvoiceModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 bg-yellow-accent hover:bg-yellow-300 text-dark-bg rounded-lg">
+            Generate Invoice
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<!-- View Invoice Modal -->
+  <div x-show="showViewInvoiceModal" x-transition.opacity class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto" @click.away="showViewInvoiceModal = false">
+      <div class="flex items-center justify-between mb-6">
+        <h3 class="text-xl font-semibold text-gray-900">Invoice Details</h3>
+        <button @click="showViewInvoiceModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <div x-show="selectedInvoice" class="space-y-6">
+        <!-- Invoice Header -->
+        <div class="border-b border-gray-200 pb-4">
+          <div class="flex justify-between items-start">
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900" x-text="selectedInvoice?.number"></h2>
+              <p class="text-sm text-gray-500 mt-1">Issued on <span x-text="selectedInvoice?.issueDate || 'Feb 1, 2024'"></span></p>
+            </div>
+            <span class="px-4 py-2 text-sm font-semibold rounded-full"
+                  :class="{
+                    'bg-green-accent text-white': selectedInvoice?.status === 'Paid',
+                    'bg-yellow-accent text-dark-bg': selectedInvoice?.status === 'Pending',
+                    'bg-red-100 text-red-800': selectedInvoice?.status === 'Overdue',
+                    'bg-orange-accent text-white': selectedInvoice?.status === 'Failed'
+                  }" x-text="selectedInvoice?.status"></span>
+          </div>
+        </div>
+
+        <!-- Bill To and From -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h4 class="text-sm font-medium text-gray-700 mb-2">Bill To:</h4>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <p class="font-medium text-gray-900" x-text="selectedInvoice?.tenant"></p>
+              <p class="text-sm text-gray-600" x-text="selectedInvoice?.plan + ' Plan'"></p>
+              <p class="text-sm text-gray-600">123 Business Street</p>
+              <p class="text-sm text-gray-600">Lusaka, Zambia</p>
+            </div>
+          </div>
+          <div>
+            <h4 class="text-sm font-medium text-gray-700 mb-2">Payment Details:</h4>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <p class="text-sm text-gray-600">Due Date: <span class="font-medium text-gray-900" x-text="selectedInvoice?.dueDate"></span></p>
+              <p class="text-sm text-gray-600">Amount: <span class="font-medium text-gray-900" x-text="selectedInvoice?.amount"></span></p>
+              <p class="text-sm text-gray-600">Payment Method: Bank Transfer</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Invoice Items -->
+        <div>
+          <h4 class="text-sm font-medium text-gray-700 mb-2">Invoice Items:</h4>
+          <div class="border border-gray-200 rounded-lg overflow-hidden">
+            <table class="w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Description</th>
+                  <th class="px-4 py-3 text-right text-sm font-medium text-gray-700">Quantity</th>
+                  <th class="px-4 py-3 text-right text-sm font-medium text-gray-700">Unit Price</th>
+                  <th class="px-4 py-3 text-right text-sm font-medium text-gray-700">Total</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200">
+                <tr>
+                  <td class="px-4 py-3 text-sm text-gray-900">Umi Health POS Subscription</td>
+                  <td class="px-4 py-3 text-sm text-gray-900 text-right">1</td>
+                  <td class="px-4 py-3 text-sm text-gray-900 text-right" x-text="selectedInvoice?.amount"></td>
+                  <td class="px-4 py-3 text-sm font-medium text-gray-900 text-right" x-text="selectedInvoice?.amount"></td>
+                </tr>
+              </tbody>
+              <tfoot class="bg-gray-50">
+                <tr>
+                  <td colspan="3" class="px-4 py-3 text-sm font-medium text-gray-700">Total:</td>
+                  <td class="px-4 py-3 text-lg font-bold text-gray-900 text-right" x-text="selectedInvoice?.amount"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-between items-center pt-4 border-t border-gray-200">
+          <div class="flex space-x-2">
+            <button @click="downloadInvoice(selectedInvoice)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg flex items-center space-x-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+              <span>Download PDF</span>
+            </button>
+            <button @click="printInvoice(selectedInvoice)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg flex items-center space-x-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+              </svg>
+              <span>Print</span>
+            </button>
+          </div>
+          <div class="flex space-x-2">
+            <button x-show="selectedInvoice?.status !== 'Paid'" @click="sendReminder(selectedInvoice)" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Send Reminder</button>
+            <button @click="showViewInvoiceModal = false" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- Credit Note Modal -->
+  <div x-show="showCreditModal" x-transition.opacity class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-2xl w-full p-6 max-h-[90vh] overflow-y-auto" @click.away="showCreditModal = false">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-900">Issue Credit Note</h3>
+        <button @click="showCreditModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      <form @submit.prevent="saveCreditNote()">
+        <div class="space-y-4">
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <h4 class="text-sm font-medium text-gray-700 mb-2">Original Invoice:</h4>
+            <p class="text-sm text-gray-600">Invoice #: <span class="font-medium text-gray-900" x-text="creditInvoice?.number"></span></p>
+            <p class="text-sm text-gray-600">Tenant: <span class="font-medium text-gray-900" x-text="creditInvoice?.tenant"></span></p>
+            <p class="text-sm text-gray-600">Original Amount: <span class="font-medium text-gray-900" x-text="creditInvoice?.amount"></span></p>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="credit-amount">Credit Amount (K)</label>
+            <input type="number" id="credit-amount" x-model="creditNote.amount" :max="getMaxCreditAmount()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+            <p class="text-xs text-gray-500 mt-1">Maximum credit amount: K<span x-text="getMaxCreditAmount()"></span></p>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="credit-reason">Reason for Credit</label>
+            <select id="credit-reason" x-model="creditNote.reason" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+              <option value="">Select a reason...</option>
+              <option value="Service Cancellation">Service Cancellation</option>
+              <option value="Billing Error">Billing Error</option>
+              <option value="Customer Refund">Customer Refund</option>
+              <option value="Partial Payment">Partial Payment</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="credit-notes">Additional Notes</label>
+            <textarea id="credit-notes" x-model="creditNote.notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"></textarea>
+          </div>
+        </div>
+        <div class="flex justify-end space-x-3 mt-6">
+          <button type="button" @click="showCreditModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg">
+            Issue Credit Note
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+<!-- Tenant Billing History Modal -->
+  <div x-show="showTenantHistoryModal" x-transition.opacity class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-5xl w-full p-6 max-h-[90vh] overflow-y-auto" @click.away="showTenantHistoryModal = false">
+      <div class="flex items-center justify-between mb-6">
+        <div class="flex items-center space-x-3">
+          <img :src="selectedTenant?.avatar" :alt="selectedTenant?.name" :title="selectedTenant?.name" class="w-12 h-12 rounded-full" :aria-label="selectedTenant?.name">
+          <div>
+            <h3 class="text-xl font-semibold text-gray-900" x-text="selectedTenant?.name"></h3>
+            <p class="text-sm text-gray-500" x-text="`${selectedTenant?.plan} Plan • Tenant ID: ${selectedTenant?.id}`"></p>
+          </div>
+        </div>
+        <button @click="showTenantHistoryModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal" aria-label="Close modal">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+        </button>
+      </div>
+      
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-blue-50 rounded-lg p-4">
+          <div class="flex items-center">
+            <div class="p-2 bg-blue-100 rounded-lg">
+              <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-blue-600 font-medium">Total Invoices</p>
+              <p class="text-xl font-bold text-blue-900" x-text="selectedTenantHistory?.totalInvoices || 0"></p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-green-50 rounded-lg p-4">
+          <div class="flex items-center">
+            <div class="p-2 bg-green-100 rounded-lg">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-green-600 font-medium">Paid Amount</p>
+              <p class="text-xl font-bold text-green-900" x-text="selectedTenantHistory?.totalPaid || 'K0'"></p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-yellow-50 rounded-lg p-4">
+          <div class="flex items-center">
+            <div class="p-2 bg-yellow-100 rounded-lg">
+              <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-yellow-600 font-medium">Pending Amount</p>
+              <p class="text-xl font-bold text-yellow-900" x-text="selectedTenantHistory?.totalPending || 'K0'"></p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="bg-red-50 rounded-lg p-4">
+          <div class="flex items-center">
+            <div class="p-2 bg-red-100 rounded-lg">
+              <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-red-600 font-medium">Overdue Amount</p>
+              <p class="text-xl font-bold text-red-900" x-text="selectedTenantHistory?.totalOverdue || 'K0'"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Billing History Table -->
+      <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+          <h4 class="text-lg font-medium text-gray-900">Billing & Payment History</h4>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Issue Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Payment Date</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <template x-for="invoice in selectedTenantHistory?.invoices || []" :key="invoice.id">
+                <tr class="hover:bg-gray-50">
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900" x-text="invoice.number"></td>
+                  <td class="px-6 py-4 text-sm text-gray-500" x-text="invoice.issueDate"></td>
+                  <td class="px-6 py-4 text-sm text-gray-500" x-text="invoice.dueDate"></td>
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900" x-text="invoice.amount"></td>
+                  <td class="px-6 py-4">
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                          :class="{
+                            'bg-green-accent text-white': invoice.status === 'Paid',
+                            'bg-yellow-accent text-dark-bg': invoice.status === 'Pending',
+                            'bg-red-100 text-red-800': invoice.status === 'Overdue',
+                            'bg-orange-accent text-white': invoice.status === 'Failed'
+                          }" x-text="invoice.status"></span>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-500" x-text="invoice.paymentDate || '-'"></td>
+                  <td class="px-6 py-4 text-sm text-gray-500">
+                    <div class="flex space-x-2">
+                      <button @click="downloadInvoice(invoice)" class="text-blue-600 hover:text-blue-800 flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <span>Download</span>
+                      </button>
+                      <button @click="viewInvoice(invoice)" class="text-yellow-accent hover:text-yellow-600">View</button>
+                    </div>
+                  </td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Modal Actions -->
+      <div class="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+        <div class="flex space-x-3">
+          <button @click="exportTenantHistory(selectedTenant)" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg flex items-center space-x-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <span>Export History</span>
+          </button>
+          <button @click="generateInvoiceForTenant(selectedTenant)" class="px-4 py-2 bg-yellow-accent hover:bg-yellow-300 text-dark-bg rounded-lg flex items-center space-x-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+            </svg>
+            <span>Generate Invoice</span>
+          </button>
+        </div>
+        <button @click="showTenantHistoryModal = false" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg">Close</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+    function billingPage() {
+      return {
+        mobileMenuOpen: false,
+        showInvoiceModal: false,
+        showViewInvoiceModal: false,
+        showCreditModal: false,
+        showTenantHistoryModal: false,
+        selectedTenant: null,
+        selectedTenantHistory: null,
+        searchQuery: '',
+        searchSuggestions: [],
+        showSuggestions: false,
+        statusFilter: '',
+        dateFilter: '',
+        selectedInvoice: null,
+        creditInvoice: null,
+        filteredInvoices: [],
+        notification: {
+          show: false,
+          message: '',
+          type: 'success'
+        },
+        contextMenu: {
+          show: false,
+          x: 0,
+          y: 0,
+          invoice: null
+        },
+        newInvoice: {
+          tenantId: '',
+          amount: '',
+          dueDate: '',
+          notes: ''
+        },
+        creditNote: {
+          amount: '',
+          reason: '',
+          notes: ''
+        },
+        invoices: [],
+        failedPayments: [],
+        tenants: [],
+        billingSummary: null,
+        init() {
+          // Initialize billing data
+          this.loadInvoices();
+          this.loadTenants();
+          this.loadBillingSummary();
+          this.$watch('dateFilter', () => {
+            this.updateFilteredInvoices();
+          });
+          
+          // Initialize filtered invoices
+          this.updateFilteredInvoices();
+        },
+        async loadBillingSummary() {
+          try {
+            const response = await fetch('/api/billing/summary', {
+              headers: this.getAuthHeaders()
+            });
+            
+            if (response.ok) {
+              const summary = await response.json();
+              this.billingSummary = {
+                monthlyRevenue: `K${summary.monthlyRevenue?.toLocaleString() || '0'}`,
+                revenueGrowth: `+${summary.revenueGrowth || 0}% from last month`,
+                pendingInvoices: summary.pendingInvoices || '0',
+                pendingAmount: summary.pendingAmount?.toLocaleString() || '0',
+                overdueInvoices: summary.overdueInvoices || '0',
+                overdueAmount: summary.overdueAmount?.toLocaleString() || '0',
+                paymentSuccessRate: `${summary.paymentSuccessRate || 0}%`,
+                successRateImprovement: `+${summary.successRateImprovement || 0}% improvement`
+              };
+            } else {
+              this.showNotification('Failed to load billing summary', 'error');
+            }
+          } catch (error) {
+            console.error('Error loading billing summary:', error);
+            this.showNotification('Error loading billing summary', 'error');
+          }
+        },
+        updateFilteredInvoices() {
+          let filtered = this.invoices;
+          
+          // Filter by search query
+          if (this.searchQuery) {
+            const query = this.searchQuery.toLowerCase();
+            filtered = filtered.filter(invoice => 
+              invoice.number.toLowerCase().includes(query) ||
+              invoice.tenant.toLowerCase().includes(query) ||
+              invoice.amount.toLowerCase().includes(query) ||
+              invoice.status.toLowerCase().includes(query)
+            );
+          }
+          
+          // Filter by status
+          if (this.statusFilter) {
+            filtered = filtered.filter(invoice => invoice.status === this.statusFilter);
+          }
+          
+          // Filter by date range
+          if (this.dateFilter) {
+            const daysAgo = parseInt(this.dateFilter);
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - daysAgo);
+            
+            filtered = filtered.filter(invoice => {
+              const invoiceDate = new Date(invoice.dueDate);
+              return invoiceDate >= cutoffDate;
+            });
+          }
+          
+          this.filteredInvoices = filtered;
+        },
+        generateInvoice() {
+          this.showInvoiceModal = true;
+        },
+        async saveInvoice() {
+          // Validate form
+          if (!this.newInvoice.tenantId || !this.newInvoice.amount || !this.newInvoice.dueDate) {
+            this.showNotification('Please fill in all required fields', 'error');
+            return;
+          }
+          
+          try {
+            const response = await fetch('/api/billing/invoices', {
+              method: 'POST',
+              headers: this.getAuthHeaders(),
+              body: JSON.stringify({
+                tenantId: this.newInvoice.tenantId,
+                plan: this.newInvoice.plan || 'Basic',
+                amount: this.newInvoice.amount,
+                issueDate: new Date().toISOString().split('T')[0],
+                dueDate: this.newInvoice.dueDate,
+                notes: this.newInvoice.notes
+              })
+            });
+            
+            if (response.ok) {
+              const newInvoice = await response.json();
+              this.invoices.unshift(newInvoice);
+              this.showNotification('Invoice generated successfully', 'success');
+              this.showInvoiceModal = false;
+              
+              // Refresh billing summary on invoice creation
+              this.loadBillingSummary();
+              this.updateFilteredInvoices();
+              
+              // Reset form
+              this.newInvoice = {
+                tenantId: '',
+                amount: '',
+                dueDate: '',
+                notes: ''
+              };
+              
+              // Broadcast real-time update
+              this.handleRealTimeInvoiceUpdate({ action: 'created', invoice: newInvoice });
+            } else {
+              this.showNotification('Failed to generate invoice', 'error');
+              }
+          } catch (error) {
+            console.error('Error generating invoice:', error);
+            this.showNotification('Error generating invoice', 'error');
+          }
+        },
+        viewInvoice(invoice) {
+          this.selectedInvoice = invoice;
+          this.showViewInvoiceModal = true;
+        },
+        sendReminder(invoice) {
+          this.showNotification(`Payment reminder sent to ${invoice.tenant}`, 'success');
+        },
+        issueCredit(invoice) {
+          this.creditInvoice = invoice;
+          this.creditNote = {
+            amount: '',
+            reason: '',
+            notes: ''
+          };
+          this.showCreditModal = true;
+        },
+        async saveCreditNote() {
+          if (!this.creditNote.amount || !this.creditNote.reason) {
+            this.showNotification('Please fill in all required fields', 'error');
+            return;
+          }
+          
+          try {
+            const response = await fetch(`/api/billing/invoices/${this.creditInvoice.id}/credit-note`, {
+              method: 'POST',
+              headers: this.getAuthHeaders(),
+              body: JSON.stringify({
+                amount: this.creditNote.amount,
+                reason: this.creditNote.reason,
+                notes: this.creditNote.notes
+              })
+            });
+            
+            if (response.ok) {
+              const creditNote = await response.json();
+              this.showNotification('Credit note issued successfully', 'success');
+              this.showCreditModal = false;
+              
+              // Reset form
+              this.creditNote = {
+                amount: '',
+                reason: '',
+                notes: ''
+              };
+              
+              // Broadcast real-time update
+              this.handleRealTimeInvoiceUpdate({ action: 'credit_issued', invoice: this.creditInvoice });
+            } else {
+              this.showNotification('Failed to issue credit note', 'error');
+              }
+          } catch (error) {
+            console.error('Error issuing credit note:', error);
+            this.showNotification('Error issuing credit note', 'error');
+          }
+        },
+        async downloadInvoice(invoice) {
+          try {
+            const response = await fetch(`/api/billing/export/invoices?tenantId=${invoice.tenantId || ''}`, {
+              headers: this.getAuthHeaders()
+            });
+            
+            if (response.ok) {
+              const blob = await response.blob();
+              const url = window.URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `${invoice.number}.csv`;
+              a.click();
+              window.URL.revokeObjectURL(url);
+              
+              this.showNotification(`Downloaded invoice ${invoice.number}`, 'success');
+            } else {
+              this.showNotification('Failed to download invoice', 'error');
+            }
+          } catch (error) {
+            console.error('Error downloading invoice:', error);
+            this.showNotification('Error downloading invoice', 'error');
+          }
+        },
+        printInvoice(invoice) {
+          this.showNotification(`Preparing invoice ${invoice.number} for print...`, 'success');
+        },
+        handleSearch(query) {
+          this.searchQuery = query;
+          
+          if (query.length > 0) {
+            this.searchSuggestions = this.invoices.filter(invoice => 
+              invoice.number.toLowerCase().includes(query.toLowerCase()) ||
+              invoice.tenant.toLowerCase().includes(query.toLowerCase()) ||
+              invoice.amount.toLowerCase().includes(query.toLowerCase())
+            ).slice(0, 5);
+          } else {
+            this.searchSuggestions = [];
+          }
+        },
+        selectSuggestion(suggestion) {
+          this.searchQuery = suggestion.number;
+          this.searchSuggestions = [];
+          this.showSuggestions = false;
+        },
+        applyFilters() {
+          // Filters are applied automatically through the computed property
+          this.showNotification('Filters applied', 'success');
+        },
+        showNotification(message, type = 'success') {
+          this.notification = {
+            show: true,
+            message: message,
+            type: type
+          };
+          
+          setTimeout(() => {
+            this.notification.show = false;
+          }, 3000);
+        },
+        showContextMenu(event, invoice) {
+          this.contextMenu.invoice = invoice;
+          this.contextMenu.x = event.clientX;
+          this.contextMenu.y = event.clientY;
+          this.contextMenu.show = true;
+        },
+        deleteInvoice(invoice) {
+          if (confirm(`Are you sure you want to delete invoice ${invoice.number}?`)) {
+            this.invoices = this.invoices.filter(i => i.id !== invoice.id);
+            console.log('Deleted invoice:', invoice);
+          }
+          this.contextMenu.show = false;
+        },
+        async showTenantBillingHistory(invoice) {
+          try {
+            // Get tenant details from API
+            const response = await fetch(`/api/billing/tenants/${invoice.tenantId}`, {
+              headers: this.getAuthHeaders()
+            });
+            
+            if (response.ok) {
+              const tenant = await response.json();
+              
+              // Get all invoices for this tenant from API
+              const invoicesResponse = await fetch(`/api/billing/invoices/tenant/${invoice.tenantId}`, {
+                headers: this.getAuthHeaders()
+              });
+              
+              let tenantInvoices = [];
+              if (invoicesResponse.ok) {
+                tenantInvoices = await invoicesResponse.json();
+              }
+              
+              // Calculate summary statistics
+              const totalInvoices = tenantInvoices.length;
+              const paidInvoices = tenantInvoices.filter(inv => inv.status === 'Paid');
+              const pendingInvoices = tenantInvoices.filter(inv => inv.status === 'Pending');
+              const overdueInvoices = tenantInvoices.filter(inv => inv.status === 'Overdue');
+              
+              const totalPaid = paidInvoices.reduce((sum, inv) => {
+                return sum + parseFloat(inv.amount.replace('K', '').replace(',', ''));
+              }, 0);
+              
+              const totalPending = pendingInvoices.reduce((sum, inv) => {
+                return sum + parseFloat(inv.amount.replace('K', '').replace(',', ''));
+              }, 0);
+              
+              const totalOverdue = overdueInvoices.reduce((sum, inv) => {
+                return sum + parseFloat(inv.amount.replace('K', '').replace(',', ''));
+              }, 0);
+              
+              // Set selected tenant and history
+              this.selectedTenant = {
+                id: tenant.id,
+                name: tenant.company,
+                plan: tenant.plan,
+                avatar: `https://picsum.photos/seed/${tenant.company.toLowerCase().replace(/\s+/g, '')}/100/100.jpg`
+              };
+              
+              this.selectedTenantHistory = {
+                totalInvoices,
+                totalPaid: `K${totalPaid.toLocaleString()}`,
+                totalPending: `K${totalPending.toLocaleString()}`,
+                totalOverdue: `K${totalOverdue.toLocaleString()}`,
+                invoices: tenantInvoices.map(inv => ({
+                  ...inv,
+                  paymentDate: inv.status === 'Paid' ? inv.dueDate : null,
+                  issueDate: inv.issueDate || new Date(inv.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                }))
+              };
+              
+              this.showTenantHistoryModal = true;
+            } else {
+              this.showNotification('Failed to load tenant details', 'error');
+            }
+          } catch (error) {
+            console.error('Error loading tenant billing history:', error);
+            this.showNotification('Error loading tenant billing history', 'error');
+          }
+        },
+        exportTenantHistory(tenant) {
+          // Create CSV content for tenant history
+          const headers = ['Invoice #', 'Issue Date', 'Due Date', 'Amount', 'Status', 'Payment Date'];
+          const rows = this.selectedTenantHistory.invoices.map(inv => [
+            inv.number,
+            inv.issueDate,
+            inv.dueDate,
+            inv.amount,
+            inv.status,
+            inv.paymentDate || ''
+          ]);
+          
+          const csvContent = [headers, ...rows]
+            .map(row => row.join(','))
+            .join('\n');
+          
+          // Download CSV file
+          const blob = new Blob([csvContent], { type: 'text/csv' });
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${tenant.name}_billing_history.csv`;
+          a.click();
+          window.URL.revokeObjectURL(url);
+          
+          this.showNotification(`Billing history exported for ${tenant.name}`, 'success');
+        },
+        generateInvoiceForTenant(tenant) {
+          // Pre-fill the generate invoice form with tenant details
+          this.newInvoice.tenantId = tenant.id;
+          
+          // Close tenant history modal and open generate invoice modal
+          this.showTenantHistoryModal = false;
+          this.showInvoiceModal = true;
+          
+          this.showNotification(`Creating new invoice for ${tenant.name}...`, 'info');
+        },
+        logout() {
+          sessionStorage.clear();
+          localStorage.removeItem('umihealthUserRole');
+          window.location.href = '../auth/signin.html';
+        }
+      }
+    }
+  </script>
+
+    <!-- Right-Click Context Menu -->
+    <div x-show="contextMenu.show" 
+         x-transition:enter="transition ease-out duration-100"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-75"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         :style="`position: fixed; left: ${contextMenu.x}px; top: ${contextMenu.y}px; z-index: 1000;`"
+         @click.away="contextMenu.show = false"
+         class="bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[150px]">
+      <button @click="viewInvoice(contextMenu.invoice)" 
+              class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+        </svg>
+        <span>View Invoice</span>
+      </button>
+      <button @click="sendReminder(contextMenu.invoice)" 
+              class="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2"
+              x-show="contextMenu.invoice.status !== 'Paid'">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+        </svg>
+        <span>Send Reminder</span>
+      </button>
+      <button @click="issueCredit(contextMenu.invoice)" 
+              class="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span>Issue Credit</span>
+      </button>
+      <button @click="deleteInvoice(contextMenu.invoice)" 
+              class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+        </svg>
+        <span>Delete Invoice</span>
+      </button>
+    </div>
+
+<!-- Notification Component -->
+    <div x-show="notification.show" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0 transform translate-y-full"
+         x-transition:enter-end="opacity-100 transform translate-y-0"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100 transform translate-y-0"
+         x-transition:leave-end="opacity-0 transform translate-y-full"
+         class="fixed bottom-4 right-4 z-50 max-w-sm">
+      <div class="rounded-lg shadow-lg p-4 flex items-center space-x-3"
+           :class="{
+             'bg-green-accent text-dark-bg': notification.type === 'success',
+             'bg-red-100 text-red-800': notification.type === 'error',
+             'bg-blue-100 text-blue-800': notification.type === 'info'
+           }">
+        <div class="flex-shrink-0">
+          <svg x-show="notification.type === 'success'" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+          </svg>
+          <svg x-show="notification.type === 'error'" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          </svg>
+          <svg x-show="notification.type === 'info'" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-medium" x-text="notification.message"></p>
+        </div>
+        <button @click="notification.show = false" class="flex-shrink-0" title="Dismiss notification">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+</body>
+</html>

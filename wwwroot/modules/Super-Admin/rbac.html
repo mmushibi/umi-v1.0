@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en" x-data="rbacPage()" x-init="init()">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Global RBAC - Umi Health</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'dark-bg': '#11191f',
+            'light-bg': '#f4f3ec',
+            'yellow-accent': '#ffed90',
+            'orange-accent': '#ff9500',
+            'green-accent': '#34c759'
+          },
+          fontFamily: {
+            'instrument': ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="../../wwwroot/js/auth.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+  </style>
+</head>
+<body class="bg-light-bg text-gray-900 font-instrument">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Mobile Menu Overlay -->
+    <div x-show="mobileMenuOpen" x-transition.opacity
+         @click="mobileMenuOpen = false"
+         class="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"></div>
+
+<!-- Sidebar -->
+    <aside class="w-64 bg-dark-bg text-white flex flex-col fixed h-full z-30 transform transition-transform duration-300 ease-in-out lg:translate-x-0"
+           :class="{'-translate-x-full': !mobileMenuOpen, 'translate-x-0': mobileMenuOpen}">
+      <!-- Logo -->
+      <div class="p-6 border-b border-gray-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 bg-yellow-accent rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-dark-bg" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+            </svg>
+          </div>
+          <span class="text-xl font-semibold">UmiHealth</span>
+        </div>
+      </div>
+
+<!-- Navigation -->
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <a href="home.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="tenants.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <span>Tenants</span>
+        </a>
+        <a href="employees.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+          </svg>
+          <span>Employee Management</span>
+        </a>
+        <a href="billing.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          <span>Billing & Payments</span>
+        </a>
+        <a href="tenant-impersonation.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          <span>Tenant Impersonation</span>
+        </a>
+        <a href="controlled-substances.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+          <span>Controlled Substances</span>
+        </a>
+        <a href="categories.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <span>Categories</span>
+        </a>
+        <a href="subscriptions.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          <span>Subscriptions</span>
+        </a>
+        <a href="audit-logs.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <span>Audit Logs</span>
+        </a>
+        <a href="rbac.html" class="flex items-center space-x-3 rounded-lg bg-white text-dark-bg px-4 py-3 font-medium">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          <span>RBAC</span>
+        </a>
+        <a href="notifications.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          <span>Notifications</span>
+        </a>
+        <a href="settings.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+<!-- User Profile -->
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex items-center space-x-3">
+          <img src="https://picsum.photos/seed/superadmin/40/40.jpg" alt="Super Admin" class="w-10 h-10 rounded-full">
+          <div class="flex-1">
+            <p class="text-sm font-medium">Super Admin</p>
+            <p class="text-xs text-gray-400">admin@umihealth.com</p>
+          </div>
+          <button @click="logout()" class="text-gray-400 hover:text-white" title="Sign out">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+<!-- Main Content Area -->
+    <div class="flex-1 ml-0 lg:ml-64">
+      <!-- Main Content -->
+      <main class="flex-1 bg-light-bg p-4 lg:p-6 overflow-y-auto custom-scrollbar h-screen">
+        <!-- Mobile Header -->
+        <div class="lg:hidden flex items-center justify-between mb-4">
+          <button @click="mobileMenuOpen = true" class="text-gray-600 hover:text-gray-900" title="Open mobile menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <h1 class="text-lg font-semibold text-gray-900">RBAC</h1>
+        </div>
+
+<!-- Desktop Header -->
+        <div class="hidden lg:block mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">Global Role-Based Access Control</h1>
+          <p class="text-gray-600">Define permissions for roles that tenants can assign to their staff</p>
+        </div>
+
+<!-- Role Management Tabs -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+          <div class="border-b border-gray-200">
+            <nav class="flex -mb-px">
+              <button @click="activeTab = 'roles'" :class="activeTab === 'roles' ? 'border-yellow-accent text-yellow-accent' : 'border-transparent text-gray-500 hover:text-gray-700'" 
+                      class="py-4 px-6 border-b-2 font-medium text-sm">
+                System Roles
+              </button>
+              <button @click="activeTab = 'permissions'" :class="activeTab === 'permissions' ? 'border-yellow-accent text-yellow-accent' : 'border-transparent text-gray-500 hover:text-gray-700'" 
+                      class="py-4 px-6 border-b-2 font-medium text-sm">
+                Permissions
+              </button>
+              <button @click="activeTab = 'assignments'" :class="activeTab === 'assignments' ? 'border-yellow-accent text-yellow-accent' : 'border-transparent text-gray-500 hover:text-gray-700'" 
+                      class="py-4 px-6 border-b-2 font-medium text-sm">
+                Tenant Assignments
+              </button>
+            </nav>
+          </div>
+        </div>
+
+<!-- Roles Tab -->
+        <div x-show="activeTab === 'roles'" class="space-y-6">
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="text-lg font-semibold text-gray-900">System Roles</h2>
+              <button @click="showAddRoleModal = true" class="px-4 py-2 bg-yellow-accent hover:bg-yellow-300 text-dark-bg rounded-lg font-medium">
+                Add Role
+              </button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <template x-for="role in roles" :key="role.id">
+                <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-semibold text-gray-900" x-text="role.name"></h3>
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                          :class="{
+                            'bg-green-accent text-white': role.level === 'High',
+                            'bg-yellow-accent text-dark-bg': role.level === 'Medium',
+                            'bg-gray-100 text-gray-800': role.level === 'Low'
+                          }" x-text="role.level"></span>
+                  </div>
+                  <p class="text-sm text-gray-600 mb-4" x-text="role.description"></p>
+                  <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+                    <span x-text="`${role.permissionCount} permissions`"></span>
+                    <span x-text="`${role.userCount} users`"></span>
+                  </div>
+                  <div class="flex space-x-2">
+                    <button @click="editRole(role)" class="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm">
+                      Edit
+                    </button>
+                    <button @click="viewRolePermissions(role)" class="flex-1 px-3 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm">
+                      Permissions
+                    </button>
+                    <button @click="deleteRole(role)" class="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm">
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+<!-- Permissions Tab -->
+        <div x-show="activeTab === 'permissions'" class="space-y-6">
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="text-lg font-semibold text-gray-900">System Permissions</h2>
+              <button @click="showAddPermissionModal = true" class="px-4 py-2 bg-yellow-accent hover:bg-yellow-300 text-dark-bg rounded-lg font-medium">
+                Add Permission
+              </button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full min-w-[800px]">
+                <thead class="bg-gray-50 border-b border-gray-200">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permission</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Risk Level</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                  <template x-for="permission in permissions" :key="permission.id">
+                    <tr class="hover:bg-gray-50">
+                      <td class="px-6 py-4 text-sm font-medium text-gray-900" x-text="permission.name"></td>
+                      <td class="px-6 py-4 text-sm text-gray-900" x-text="permission.category"></td>
+                      <td class="px-6 py-4 text-sm text-gray-600" x-text="permission.description"></td>
+                      <td class="px-6 py-4">
+                        <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                              :class="{
+                                'bg-red-100 text-red-800': permission.riskLevel === 'Critical',
+                                'bg-orange-accent text-white': permission.riskLevel === 'High',
+                                'bg-yellow-accent text-dark-bg': permission.riskLevel === 'Medium',
+                                'bg-green-100 text-green-800': permission.riskLevel === 'Low'
+                              }" x-text="permission.riskLevel"></span>
+                      </td>
+                      <td class="px-6 py-4 text-sm text-gray-500">
+                        <div class="flex space-x-2">
+                          <button @click="editPermission(permission)" class="text-yellow-accent hover:text-yellow-600">Edit</button>
+                          <button @click="deletePermission(permission)" class="text-red-600 hover:text-red-800">Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+<!-- Tenant Assignments Tab -->
+        <div x-show="activeTab === 'assignments'" class="space-y-6">
+          <div class="bg-white rounded-lg shadow-sm p-6">
+            <div class="flex items-center justify-between mb-6">
+              <h2 class="text-lg font-semibold text-gray-900">Tenant Role Assignments</h2>
+              <select x-model="selectedTenant" @change="filterAssignments()" class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" title="Filter by tenant">
+                <option value="">All Tenants</option>
+                <template x-for="tenant in tenants" :key="tenant.id">
+                  <option :value="tenant.name" x-text="tenant.name"></option>
+                </template>
+              </select>
+            </div>
+            <div class="space-y-4">
+              <template x-for="assignment in filteredAssignments" :key="assignment.id">
+                <div class="border border-gray-200 rounded-lg p-4">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h4 class="font-medium text-gray-900" x-text="assignment.tenant"></h4>
+                      <p class="text-sm text-gray-600 mt-1">
+                        <span x-text="`${assignment.userCount} users assigned to ${assignment.roleCount} roles`"></span>
+                      </p>
+                    </div>
+                    <button @click="viewTenantRoles(assignment)" class="px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg text-sm">
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Add Role Modal -->
+  <div x-show="showAddRoleModal" x-transition.opacity
+       class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div x-show="showAddRoleModal" x-transition.scale
+         class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Add New Role</h3>
+          <button @click="showAddRoleModal = false" title="Close Add Role Modal" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <form @submit.prevent="createRole()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Role Name</label>
+              <input type="text" x-model="newRole.name" required title="Role Name"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter role name">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea x-model="newRole.description" rows="3" title="Role Description"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter role description"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Level</label>
+              <select x-model="newRole.level" title="Role Level"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div class="flex items-center">
+              <input type="checkbox" x-model="newRole.isGlobal" id="isGlobal"
+                     class="w-4 h-4 text-yellow-accent border-gray-300 rounded focus:ring-yellow-accent">
+              <label for="isGlobal" class="ml-2 text-sm text-gray-700">Global Role (available to all tenants)</label>
+            </div>
+          </div>
+          <div class="flex justify-end space-x-3 mt-6">
+            <button type="button" @click="showAddRoleModal = false"
+                    class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">
+              Cancel
+            </button>
+            <button type="submit"
+                    class="px-4 py-2 bg-yellow-accent hover:bg-yellow-300 text-dark-bg rounded-lg font-medium">
+              Create Role
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Role Modal -->
+  <div x-show="showEditRoleModal" x-transition.opacity
+       class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div x-show="showEditRoleModal" x-transition.scale
+         class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Edit Role</h3>
+          <button @click="showEditRoleModal = false" title="Close Edit Role Modal" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <form @submit.prevent="updateRole()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Role Name</label>
+              <input type="text" x-model="editRoleData.name" required title="Role Name"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter role name">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea x-model="editRoleData.description" rows="3" title="Role Description"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter role description"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Level</label>
+              <select x-model="editRoleData.level" title="Role Level"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+            <div class="flex items-center">
+              <input type="checkbox" x-model="editRoleData.isGlobal" id="editIsGlobal"
+                     class="w-4 h-4 text-yellow-accent border-gray-300 rounded focus:ring-yellow-accent">
+              <label for="editIsGlobal" class="ml-2 text-sm text-gray-700">Global Role (available to all tenants)</label>
+            </div>
+          </div>
+          <div class="flex justify-end space-x-3 mt-6">
+            <button type="button" @click="showEditRoleModal = false"
+                    class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">
+              Cancel
+            </button>
+            <button type="submit"
+                    class="px-4 py-2 bg-yellow-accent hover:bg-yellow-300 text-dark-bg rounded-lg font-medium">
+              Update Role
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Permission Modal -->
+  <div x-show="showAddPermissionModal" x-transition.opacity
+       class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div x-show="showAddPermissionModal" x-transition.scale
+         class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Add New Permission</h3>
+          <button @click="showAddPermissionModal = false" title="Close Add Permission Modal" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <form @submit.prevent="createPermission()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Permission Name</label>
+              <input type="text" x-model="newPermission.name" required title="Permission Name"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter permission name">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
+              <input type="text" x-model="newPermission.displayName" required title="Permission Display Name"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter display name">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <input type="text" x-model="newPermission.category" required title="Permission Category"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter permission category">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea x-model="newPermission.description" rows="3" title="Permission Description"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter permission description"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Risk Level</label>
+              <select x-model="newPermission.riskLevel" title="Risk Level"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex justify-end space-x-3 mt-6">
+            <button type="button" @click="showAddPermissionModal = false"
+                    class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">
+              Cancel
+            </button>
+            <button type="submit"
+                    class="px-4 py-2 bg-yellow-accent hover:bg-yellow-300 text-dark-bg rounded-lg font-medium">
+              Create Permission
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Permission Modal -->
+  <div x-show="showEditPermissionModal" x-transition.opacity
+       class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div x-show="showEditPermissionModal" x-transition.scale
+         class="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Edit Permission</h3>
+          <button @click="showEditPermissionModal = false" title="Close Edit Permission Modal" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <form @submit.prevent="updatePermission()">
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Permission Name</label>
+              <input type="text" x-model="editPermissionData.name" required title="Permission Name"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter permission name">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
+              <input type="text" x-model="editPermissionData.displayName" required title="Permission Display Name"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter display name">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <input type="text" x-model="editPermissionData.category" required title="Permission Category"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter permission category">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea x-model="editPermissionData.description" rows="3" title="Permission Description"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter permission description"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Risk Level</label>
+              <select x-model="editPermissionData.riskLevel"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                      title="Risk Level" aria-label="Risk Level">
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex justify-end space-x-3 mt-6">
+            <button type="button" @click="showEditPermissionModal = false"
+                    class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg">
+              Cancel
+            </button>
+            <button type="submit"
+                    class="px-4 py-2 bg-yellow-accent hover:bg-yellow-300 text-dark-bg rounded-lg font-medium">
+              Update Permission
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Role Details Modal -->
+  <div x-show="showViewRoleModal" x-transition.opacity
+       class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div x-show="showViewRoleModal" x-transition.scale
+         class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Role Details</h3>
+          <button @click="showViewRoleModal = false" title="Close Role Details Modal" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div x-show="selectedRole" class="space-y-4">
+          <div class="bg-gray-50 rounded-lg p-4">
+            <h4 class="font-semibold text-gray-900 mb-2" x-text="selectedRole?.name"></h4>
+            <p class="text-sm text-gray-600 mb-3" x-text="selectedRole?.description"></p>
+            <div class="flex space-x-4 text-sm">
+              <span class="px-2 py-1 bg-yellow-accent text-dark-bg rounded-full" x-text="selectedRole?.level"></span>
+              <span class="text-gray-500" x-text="`${selectedRole?.permissionCount} permissions`"></span>
+              <span class="text-gray-500" x-text="`${selectedRole?.userCount} users`"></span>
+            </div>
+          </div>
+          <div>
+            <h5 class="font-medium text-gray-900 mb-3">Assigned Permissions</h5>
+            <div class="space-y-2 max-h-60 overflow-y-auto">
+              <template x-for="perm in rolePermissions" :key="perm.permissionId">
+                <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div>
+                    <div class="font-medium text-sm" x-text="perm.permissionDisplayName"></div>
+                    <div class="text-xs text-gray-500" x-text="perm.permissionName"></div>
+                  </div>
+                  <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800" x-text="perm.category"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Tenant Roles Modal -->
+  <div x-show="showViewTenantModal" x-transition.opacity
+       class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div x-show="showViewTenantModal" x-transition.scale
+         class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-gray-900">Tenant Role Details</h3>
+          <button @click="showViewTenantModal = false" title="Close Tenant Role Details Modal" class="text-gray-400 hover:text-gray-600">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <div x-show="selectedAssignment" class="space-y-4">
+          <div class="bg-gray-50 rounded-lg p-4">
+            <h4 class="font-semibold text-gray-900 mb-2" x-text="selectedAssignment?.tenant"></h4>
+            <div class="flex space-x-4 text-sm text-gray-600">
+              <span x-text="`${selectedAssignment?.userCount} users`"></span>
+              <span x-text="`${selectedAssignment?.roleCount} roles`"></span>
+            </div>
+          </div>
+          <div>
+            <h5 class="font-medium text-gray-900 mb-3">Assigned Roles</h5>
+            <div class="space-y-2 max-h-60 overflow-y-auto">
+              <template x-for="role in tenantRoles" :key="role.id">
+                <div class="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div>
+                    <div class="font-medium text-sm" x-text="role.roleName"></div>
+                    <div class="text-xs text-gray-500" x-text="`${role.userCount} users`"></div>
+                  </div>
+                  <span class="px-2 py-1 text-xs rounded-full bg-yellow-accent text-dark-bg" x-text="role.roleLevel"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+    function rbacPage() {
+      return {
+        mobileMenuOpen: false,
+        activeTab: 'roles',
+        showAddRoleModal: false,
+        showEditRoleModal: false,
+        showAddPermissionModal: false,
+        showEditPermissionModal: false,
+        showViewRoleModal: false,
+        showViewPermissionModal: false,
+        showViewTenantModal: false,
+        selectedTenant: '',
+        loading: false,
+        roles: [],
+        permissions: [],
+        tenants: [],
+        assignments: [],
+        filteredAssignments: [],
+        selectedRole: null,
+        selectedPermission: null,
+        selectedAssignment: null,
+        rolePermissions: [],
+        tenantRoles: [],
+        
+        // Form data
+        newRole: {
+          name: '',
+          description: '',
+          level: 'Medium',
+          isGlobal: true,
+          permissionIds: []
+        },
+        editRoleData: {
+          id: null,
+          name: '',
+          description: '',
+          level: 'Medium',
+          isGlobal: true,
+          permissionIds: []
+        },
+        newPermission: {
+          name: '',
+          displayName: '',
+          category: '',
+          description: '',
+          riskLevel: 'Medium'
+        },
+        editPermissionData: {
+          id: null,
+          name: '',
+          displayName: '',
+          category: '',
+          description: '',
+          riskLevel: 'Medium'
+        },
+        
+        init() {
+          this.loadRoles();
+          this.loadPermissions();
+          this.loadTenantAssignments();
+        },
+        
+        async loadRoles() {
+          try {
+            this.loading = true;
+            const response = await fetch('/api/superadmin/rbac/roles');
+            if (response.ok) {
+              this.roles = await response.json();
+            } else {
+              this.showNotification('Failed to load roles', 'error');
+            }
+          } catch (error) {
+            console.error('Error loading roles:', error);
+            this.showNotification('Error loading roles', 'error');
+          } finally {
+            this.loading = false;
+          }
+        },
+        
+        async loadPermissions() {
+          try {
+            this.loading = true;
+            const response = await fetch('/api/superadmin/rbac/permissions');
+            if (response.ok) {
+              this.permissions = await response.json();
+            } else {
+              this.showNotification('Failed to load permissions', 'error');
+            }
+          } catch (error) {
+            console.error('Error loading permissions:', error);
+            this.showNotification('Error loading permissions', 'error');
+          } finally {
+            this.loading = false;
+          }
+        },
+        
+        async loadTenantAssignments() {
+          try {
+            this.loading = true;
+            const response = await fetch('/api/superadmin/rbac/tenant-assignments');
+            if (response.ok) {
+              this.assignments = await response.json();
+              this.filteredAssignments = this.assignments;
+            } else {
+              this.showNotification('Failed to load tenant assignments', 'error');
+            }
+          } catch (error) {
+            console.error('Error loading tenant assignments:', error);
+            this.showNotification('Error loading tenant assignments', 'error');
+          } finally {
+            this.loading = false;
+          }
+        },
+        
+        filterAssignments() {
+          if (!this.selectedTenant) {
+            this.filteredAssignments = this.assignments;
+          } else {
+            this.filteredAssignments = this.assignments.filter(a => a.tenant === this.selectedTenant);
+          }
+        },
+        
+        async createRole() {
+          try {
+            const response = await fetch('/api/superadmin/rbac/roles', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(this.newRole)
+            });
+            
+            if (response.ok) {
+              this.showNotification('Role created successfully', 'success');
+              this.showAddRoleModal = false;
+              this.resetRoleForm();
+              await this.loadRoles();
+            } else {
+              const error = await response.json();
+              this.showNotification(error.error || 'Failed to create role', 'error');
+            }
+          } catch (error) {
+            console.error('Error creating role:', error);
+            this.showNotification('Error creating role', 'error');
+          }
+        },
+        
+        async updateRole() {
+          try {
+            const response = await fetch(`/api/superadmin/rbac/roles/${this.editRoleData.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(this.editRoleData)
+            });
+            
+            if (response.ok) {
+              this.showNotification('Role updated successfully', 'success');
+              this.showEditRoleModal = false;
+              await this.loadRoles();
+            } else {
+              const error = await response.json();
+              this.showNotification(error.error || 'Failed to update role', 'error');
+            }
+          } catch (error) {
+            console.error('Error updating role:', error);
+            this.showNotification('Error updating role', 'error');
+          }
+        },
+        
+        async deleteRole(role) {
+          if (!confirm(`Are you sure you want to delete the role "${role.name}"?`)) {
+            return;
+          }
+          
+          try {
+            const response = await fetch(`/api/superadmin/rbac/roles/${role.id}`, {
+              method: 'DELETE'
+            });
+            
+            if (response.ok) {
+              this.showNotification('Role deleted successfully', 'success');
+              await this.loadRoles();
+            } else {
+              const error = await response.json();
+              this.showNotification(error.error || 'Failed to delete role', 'error');
+            }
+          } catch (error) {
+            console.error('Error deleting role:', error);
+            this.showNotification('Error deleting role', 'error');
+          }
+        },
+        
+        async createPermission() {
+          try {
+            const response = await fetch('/api/superadmin/rbac/permissions', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(this.newPermission)
+            });
+            
+            if (response.ok) {
+              this.showNotification('Permission created successfully', 'success');
+              this.showAddPermissionModal = false;
+              this.resetPermissionForm();
+              await this.loadPermissions();
+            } else {
+              const error = await response.json();
+              this.showNotification(error.error || 'Failed to create permission', 'error');
+            }
+          } catch (error) {
+            console.error('Error creating permission:', error);
+            this.showNotification('Error creating permission', 'error');
+          }
+        },
+        
+        async updatePermission() {
+          try {
+            const response = await fetch(`/api/superadmin/rbac/permissions/${this.editPermissionData.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(this.editPermissionData)
+            });
+            
+            if (response.ok) {
+              this.showNotification('Permission updated successfully', 'success');
+              this.showEditPermissionModal = false;
+              await this.loadPermissions();
+            } else {
+              const error = await response.json();
+              this.showNotification(error.error || 'Failed to update permission', 'error');
+            }
+          } catch (error) {
+            console.error('Error updating permission:', error);
+            this.showNotification('Error updating permission', 'error');
+          }
+        },
+        
+        async deletePermission(permission) {
+          if (!confirm(`Are you sure you want to delete the permission "${permission.name}"?`)) {
+            return;
+          }
+          
+          try {
+            const response = await fetch(`/api/superadmin/rbac/permissions/${permission.id}`, {
+              method: 'DELETE'
+            });
+            
+            if (response.ok) {
+              this.showNotification('Permission deleted successfully', 'success');
+              await this.loadPermissions();
+            } else {
+              const error = await response.json();
+              this.showNotification(error.error || 'Failed to delete permission', 'error');
+            }
+          } catch (error) {
+            console.error('Error deleting permission:', error);
+            this.showNotification('Error deleting permission', 'error');
+          }
+        },
+        
+        async viewRolePermissions(role) {
+          try {
+            const response = await fetch(`/api/superadmin/rbac/roles/${role.id}/permissions`);
+            if (response.ok) {
+              this.rolePermissions = await response.json();
+              this.selectedRole = role;
+              this.showViewRoleModal = true;
+            } else {
+              this.showNotification('Failed to load role permissions', 'error');
+            }
+          } catch (error) {
+            console.error('Error loading role permissions:', error);
+            this.showNotification('Error loading role permissions', 'error');
+          }
+        },
+        
+        async viewTenantRoles(assignment) {
+          try {
+            const response = await fetch(`/api/superadmin/rbac/tenant-assignments/${assignment.id}/roles`);
+            if (response.ok) {
+              this.tenantRoles = await response.json();
+              this.selectedAssignment = assignment;
+              this.showViewTenantModal = true;
+            } else {
+              this.showNotification('Failed to load tenant roles', 'error');
+            }
+          } catch (error) {
+            console.error('Error loading tenant roles:', error);
+            this.showNotification('Error loading tenant roles', 'error');
+          }
+        },
+        
+        editRole(role) {
+          this.editRoleData = {
+            id: role.id,
+            name: role.name,
+            description: role.description,
+            level: role.level,
+            isGlobal: role.isGlobal,
+            permissionIds: []
+          };
+          this.showEditRoleModal = true;
+        },
+        
+        editPermission(permission) {
+          this.editPermissionData = {
+            id: permission.id,
+            name: permission.name,
+            displayName: permission.displayName,
+            category: permission.category,
+            description: permission.description,
+            riskLevel: permission.riskLevel
+          };
+          this.showEditPermissionModal = true;
+        },
+        
+        resetRoleForm() {
+          this.newRole = {
+            name: '',
+            description: '',
+            level: 'Medium',
+            isGlobal: true,
+            permissionIds: []
+          };
+        },
+        
+        resetPermissionForm() {
+          this.newPermission = {
+            name: '',
+            displayName: '',
+            category: '',
+            description: '',
+            riskLevel: 'Medium'
+          };
+        },
+        
+        showNotification(message, type = 'info') {
+          // Create notification element
+          const notification = document.createElement('div');
+          notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            'bg-blue-500 text-white'
+          }`;
+          notification.textContent = message;
+          
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
+        },
+        
+        logout() {
+          sessionStorage.clear();
+          localStorage.removeItem('umihealthUserRole');
+          window.location.href = '../auth/signin.html';
+        }
+      }
+    }
+  </script>
+</body>
+</html>

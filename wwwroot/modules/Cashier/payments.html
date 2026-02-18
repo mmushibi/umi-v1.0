@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en" x-data="cashierDashboard()" x-init="init()">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Payments - Umi Health</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ocean: {
+              50: '#eff9ff',
+              100: '#d6f0ff',
+              200: '#b5e0ff',
+              300: '#86c8ff',
+              400: '#55a7f5',
+              500: '#2f88db',
+              600: '#1c6db8',
+              700: '#165697',
+              800: '#183f6f',
+              900: '#142f55'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="../../wwwroot/js/auth.js"></script>
+</head>
+<body class="bg-gray-50 text-slate-800">
+  <div class="flex h-screen">
+    <!-- Mobile Menu Overlay -->
+    <div x-show="mobileMenuOpen" x-transition.opacity
+         @click="mobileMenuOpen = false"
+         class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"></div>
+    
+    <!-- Sidebar -->
+    <aside x-show="mobileMenuOpen" x-transition:enter="transition ease-in-out duration-300"
+           x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0"
+           x-transition:leave="transition ease-in-out duration-300"
+           x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full"
+           class="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform lg:hidden lg:transform-none lg:static lg:inset-0">
+      <div class="p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col items-center space-y-2">
+            <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
+            <span class="text-xl font-semibold text-ocean-800">Cashier</span>
+          </div>
+          <button @click="mobileMenuOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700" title="Close menu">
+            <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <nav class="mt-8">
+        <div class="px-4 space-y-2">
+          <a href="home.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+            <span>Home</span>
+          </a>
+          
+          <a href="point-of-sale.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <span>Point of Sale</span>
+          </a>
+          
+          <a href="patients.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <span>Patients</span>
+          </a>
+          
+          
+          <a href="#" class="flex items-center space-x-3 text-gray-700 bg-ocean-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5 text-ocean-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+            </svg>
+            <span>Payments</span>
+          </a>
+          
+          <a href="inventory.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+            </svg>
+            <span>Inventory</span>
+          </a>
+          
+          <a href="daybook.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <span>Daybook</span>
+          </a>
+          
+          <a href="shift-management.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Shift Management</span>
+          </a>
+          
+          <a href="reports.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v1a3 3 0 003 3h0a3 3 0 003-3v-1m-6 0h6M9 7h6m-6 4h6m-6-8h6a2 2 0 012 2v8a2 2 0 01-2 2H9a2 2 0 01-2-2V5a2 2 0 012-2z"></path>
+            </svg>
+            <span>Reports</span>
+          </a>
+          
+          <a href="help-training.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Help & Training</span>
+          </a>
+          
+          <a href="account.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            <span>Account</span>
+          </a>
+        </div>
+        
+        <div class="mt-8 px-4">
+          <div class="border-t pt-4">
+            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+              </svg>
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Desktop Sidebar (Always Visible) -->
+    <aside class="hidden lg:block w-64 bg-white shadow-lg">
+      <div class="p-4">
+        <div class="flex flex-col items-center space-y-2">
+          <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
+          <span class="text-xl font-semibold text-ocean-800">Cashier</span>
+        </div>
+      </div>
+      
+      <nav class="mt-8">
+        <div class="px-4 space-y-2">
+          <a href="home.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+            </svg>
+            <span>Home</span>
+          </a>
+          
+          <a href="point-of-sale.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <span>Point of Sale</span>
+          </a>
+          
+          <a href="patients.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            </svg>
+            <span>Patients</span>
+          </a>
+          
+          
+          <a href="#" class="flex items-center space-x-3 text-gray-700 bg-ocean-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5 text-ocean-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+            </svg>
+            <span>Payments</span>
+          </a>
+          
+          <a href="inventory.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+            </svg>
+            <span>Inventory</span>
+          </a>
+          
+          <a href="daybook.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            <span>Daybook</span>
+          </a>
+          
+          <a href="shift-management.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Shift Management</span>
+          </a>
+          
+          <a href="reports.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v1a3 3 0 003 3h0a3 3 0 003-3v-1m-6 0h6M9 7h6m-6 4h6m-6-8h6a2 2 0 012 2v8a2 2 0 01-2 2H9a2 2 0 01-2-2V5a2 2 0 012-2z"></path>
+            </svg>
+            <span>Reports</span>
+          </a>
+          
+          <a href="help-training.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span>Help & Training</span>
+          </a>
+          
+          <a href="account.html" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium">
+            <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+            </svg>
+            <span>Account</span>
+          </a>
+        </div>
+        
+        <div class="mt-8 px-4">
+          <div class="border-t pt-4">
+            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full">
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+              </svg>
+              <span>Sign out</span>
+            </button>
+          </div>
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+      <!-- Header -->
+      <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="px-6 py-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <!-- Mobile menu button -->
+              <button @click="mobileMenuOpen = true" class="lg:hidden text-gray-500 hover:text-gray-700" title="Open menu">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                </svg>
+              </button>
+              
+              <!-- Mobile logo -->
+              <div class="lg:hidden flex items-center space-x-2">
+                <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
+                <span class="text-xl font-semibold text-ocean-800">Cashier</span>
+              </div>
+              
+              <!-- Desktop title -->
+              <h1 class="hidden lg:block text-2xl font-semibold text-gray-900">Payments</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+              <button class="text-gray-500 hover:text-gray-700" title="Notifications">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <main class="flex-1 overflow-y-auto bg-gray-50 p-6">
+        <!-- Payment Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="p-2 bg-blue-100 rounded-lg">
+                <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Pending Quotations</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="pendingQuotations"></p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="p-2 bg-green-100 rounded-lg">
+                <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Unpaid Invoices</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="unpaidInvoices"></p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="p-2 bg-yellow-100 rounded-lg">
+                <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Credit Notes</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="creditNotes"></p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center">
+              <div class="p-2 bg-purple-100 rounded-lg">
+                <svg class="h-6 w-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+              </div>
+              <div class="ml-4">
+                <p class="text-sm font-medium text-gray-600">Today's Revenue</p>
+                <p class="text-2xl font-semibold text-gray-900" x-text="todayRevenue"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Type Tabs -->
+        <div class="bg-white rounded-lg shadow mb-6">
+          <div class="border-b border-gray-200">
+            <nav class="flex -mb-px">
+              <button @click="activeTab = 'quotations'" 
+                      :class="activeTab === 'quotations' ? 'border-ocean-500 text-ocean-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                      class="py-4 px-6 text-sm font-medium border-b-2 transition-colors">
+                Quotations
+              </button>
+              <button @click="activeTab = 'invoices'" 
+                      :class="activeTab === 'invoices' ? 'border-ocean-500 text-ocean-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                      class="py-4 px-6 text-sm font-medium border-b-2 transition-colors">
+                Invoices
+              </button>
+              <button @click="activeTab = 'credit-notes'" 
+                      :class="activeTab === 'credit-notes' ? 'border-ocean-500 text-ocean-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                      class="py-4 px-6 text-sm font-medium border-b-2 transition-colors">
+                Credit Notes
+              </button>
+              <button @click="activeTab = 'insurance'" 
+                      :class="activeTab === 'insurance' ? 'border-ocean-500 text-ocean-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                      class="py-4 px-6 text-sm font-medium border-b-2 transition-colors">
+                Insurance
+              </button>
+            </nav>
+          </div>
+
+          <!-- Tab Content -->
+          <div class="p-6">
+            <!-- Quotations Tab -->
+            <div x-show="activeTab === 'quotations'" x-transition:enter="transition ease-out duration-200">
+              <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-medium text-gray-900">Quotations</h3>
+                <div class="flex space-x-3">
+                  <input type="text" x-model="quotationSearch" placeholder="Search quotations..." 
+                         class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                  <button @click="showNewQuotationModal = true" 
+                          class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors">
+                    New Quotation
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Quote #</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <template x-for="quotation in filteredQuotations" :key="quotation.id">
+                      <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="quotation.number"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="quotation.patient"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="quotation.date"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">ZMW <span x-text="quotation.amount"></span></td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span :class="quotation.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'"
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" x-text="quotation.status"></span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button @click="convertToInvoice(quotation)" class="text-ocean-600 hover:text-ocean-900 mr-3">Convert to Invoice</button>
+                          <button @click="viewQuotation(quotation)" class="text-gray-600 hover:text-gray-900">View</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Invoices Tab -->
+            <div x-show="activeTab === 'invoices'" x-transition:enter="transition ease-out duration-200">
+              <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-medium text-gray-900">Invoices</h3>
+                <div class="flex space-x-3">
+                  <input type="text" x-model="invoiceSearch" placeholder="Search invoices..." 
+                         class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                  <button @click="showNewInvoiceModal = true" 
+                          class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors">
+                    New Invoice
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice #</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Due Date</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <template x-for="invoice in filteredInvoices" :key="invoice.id">
+                      <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="invoice.number"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="invoice.patient"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="invoice.date"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="invoice.dueDate"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">ZMW <span x-text="invoice.amount"></span></td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span :class="getInvoiceStatusClass(invoice.status)"
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" x-text="invoice.status"></span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button x-show="invoice.status === 'Unpaid'" @click="processPayment(invoice)" class="text-green-600 hover:text-green-900 mr-3">Process Payment</button>
+                          <button @click="viewInvoice(invoice)" class="text-gray-600 hover:text-gray-900">View</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Credit Notes Tab -->
+            <div x-show="activeTab === 'credit-notes'" x-transition:enter="transition ease-out duration-200">
+              <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-medium text-gray-900">Credit Notes</h3>
+                <div class="flex space-x-3">
+                  <input type="text" x-model="creditNoteSearch" placeholder="Search credit notes..." 
+                         class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                  <button @click="showNewCreditNoteModal = true" 
+                          class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors">
+                    New Credit Note
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Credit Note #</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Original Invoice</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <template x-for="creditNote in filteredCreditNotes" :key="creditNote.id">
+                      <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="creditNote.number"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="creditNote.originalInvoice"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="creditNote.patient"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="creditNote.date"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">ZMW <span x-text="creditNote.amount"></span></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="creditNote.reason"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button @click="viewCreditNote(creditNote)" class="text-gray-600 hover:text-gray-900">View</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Insurance Tab -->
+            <div x-show="activeTab === 'insurance'" x-transition:enter="transition ease-out duration-200">
+              <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-medium text-gray-900">Insurance Claims</h3>
+                <div class="flex space-x-3">
+                  <input type="text" x-model="insuranceSearch" placeholder="Search insurance claims..." 
+                         class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                  <button @click="showNewInsuranceModal = true" 
+                          class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors">
+                    New Insurance Claim
+                  </button>
+                </div>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                    <tr>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Claim #</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Patient</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Insurance Provider</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Policy Number</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Claim Amount</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                      <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                    <template x-for="claim in filteredInsuranceClaims" :key="claim.id">
+                      <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900" x-text="claim.number"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="claim.patient"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="claim.provider"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="claim.policyNumber"></td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900" x-text="claim.amount"></td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                          <span :class="getInsuranceStatusClass(claim.status)"
+                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full" x-text="claim.status"></span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button @click="processInsuranceClaim(claim)" class="text-green-600 hover:text-green-900 mr-3">Process</button>
+                          <button @click="viewInsuranceClaim(claim)" class="text-gray-600 hover:text-gray-900">View</button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- New Quotation Modal -->
+        <div x-show="showNewQuotationModal" x-transition.opacity class="fixed inset-0 z-50 overflow-y-auto">
+          <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" @click="showNewQuotationModal = false">
+              <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+              <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Create New Quotation</h3>
+                <form @submit.prevent="createQuotation()">
+                  <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Patient Name</label>
+                      <input type="text" x-model="newQuotation.patient" placeholder="Enter patient name" required
+                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Patient Name">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                      <input type="email" x-model="newQuotation.email" placeholder="Enter email address"
+                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Email">
+                    </div>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Items</label>
+                    <div class="space-y-2">
+                      <template x-for="(item, index) in newQuotation.items" :key="index">
+                        <div class="flex space-x-2">
+                          <input type="text" x-model="item.description" placeholder="Description" required
+                                 class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                          <input type="number" x-model="item.quantity" placeholder="Qty" min="1" required
+                                 class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                          <input type="number" x-model="item.price" placeholder="Price" min="0" step="0.01" required
+                                 class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                          <button type="button" @click="newQuotation.items.splice(index, 1)" 
+                                  class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Remove</button>
+                        </div>
+                      </template>
+                    </div>
+                    <button type="button" @click="newQuotation.items.push({description: '', quantity: 1, price: 0})" 
+                            class="mt-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                      Add Item
+                    </button>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    <textarea x-model="newQuotation.notes" rows="3" placeholder="Enter any additional notes"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Notes"></textarea>
+                  </div>
+                  
+                  <div class="flex justify-end space-x-3">
+                    <button type="button" @click="showNewQuotationModal = false" 
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                      Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
+                      Create Quotation
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment Processing Modal -->
+        <div x-show="showPaymentModal" x-transition.opacity class="fixed inset-0 z-50 overflow-y-auto">
+          <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" @click="showPaymentModal = false">
+              <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Process Payment</h3>
+                <div class="mb-4">
+                  <p class="text-sm text-gray-600">Invoice: <span x-text="selectedInvoice?.number" class="font-medium"></span></p>
+                  <p class="text-sm text-gray-600">Patient: <span x-text="selectedInvoice?.patient" class="font-medium"></span></p>
+                  <p class="text-sm text-gray-600">Amount Due: <span class="font-medium">ZMW <span x-text="selectedInvoice?.amount"></span></span></p>
+                </div>
+                
+                <form @submit.prevent="completePayment()">
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Payment Method</label>
+                    <select x-model="payment.method" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Payment Method">
+                      <option value="">Select payment method</option>
+                      <option value="cash">Cash</option>
+                      <option value="card">Credit/Debit Card</option>
+                      <option value="mobile">Mobile Money</option>
+                      <option value="bank">Bank Transfer</option>
+                    </select>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount Paid</label>
+                    <input type="number" x-model="payment.amount" :max="selectedInvoice?.amount" min="0" step="0.01" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" placeholder="Enter amount" aria-label="Amount Paid">
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Reference Number</label>
+                    <input type="text" x-model="payment.reference" placeholder="Enter reference number"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Reference Number">
+                  </div>
+                  
+                  <div class="flex justify-end space-x-3">
+                    <button type="button" @click="showPaymentModal = false" 
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                      Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                      Complete Payment
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- New Invoice Modal -->
+        <div x-show="showNewInvoiceModal" x-transition.opacity class="fixed inset-0 z-50 overflow-y-auto">
+          <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" @click="showNewInvoiceModal = false">
+              <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+              <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Create New Invoice</h3>
+                <form @submit.prevent="createInvoice()">
+                  <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Patient Name</label>
+                      <input type="text" x-model="newInvoice.patient" placeholder="Enter patient name" required
+                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Patient Name">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+                      <input type="date" x-model="newInvoice.dueDate" required
+                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Due Date">
+                    </div>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Items</label>
+                    <div class="space-y-2">
+                      <template x-for="(item, index) in newInvoice.items" :key="index">
+                        <div class="flex space-x-2">
+                          <input type="text" x-model="item.description" placeholder="Description" required
+                                 class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                          <input type="number" x-model="item.quantity" placeholder="Qty" min="1" required
+                                 class="w-20 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                          <input type="number" x-model="item.price" placeholder="Price" min="0" step="0.01" required
+                                 class="w-24 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500">
+                          <button type="button" @click="newInvoice.items.splice(index, 1)" 
+                                  class="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Remove</button>
+                        </div>
+                      </template>
+                    </div>
+                    <button type="button" @click="newInvoice.items.push({description: '', quantity: 1, price: 0})" 
+                            class="mt-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                      Add Item
+                    </button>
+                  </div>
+                  
+                  <div class="flex justify-end space-x-3">
+                    <button type="button" @click="showNewInvoiceModal = false" 
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                      Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
+                      Create Invoice
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- New Credit Note Modal -->
+        <div x-show="showNewCreditNoteModal" x-transition.opacity class="fixed inset-0 z-50 overflow-y-auto">
+          <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" @click="showNewCreditNoteModal = false">
+              <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Create New Credit Note</h3>
+                <form @submit.prevent="createCreditNote()">
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Original Invoice</label>
+                    <select x-model="newCreditNote.originalInvoice" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Original Invoice">
+                      <option value="">Select invoice</option>
+                      <template x-for="invoice in invoices" :key="invoice.id">
+                        <option :value="invoice.number" x-text="`${invoice.number} - ${invoice.patient}`"></option>
+                      </template>
+                    </select>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount</label>
+                    <input type="number" x-model="newCreditNote.amount" placeholder="Enter credit amount" min="0" step="0.01" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Amount">
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                    <select x-model="newCreditNote.reason" required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Reason">
+                      <option value="">Select reason</option>
+                      <option value="Product return">Product return</option>
+                      <option value="Price adjustment">Price adjustment</option>
+                      <option value="Service cancellation">Service cancellation</option>
+                      <option value="Billing error">Billing error</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                    <textarea x-model="newCreditNote.notes" rows="3" placeholder="Enter additional notes"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Notes"></textarea>
+                  </div>
+                  
+                  <div class="flex justify-end space-x-3">
+                    <button type="button" @click="showNewCreditNoteModal = false" 
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                      Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
+                      Create Credit Note
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- New Insurance Claim Modal -->
+        <div x-show="showNewInsuranceModal" x-transition.opacity class="fixed inset-0 z-50 overflow-y-auto">
+          <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 transition-opacity" @click="showNewInsuranceModal = false">
+              <div class="absolute inset-0 bg-gray-500 opacity-75"></div>
+            </div>
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+              <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Create New Insurance Claim</h3>
+                <form @submit.prevent="createInsuranceClaim()">
+                  <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Patient Name</label>
+                      <input type="text" x-model="newInsuranceClaim.patient" placeholder="Enter patient name" required
+                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Patient Name">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Insurance Provider</label>
+                      <select x-model="newInsuranceClaim.provider" required
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Insurance Provider">
+                        <option value="">Select insurance provider</option>
+                        <option value="National Health Insurance Management Agency (NHIMA)">National Health Insurance Management Agency (NHIMA)</option>
+                        <option value="Zambia State Insurance Corporation (ZSIC)">Zambia State Insurance Corporation (ZSIC)</option>
+                        <option value="Madison General Insurance">Madison General Insurance</option>
+                        <option value="Prudential Life Assurance Zambia">Prudential Life Assurance Zambia</option>
+                        <option value="Profund Insurance Company">Profund Insurance Company</option>
+                        <option value="Zenith Insurance">Zenith Insurance</option>
+                        <option value="Sanlam Life Insurance Zambia">Sanlam Life Insurance Zambia</option>
+                        <option value="African Life Assurance">African Life Assurance</option>
+                        <option value="General Alliance Insurance">General Alliance Insurance</option>
+                        <option value="Zambia National Provident Fund (ZNPF)">Zambia National Provident Fund (ZNPF)</option>
+                        <option value="Greenlands Insurance Company">Greenlands Insurance Company</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Policy Number</label>
+                      <input type="text" x-model="newInsuranceClaim.policyNumber" placeholder="Enter policy number" required
+                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Policy Number">
+                    </div>
+                    <div>
+                      <label class="block text-sm font-medium text-gray-700 mb-1">Claim Amount</label>
+                      <input type="number" x-model="newInsuranceClaim.amount" placeholder="Enter claim amount" min="0" step="0.01" required
+                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Claim Amount">
+                    </div>
+                  </div>
+                  
+                  <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Service Description</label>
+                    <textarea x-model="newInsuranceClaim.description" rows="3" placeholder="Describe the services claimed"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-ocean-500" aria-label="Service Description"></textarea>
+                  </div>
+                  
+                  <div class="flex justify-end space-x-3">
+                    <button type="button" @click="showNewInsuranceModal = false" 
+                            class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+                      Cancel
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
+                      Create Claim
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    function cashierDashboard() {
+      return {
+        mobileMenuOpen: false,
+        activeTab: 'quotations',
+        
+        // Statistics
+        pendingQuotations: 0,
+        unpaidInvoices: 0,
+        creditNotes: 0,
+        todayRevenue: '0.00',
+        
+        // Search filters
+        quotationSearch: '',
+        invoiceSearch: '',
+        creditNoteSearch: '',
+        insuranceSearch: '',
+        
+        // Modal states
+        showNewQuotationModal: false,
+        showNewInvoiceModal: false,
+        showNewCreditNoteModal: false,
+        showNewInsuranceModal: false,
+        showPaymentModal: false,
+        
+        // Selected items
+        selectedInvoice: null,
+        
+        // Forms
+        newQuotation: {
+          patient: '',
+          email: '',
+          phone: '',
+          items: [
+            {description: '', quantity: 1, price: 0}
+          ],
+          notes: ''
+        },
+        
+        newInvoice: {
+          patient: '',
+          email: '',
+          phone: '',
+          dueDate: '',
+          items: [
+            {description: '', quantity: 1, price: 0}
+          ]
+        },
+        
+        newCreditNote: {
+          originalInvoice: '',
+          amount: 0,
+          reason: '',
+          notes: ''
+        },
+        
+        newInsuranceClaim: {
+          patient: '',
+          provider: '',
+          policyNumber: '',
+          amount: 0,
+          description: ''
+        },
+        
+        payment: {
+          method: '',
+          amount: 0,
+          reference: ''
+        },
+        
+        // Empty data arrays (no fake data)
+        quotations: [],
+        invoices: [],
+        creditNotes: [],
+        insuranceClaims: [],
+        
+        // Computed properties
+        get filteredQuotations() {
+          return this.quotations.filter(q => 
+            q.number.toLowerCase().includes(this.quotationSearch.toLowerCase()) ||
+            q.patient.toLowerCase().includes(this.quotationSearch.toLowerCase()) ||
+            q.status.toLowerCase().includes(this.quotationSearch.toLowerCase())
+          );
+        },
+        
+        get filteredInvoices() {
+          return this.invoices.filter(i => 
+            i.number.toLowerCase().includes(this.invoiceSearch.toLowerCase()) ||
+            i.patient.toLowerCase().includes(this.invoiceSearch.toLowerCase()) ||
+            i.status.toLowerCase().includes(this.invoiceSearch.toLowerCase())
+          );
+        },
+        
+        get filteredCreditNotes() {
+          return this.creditNotes.filter(cn => 
+            cn.number.toLowerCase().includes(this.creditNoteSearch.toLowerCase()) ||
+            cn.patient.toLowerCase().includes(this.creditNoteSearch.toLowerCase()) ||
+            cn.reason.toLowerCase().includes(this.creditNoteSearch.toLowerCase())
+          );
+        },
+        
+        get filteredInsuranceClaims() {
+          return this.insuranceClaims.filter(claim => 
+            claim.number.toLowerCase().includes(this.insuranceSearch.toLowerCase()) ||
+            claim.patient.toLowerCase().includes(this.insuranceSearch.toLowerCase()) ||
+            claim.provider.toLowerCase().includes(this.insuranceSearch.toLowerCase())
+          );
+        },
+        
+        // Methods
+        async init() {
+          await this.loadQuotations();
+          await this.loadInvoices();
+          await this.loadCreditNotes();
+          await this.loadInsuranceClaims();
+        },
+        
+        async loadQuotations() {
+          try {
+            const response = await fetch('/api/payment/quotations', {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              this.quotations = data;
+            } else {
+              console.error('Failed to load quotations');
+            }
+          } catch (error) {
+            console.error('Error loading quotations:', error);
+          }
+        },
+        
+        async loadInvoices() {
+          try {
+            const response = await fetch('/api/payment/invoices', {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              this.invoices = data;
+            } else {
+              console.error('Failed to load invoices');
+            }
+          } catch (error) {
+            console.error('Error loading invoices:', error);
+          }
+        },
+        
+        async loadCreditNotes() {
+          try {
+            const response = await fetch('/api/payment/credit-notes', {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              this.creditNotes = data;
+            } else {
+              console.error('Failed to load credit notes');
+            }
+          } catch (error) {
+            console.error('Error loading credit notes:', error);
+          }
+        },
+        
+        async loadInsuranceClaims() {
+          try {
+            const response = await fetch('/api/payment/insurance-claims', {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              this.insuranceClaims = data;
+            } else {
+              console.error('Failed to load insurance claims');
+            }
+          } catch (error) {
+            console.error('Error loading insurance claims:', error);
+          }
+        },
+        getInvoiceStatusClass(status) {
+          switch(status) {
+            case 'Paid': return 'bg-green-100 text-green-800';
+            case 'Unpaid': return 'bg-yellow-100 text-yellow-800';
+            case 'Overdue': return 'bg-red-100 text-red-800';
+            default: return 'bg-gray-100 text-gray-800';
+          }
+        },
+        
+        getInsuranceStatusClass(status) {
+          switch(status) {
+            case 'Approved': return 'bg-green-100 text-green-800';
+            case 'Pending': return 'bg-yellow-100 text-yellow-800';
+            case 'Rejected': return 'bg-red-100 text-red-800';
+            case 'Processing': return 'bg-blue-100 text-blue-800';
+            default: return 'bg-gray-100 text-gray-800';
+          }
+        },
+        
+        async createQuotation() {
+          try {
+            const total = this.newQuotation.items.reduce((sum, item) => {
+              return sum + (item.quantity * item.price);
+            }, 0);
+            
+            const quotationData = {
+              patientName: this.newQuotation.patient,
+              email: this.newQuotation.email,
+              phone: this.newQuotation.phone,
+              items: this.newQuotation.items.filter(item => item.description && item.quantity > 0 && item.price > 0),
+              notes: this.newQuotation.notes
+            };
+            
+            const response = await fetch('/api/payment/quotations', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify(quotationData)
+            });
+            
+            if (response.ok) {
+              const newQuotation = await response.json();
+              this.quotations.unshift(newQuotation);
+              this.pendingQuotations++;
+              
+              // Reset form
+              this.newQuotation = {
+                patient: '',
+                email: '',
+                phone: '',
+                items: [{description: '', quantity: 1, price: 0}],
+                notes: ''
+              };
+              this.showNewQuotationModal = false;
+              
+              this.showNotification('Quotation created successfully', 'success');
+            } else {
+              const error = await response.json();
+              this.showNotification(`Failed to create quotation: ${error.error || 'Unknown error'}`, 'error');
+            }
+          } catch (error) {
+            console.error('Error creating quotation:', error);
+            this.showNotification('Failed to create quotation', 'error');
+          }
+        },
+        
+        convertToInvoice(quotation) {
+          const newInvoice = {
+            id: this.invoices.length + 1,
+            number: `INV-2024-${String(this.invoices.length + 1).padStart(3, '0')}`,
+            patient: quotation.patient,
+            date: new Date().toISOString().split('T')[0],
+            dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            amount: quotation.amount,
+            status: 'Unpaid'
+          };
+          
+          this.invoices.unshift(newInvoice);
+          this.unpaidInvoices++;
+          
+          // Update quotation status
+          quotation.status = 'Converted';
+          this.pendingQuotations--;
+          
+          this.showNotification('Quotation converted to invoice', 'success');
+        },
+        
+        async createInvoice() {
+          try {
+            const total = this.newInvoice.items.reduce((sum, item) => {
+              return sum + (item.quantity * item.price);
+            }, 0);
+            
+            const invoiceData = {
+              patientName: this.newInvoice.patient,
+              email: this.newInvoice.email,
+              phone: this.newInvoice.phone,
+              items: this.newInvoice.items.filter(item => item.description && item.quantity > 0 && item.price > 0)
+            };
+            
+            const response = await fetch('/api/payment/invoices', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify(invoiceData)
+            });
+            
+            if (response.ok) {
+              const newInvoice = await response.json();
+              this.invoices.unshift(newInvoice);
+              this.unpaidInvoices++;
+              
+              // Reset form
+              this.newInvoice = {
+                patient: '',
+                email: '',
+                phone: '',
+                dueDate: '',
+                items: [{description: '', quantity: 1, price: 0}]
+              };
+              this.showNewInvoiceModal = false;
+              
+              this.showNotification('Invoice created successfully', 'success');
+            } else {
+              const error = await response.json();
+              this.showNotification(`Failed to create invoice: ${error.error || 'Unknown error'}`, 'error');
+            }
+          } catch (error) {
+            console.error('Error creating invoice:', error);
+            this.showNotification('Failed to create invoice', 'error');
+          }
+        },
+        
+        createCreditNote() {
+          // Find original invoice
+          const originalInvoice = this.invoices.find(inv => inv.number === this.newCreditNote.originalInvoice);
+          
+          // Create new credit note
+          const newCreditNote = {
+            id: this.creditNotes.length + 1,
+            number: `CN-2024-${String(this.creditNotes.length + 1).padStart(3, '0')}`,
+            originalInvoice: this.newCreditNote.originalInvoice,
+            patient: originalInvoice ? originalInvoice.patient : 'Unknown',
+            date: new Date().toISOString().split('T')[0],
+            amount: this.newCreditNote.amount.toFixed(2),
+            reason: this.newCreditNote.reason
+          };
+          
+          this.creditNotes.unshift(newCreditNote);
+          this.creditNotes++;
+          
+          // Reset form
+          this.newCreditNote = {
+            originalInvoice: '',
+            amount: 0,
+            reason: '',
+            notes: ''
+          };
+          this.showNewCreditNoteModal = false;
+          
+          this.showNotification('Credit note created successfully', 'success');
+        },
+        
+        createInsuranceClaim() {
+          // Create new insurance claim
+          const newClaim = {
+            id: this.insuranceClaims.length + 1,
+            number: `CL-2024-${String(this.insuranceClaims.length + 1).padStart(3, '0')}`,
+            patient: this.newInsuranceClaim.patient,
+            provider: this.newInsuranceClaim.provider,
+            policyNumber: this.newInsuranceClaim.policyNumber,
+            amount: this.newInsuranceClaim.amount.toFixed(2),
+            status: 'Pending'
+          };
+          
+          this.insuranceClaims.unshift(newClaim);
+          
+          // Reset form
+          this.newInsuranceClaim = {
+            patient: '',
+            provider: '',
+            policyNumber: '',
+            amount: 0,
+            description: ''
+          };
+          this.showNewInsuranceModal = false;
+          
+          this.showNotification('Insurance claim created successfully', 'success');
+        },
+        
+        processInsuranceClaim(claim) {
+          claim.status = 'Processing';
+          this.showNotification(`Processing claim ${claim.number}`, 'info');
+        },
+        
+        viewInsuranceClaim(claim) {
+          this.showNotification(`Viewing insurance claim ${claim.number}`, 'info');
+        },
+        
+        processPayment(invoice) {
+          this.selectedInvoice = invoice;
+          this.payment = {
+            method: '',
+            amount: parseFloat(invoice.amount),
+            reference: ''
+          };
+          this.showPaymentModal = true;
+        },
+        
+        completePayment() {
+          if (this.selectedInvoice) {
+            this.selectedInvoice.status = 'Paid';
+            this.unpaidInvoices--;
+            
+            // Update today's revenue
+            const currentRevenue = parseFloat(this.todayRevenue.replace(',', ''));
+            this.todayRevenue = (currentRevenue + this.payment.amount).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
+            this.showPaymentModal = false;
+            this.showNotification('Payment processed successfully', 'success');
+          }
+        },
+        
+        viewQuotation(quotation) {
+          this.showNotification(`Viewing quotation ${quotation.number}`, 'info');
+        },
+        
+        viewInvoice(invoice) {
+          this.showNotification(`Viewing invoice ${invoice.number}`, 'info');
+        },
+        
+        viewCreditNote(creditNote) {
+          this.showNotification(`Viewing credit note ${creditNote.number}`, 'info');
+        },
+        
+        showNotification(message, type = 'info') {
+          // Simple notification implementation
+          const notification = document.createElement('div');
+          notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${
+            type === 'success' ? 'bg-green-500 text-white' :
+            type === 'error' ? 'bg-red-500 text-white' :
+            'bg-blue-500 text-white'
+          }`;
+          notification.textContent = message;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.remove();
+          }, 3000);
+        },
+        
+        init() {
+          // Initialize authentication
+          if (!window.umiAuth.initPageAuth('Cashier')) {
+            return; // Will redirect if not authenticated
+          }
+          
+          // Initialize any data here
+        },
+        
+        logout() {
+          window.umiLogout();
+        }
+      }
+    }
+  </script>
+</body>
+</html>

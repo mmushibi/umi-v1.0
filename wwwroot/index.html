@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en" x-data="landing()">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Umi Health | Health Information Systems POS</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ocean: {
+              50: '#eff9ff',
+              100: '#d6f0ff',
+              200: '#b5e0ff',
+              300: '#86c8ff',
+              400: '#55a7f5',
+              500: '#2f88db',
+              600: '#1c6db8',
+              700: '#165697',
+              800: '#183f6f',
+              900: '#142f55'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-ocean-50 text-slate-800 antialiased">
+  <header class="relative overflow-hidden bg-gradient-to-b from-ocean-200 via-white to-white">
+    <div class="absolute inset-0 bg-[url('https://chargebacks911.com/wp-content/uploads/2025/05/Point-of-Sale-blog.jpg')] bg-cover bg-center opacity-30"></div>
+    <div class="relative mx-auto flex max-w-7xl items-center justify-between px-6 py-6 md:justify-start">
+      <div class="flex w-full items-center justify-between md:w-auto md:justify-start">
+        <a href="./index.html" class="flex items-center gap-2 text-2xl font-semibold text-ocean-800 mx-auto md:mx-0">
+          <img src="./logo.png" alt="Umi Health" class="h-8 w-auto">
+          <span class="hidden md:inline">Umi Health</span>
+        </a>
+        <!-- Mobile menu placeholder if needed -->
+      </div>
+      <nav class="hidden gap-8 text-sm font-medium text-slate-700 md:flex md:ml-auto">
+        <a href="#features" class="hover:text-ocean-600">Features</a>
+        <a href="#products" class="hover:text-ocean-600">Products</a>
+        <a href="#pricing" class="hover:text-ocean-600">Subscription Plans</a>
+        <a href="#stories" class="hover:text-ocean-600">Stories</a>
+        <a href="#faq" class="hover:text-ocean-600">FAQ</a>
+      </nav>
+      <div class="hidden items-center gap-4 md:flex">
+      </div>
+    </div>
+    <div class="relative mx-auto flex max-w-7xl flex-col items-center gap-6 px-6 pb-24 pt-20 text-center">
+      <span class="text-xs font-semibold uppercase tracking-[0.3em] text-ocean-600">Pharmacy Management System</span>
+      <h1 class="text-4xl font-bold text-slate-900 md:text-6xl">Complete Pharmacy Management Solution</h1>
+      <p class="max-w-3xl text-lg text-slate-600 md:text-xl">A modern system that helps pharmacies manage sales, inventory, prescriptions, and customer information all in one place. Perfect for single locations or multiple pharmacy chains.</p>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <a href="./modules/auth/signup.html" class="rounded-full bg-ocean-500 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-ocean-500/30 hover:bg-ocean-600">Get Started</a>
+        <a href="./modules/auth/signin.html" class="rounded-full border border-ocean-500 px-8 py-3 text-base font-semibold text-ocean-600 hover:bg-ocean-50">Sign In</a>
+      </div>
+      <div class="mt-10 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-3">
+        <template x-for="card in heroCards" :key="card.title">
+          <div class="rounded-3xl bg-white/80 p-6 shadow-xl shadow-slate-900/5 backdrop-blur">
+            <p class="text-xs font-semibold uppercase tracking-wider text-ocean-500" x-text="card.label"></p>
+            <h3 class="mt-2 text-lg font-semibold text-slate-900" x-text="card.title"></h3>
+            <p class="mt-2 text-sm text-slate-600" x-text="card.body"></p>
+          </div>
+        </template>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="features" class="bg-white py-20">
+      <div class="mx-auto max-w-7xl px-6">
+        <div class="grid items-center gap-12 md:grid-cols-2">
+          <div>
+            <h2 class="text-3xl font-bold text-slate-900">Complete Pharmacy Management</h2>
+            <p class="mt-4 text-base text-slate-600">Umi Health provides everything you need to run your pharmacy efficiently. Manage sales, track inventory, handle prescriptions, and serve customers better with our easy-to-use system.</p>
+            <ul class="mt-8 space-y-4">
+              <template x-for="feature in features.slice(0, 3)" :key="feature.title">
+                <li class="flex items-start gap-4">
+                  <span class="mt-1 inline-flex h-8 w-8 items-center justify-center rounded-full bg-ocean-100 text-ocean-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-4 w-4">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                  </span>
+                  <div>
+                    <h3 class="text-lg font-semibold text-slate-900" x-text="feature.title"></h3>
+                    <p class="text-sm text-slate-600" x-text="feature.body"></p>
+                  </div>
+                </li>
+              </template>
+            </ul>
+          </div>
+          <div class="relative">
+            <div class="absolute -inset-6 rounded-3xl bg-gradient-to-br from-ocean-100 via-white to-white shadow-[0_40px_90px_-40px_rgba(45,105,175,0.6)]"></div>
+            <div class="relative rounded-3xl bg-white p-6 shadow-xl shadow-ocean-500/10">
+             <div class="mt-6">
+                <h3 class="text-xl font-semibold text-slate-900">Modern Features</h3>
+                <p class="mt-2 text-sm text-slate-600">Our system includes all the tools you need to run a successful pharmacy, from sales tracking to customer management.</p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                  <span class="rounded-full bg-ocean-100 px-3 py-1 text-xs font-semibold text-ocean-600">Easy to Use</span>
+                  <span class="rounded-full bg-ocean-100 px-3 py-1 text-xs font-semibold text-ocean-600">Secure</span>
+                  <span class="rounded-full bg-ocean-100 px-3 py-1 text-xs font-semibold text-ocean-600">Reliable</span>
+                  <span class="rounded-full bg-ocean-100 px-3 py-1 text-xs font-semibold text-ocean-600">Fast</span>
+                  <span class="rounded-full bg-ocean-100 px-3 py-1 text-xs font-semibold text-ocean-600">Support</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-12">
+          <h3 class="text-2xl font-bold text-slate-900 text-center">Additional Features</h3>
+          <div class="mt-8 grid gap-6 md:grid-cols-3">
+            <template x-for="feature in features.slice(3)" :key="feature.title">
+              <div class="rounded-3xl bg-white/70 p-6 shadow-lg shadow-slate-900/5 backdrop-blur">
+                <h3 class="text-lg font-semibold text-slate-900" x-text="feature.title"></h3>
+                <p class="mt-2 text-sm text-slate-600" x-text="feature.body"></p>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="products" class="bg-gradient-to-b from-white to-ocean-50 py-20">
+      <div class="mx-auto max-w-7xl px-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-3xl font-bold text-slate-900">Pharmacy Management Modules</h2>
+            <p class="mt-2 text-base text-slate-600">Comprehensive modules for complete pharmacy operations management.</p>
+          </div>
+          <a href="#" class="hidden rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-600 hover:border-ocean-300 hover:text-ocean-500 md:inline-flex">View all modules</a>
+        </div>
+        <div class="mt-12 grid gap-6 md:grid-cols-3">
+          <template x-for="product in products" :key="product.title">
+            <div class="rounded-3xl bg-white/70 p-6 shadow-lg shadow-slate-900/5 backdrop-blur">
+              <span class="text-xs font-semibold uppercase tracking-widest text-ocean-400" x-text="product.label"></span>
+              <h3 class="mt-3 text-lg font-semibold text-slate-900" x-text="product.title"></h3>
+              <p class="mt-2 text-sm text-slate-600" x-text="product.body"></p>
+              <a :href="product.link" class="mt-5 inline-block w-full rounded-full bg-ocean-500 py-2 text-sm font-semibold text-white text-center hover:bg-ocean-600">Access Module</a>
+            </div>
+          </template>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="bg-white py-20">
+      <div class="mx-auto max-w-7xl px-6 text-center">
+        <h2 class="text-3xl font-bold text-slate-900">Flexible Plans for Every Pharmacy</h2>
+        <p class="mt-3 text-base text-slate-600">Scalable solutions designed to grow with your pharmacy business.</p>
+        <div class="mt-12 grid gap-6 md:grid-cols-3">
+          <template x-for="plan in plans" :key="plan.name">
+            <div class="rounded-3xl border border-slate-200 bg-white p-8 text-left shadow-xl shadow-slate-900/5" :class="plan.featured ? 'border-ocean-400 bg-ocean-50 shadow-ocean-500/20' : ''">
+              <h3 class="text-lg font-semibold text-slate-900" x-text="plan.name"></h3>
+              <p class="mt-2 text-sm text-slate-600" x-text="plan.body"></p>
+              <ul class="mt-6 space-y-3 text-sm">
+                <template x-for="perk in plan.perks" :key="perk">
+                  <li class="flex items-center gap-2 text-slate-600">
+                    <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-ocean-100 text-ocean-500">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="h-3 w-3">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                      </svg>
+                    </span>
+                    <span x-text="perk"></span>
+                  </li>
+                </template>
+              </ul>
+              <a href="./modules/auth/signup.html" class="mt-8 inline-flex w-full justify-center rounded-full border border-ocean-500 px-5 py-2 text-sm font-semibold text-ocean-600 hover:bg-ocean-50">Choose plan</a>
+            </div>
+          </template>
+        </div>
+      </div>
+    </section>
+
+    <section id="stories" class="bg-gradient-to-b from-ocean-50 to-white py-20">
+      <div class="mx-auto max-w-7xl px-6">
+        <div class="grid gap-8 md:grid-cols-2">
+          <div>
+            <h2 class="text-3xl font-bold text-slate-900">Trusted by Pharmacy Professionals</h2>
+            <p class="mt-4 text-base text-slate-600">From independent pharmacies to large chains, healthcare professionals rely on Umi Health for comprehensive pharmacy management solutions.</p>
+          </div>
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <template x-for="story in stories" :key="story.name">
+              <div class="rounded-3xl bg-white/80 p-6 shadow shadow-slate-900/5 backdrop-blur">
+                <h3 class="mt-4 text-lg font-semibold text-slate-900" x-text="story.name"></h3>
+                <p class="text-sm font-medium text-ocean-500" x-text="story.role"></p>
+                <p class="mt-3 text-sm text-slate-600" x-text="story.quote"></p>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="bg-white py-20">
+      <div class="mx-auto max-w-7xl px-6">
+        <div class="text-center">
+          <h2 class="text-3xl font-bold text-slate-900">Frequently Asked Questions</h2>
+          <p class="mt-3 text-base text-slate-600">Everything you need to know about implementing Umi Health in your pharmacy.</p>
+        </div>
+        <div class="mt-12 space-y-4">
+          <template x-for="faq in faqs" :key="faq.question">
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 class="text-lg font-semibold text-slate-900" x-text="faq.question"></h3>
+              <p class="mt-2 text-sm text-slate-600" x-text="faq.answer"></p>
+            </div>
+          </template>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-ocean-900 py-10 text-sm text-ocean-100">
+    <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 md:flex-row">
+      <div class="flex flex-col items-center md:items-start gap-2">
+        <p>© <span x-text="year"></span> Umi Health Information Systems. All rights reserved.</p>
+        <p class="text-xs text-ocean-300">Powered by Sepio Corp</p>
+      </div>
+      <div class="flex gap-4">
+        <button type="button" data-modal-target="globalTermsModal"
+          class="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Privacy</button>
+        <button type="button" data-modal-target="globalTermsModal"
+          class="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Terms</button>
+        <a href="mailto:support@umihealth.com" class="hover:text-white">Support</a>
+        <a href="./modules/Super-Admin/login.html" class="hover:text-white">Admin</a>
+        <a href="./modules/Sales-Operations/home.html" class="hover:text-white">Sales Ops</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Terms & privacy modal -->
+  <div id="globalTermsModal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 px-4 py-6 backdrop-blur">
+    <div class="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-slate-900">Umi Health Platform Terms & Privacy</h2>
+          <p class="mt-2 text-sm text-slate-600">These terms govern use of the Umi Health information systems platform and related services.</p>
+        </div>
+        <button type="button" data-modal-close="globalTermsModal" aria-label="Close"
+          class="rounded-full p-1 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-500">
+          <span class="material-symbols-rounded" aria-hidden="true">close</span>
+        </button>
+      </div>
+      <div class="mt-4 space-y-4 text-sm text-slate-600">
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700">Use of Service</h3>
+          <p>Your organisation’s access is limited to authorised staff. Activities are logged and reviewed by Sepio Corp’s
+            governance team.</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700">Data Protection</h3>
+          <p>All patient and transactional data is encrypted at rest and in transit. Data is processed in compliance with
+            local healthcare privacy legislation.</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700">Confidentiality</h3>
+          <p>Reports exported from Umi Health must remain within your secure environment unless Sepio Corp grants written
+            approval.</p>
+        </div>
+        <div>
+          <h3 class="text-sm font-semibold text-slate-700">Contact</h3>
+          <p>For questions, email <a href="mailto:legal@sepiocorp.com" class="font-semibold text-ocean-600">legal@sepiocorp.com</a>
+            or visit the Sepio Corp trust centre.</p>
+        </div>
+      </div>
+      <div class="mt-6 flex justify-end gap-3">
+        <button type="button" data-modal-close="globalTermsModal"
+          class="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-ocean-500 hover:text-ocean-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-500">
+          Close
+        </button>
+        <a href="https://www.sepiocorp.com/trust" target="_blank" rel="noopener"
+          class="rounded-full bg-ocean-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-ocean-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-500">
+          View full policy
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function landing() {
+      return {
+        year: new Date().getFullYear(),
+        heroCards: [
+          { label: 'Easy to Use', title: 'Simple Management', body: 'User-friendly system that makes running your pharmacy easier and more efficient.' },
+          { label: 'All-in-One', title: 'Complete Solution', body: 'Everything you need for your pharmacy - sales, inventory, prescriptions, and customer care.' },
+          { label: 'Secure', title: 'Safe & Reliable', body: 'Your data is protected with advanced security and regular backups.' }
+        ],
+        features: [
+          { title: 'Sales Management', body: 'Handle all sales transactions easily with payment processing and automatic receipts.' },
+          { title: 'Smart Inventory', body: 'Track your stock in real-time, get alerts for low items, and manage expiry dates automatically.' },
+          { title: 'Prescription Services', body: 'Manage digital prescriptions, track fulfillment, and stay compliant with regulations.' },
+          { title: 'Multiple Locations', body: 'Manage several pharmacy locations from one central system with shared data.' },
+          { title: 'User Access Control', body: 'Set up different staff roles and permissions to keep your system secure.' },
+          { title: 'Business Reports', body: 'Get detailed reports about sales, inventory, and customer trends to grow your business.' }
+        ],
+        products: [
+          { label: 'Core Module', title: 'Sales & Checkout', body: 'Easy-to-use point of sale system with payment processing and receipt printing.', link: './modules/Cashier/home.html' },
+          { label: 'Essential', title: 'Stock Control', body: 'Keep track of your inventory, get alerts for low stock, and manage expiry dates.', link: './modules/Pharmacist/home.html' },
+          { label: 'Advanced', title: 'Prescription Care', body: 'Handle customer prescriptions safely and stay compliant with health regulations.', link: './modules/Pharmacist/clinical.html' }
+        ],
+        plans: [
+          { name: 'Starter', body: 'Single location pharmacies digitise sales and stock.', perks: ['3 users included', 'Inventory + customer CRM', 'Offline fallback'], featured: false },
+          { name: 'Professional', body: 'Growing brands managing multiple branches.', perks: ['10 users included', 'Advanced analytics', 'Priority support'], featured: true },
+          { name: 'Enterprise', body: 'Multi-region operations with custom workflows.', perks: ['Unlimited users', 'Dedicated account manager', 'Custom integrations'], featured: false }
+        ],
+        stories: [
+          { name: 'Dr. Martha L.', role: 'Chief Pharmacist, Lusaka', quote: '"Umi Health gives us confidence that every patient journey is consistent no matter which branch they visit."', image: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=600&q=80' },
+          { name: 'Moses M.', role: 'Operations Director', quote: '"Stock variance shrunk by 27% once we switched to Umi Health\'s predictive restock alerts."', image: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=600&q=80' },
+          { name: 'Evan Hantolo.', role: 'Wellness Coach', quote: '“The unified messaging keeps our chronic care patients engaged and compliant.”', image: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=600&q=80' },
+          { name: 'Mawano M.', role: 'Retail Pharmacist', quote: '“Offline mode means we never miss a sale even when the network drops.”', image: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=600&q=80' }
+        ],
+        faqs: [
+          { question: 'Is Umi Health easy to learn and use?', answer: 'Yes! Our system is designed for pharmacy staff with simple, clear interfaces. We provide training and support to help you get started quickly.' },
+          { question: 'Can I use Umi Health for multiple pharmacy locations?', answer: 'Absolutely. You can manage several pharmacies from one account, with shared inventory and customer information across all locations.' },
+          { question: 'Is my pharmacy data safe and secure?', answer: 'Yes. We use advanced security measures to protect your data, including regular backups and secure access controls for your staff.' }
+        ]
+      }
+    }
+  </script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const triggers = document.querySelectorAll('[data-modal-target]');
+      const closeButtons = document.querySelectorAll('[data-modal-close]');
+
+      const openModal = (id) => {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      };
+
+      const closeModal = (id) => {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        modal.classList.remove('flex');
+        modal.classList.add('hidden');
+      };
+
+      triggers.forEach((trigger) => {
+        trigger.addEventListener('click', () => {
+          openModal(trigger.getAttribute('data-modal-target'));
+        });
+      });
+
+      closeButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          closeModal(button.getAttribute('data-modal-close'));
+        });
+      });
+
+      document.querySelectorAll('[id$="Modal"]').forEach((modal) => {
+        modal.addEventListener('click', (event) => {
+          if (event.target === modal) {
+            closeModal(modal.id);
+          }
+        });
+      });
+    });
+  </script>
+</body>
+
+</html>

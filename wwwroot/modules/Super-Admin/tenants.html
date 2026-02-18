@@ -1,0 +1,1907 @@
+<!DOCTYPE html>
+<html lang="en" x-data="tenantsPage()" x-init="init()">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tenants - Umi Health</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'dark-bg': '#11191f',
+            'light-bg': '#f4f3ec',
+            'yellow-accent': '#ffed90',
+            'orange-accent': '#ff9500',
+            'green-accent': '#34c759'
+          },
+          fontFamily: {
+            'instrument': ['Inter', 'system-ui', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="../../wwwroot/js/auth.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+  </style>
+</head>
+<body class="bg-light-bg text-gray-900 font-instrument">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Mobile Menu Overlay -->
+    <div x-show="mobileMenuOpen" x-transition.opacity
+         @click="mobileMenuOpen = false"
+         class="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"></div>
+    
+    <!-- Sidebar -->
+    <aside class="w-64 bg-dark-bg text-white flex flex-col fixed h-full z-30 transform transition-transform duration-300 ease-in-out lg:translate-x-0"
+           :class="{'-translate-x-full': !mobileMenuOpen, 'translate-x-0': mobileMenuOpen}">
+      <!-- Logo -->
+      <div class="p-6 border-b border-gray-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-8 h-8 bg-yellow-accent rounded-lg flex items-center justify-center">
+            <svg class="w-5 h-5 text-dark-bg" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+            </svg>
+          </div>
+          <span class="text-xl font-semibold">UmiHealth</span>
+        </div>
+      </div>
+      
+      <!-- Navigation -->
+      <nav class="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <a href="home.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+          </svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="tenants.html" class="flex items-center space-x-3 rounded-lg bg-white text-dark-bg px-4 py-3 font-medium">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+          <span>Tenants</span>
+        </a>
+        <a href="employees.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+          </svg>
+          <span>Employee Management</span>
+        </a>
+        <a href="billing.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          <span>Billing & Payments</span>
+        </a>
+        <a href="tenant-impersonation.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+          </svg>
+          <span>Tenant Impersonation</span>
+        </a>
+        <a href="controlled-substances.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+          <span>Controlled Substances</span>
+        </a>
+        <a href="categories.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
+          </svg>
+          <span>Categories</span>
+        </a>
+        <a href="subscriptions.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path>
+          </svg>
+          <span>Subscriptions</span>
+        </a>
+        <a href="audit-logs.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+          </svg>
+          <span>Audit Logs</span>
+        </a>
+        <a href="rbac.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+          </svg>
+          <span>RBAC</span>
+        </a>
+        <a href="notifications.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+          </svg>
+          <span>Notifications</span>
+        </a>
+        <a href="settings.html" class="flex items-center space-x-3 rounded-lg px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          </svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+      
+      <!-- User Profile -->
+      <div class="p-4 border-t border-gray-800">
+        <div class="flex items-center space-x-3">
+          <img src="https://picsum.photos/seed/superadmin/40/40.jpg" alt="Super Admin" class="w-10 h-10 rounded-full">
+          <div class="flex-1">
+            <p class="text-sm font-medium">Super Admin</p>
+            <p class="text-xs text-gray-400">admin@umihealth.com</p>
+          </div>
+          <button @click="logout()" class="text-gray-400 hover:text-white" title="Sign out">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex ml-0 lg:ml-64">
+      <!-- Main Content -->
+      <main class="flex-1 bg-light-bg p-4 lg:p-6 overflow-y-auto custom-scrollbar h-screen">
+        <!-- Mobile Header -->
+        <div class="lg:hidden flex items-center justify-between mb-4">
+          <button @click="mobileMenuOpen = true" class="text-gray-600 hover:text-gray-900" title="Open mobile menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+          </button>
+          <h1 class="text-lg font-semibold text-gray-900">Tenants</h1>
+        </div>
+        
+        <!-- Desktop Header -->
+        <div class="hidden lg:block mb-6">
+          <h1 class="text-2xl font-bold text-gray-900 mb-2">Tenants</h1>
+          <div class="flex flex-col lg:flex-row lg:items-center lg:gap-4 space-y-4 lg:space-y-0">
+            <!-- Status Filter -->
+            <label class="sr-only" for="status-filter">Filter by status</label>
+            <select id="status-filter" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-accent w-full lg:w-auto" title="Filter by status">
+              <option>Any status</option>
+              <option>Active</option>
+              <option>Inactive</option>
+              <option>Pending</option>
+            </select>
+            
+            <!-- Price Range Filter -->
+            <label class="sr-only" for="price-filter">Filter by price range</label>
+            <select id="price-filter" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-accent w-full lg:w-auto" title="Filter by price range">
+              <option>K100-K1500</option>
+              <option>K1500-K3000</option>
+              <option>K3000+</option>
+            </select>
+            
+            <!-- Search with Autocomplete -->
+            <div class="relative w-full lg:w-auto" x-data="searchComponent()">
+              <input 
+                type="text" 
+                placeholder="Search tenants..." 
+                x-model="searchQuery"
+                @input="handleSearch"
+                @focus="showSuggestions = true"
+                @blur="setTimeout(() => showSuggestions = false, 200)"
+                class="pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-accent w-full lg:w-64">
+              <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+              </svg>
+              
+              <!-- Search Suggestions Dropdown -->
+              <div x-show="showSuggestions && suggestions.length > 0" 
+                   x-transition:enter="transition ease-out duration-200"
+                   x-transition:enter-start="opacity-0 transform scale-95"
+                   x-transition:enter-end="opacity-100 transform scale-100"
+                   class="absolute top-full mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+                <template x-for="suggestion in suggestions" :key="suggestion.id">
+                  <div @click="selectSuggestion(suggestion)" 
+                       class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0">
+                    <div class="flex items-center space-x-3">
+                      <img :src="suggestion.avatar" :alt="suggestion.company" class="w-8 h-8 rounded-full">
+                      <div>
+                        <div class="text-sm font-medium text-gray-900" x-text="suggestion.company"></div>
+                        <div class="text-xs text-gray-500" x-text="suggestion.email"></div>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+            
+            <!-- Sort -->
+            <label class="sr-only" for="sort-select">Sort options</label>
+            <select id="sort-select" @change="handleSort($event.target.value)" class="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-accent w-full lg:w-auto" title="Sort options">
+              <option value="date">Sort by Date</option>
+              <option value="name">Sort by Name</option>
+              <option value="status">Sort by Status</option>
+              <option value="plan">Sort by Plan</option>
+            </select>
+            
+            <!-- Add New Tenant Button -->
+            <button @click="showAddTenantModal = true" class="px-4 py-2 bg-yellow-accent text-dark-bg font-medium rounded-lg hover:bg-yellow-300 transition-colors w-full lg:w-auto" title="Add new tenant">
+              <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+              </svg>
+              Add New Tenant
+            </button>
+          </div>
+        </div>
+
+        <!-- Tenants Table -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[800px]">
+            <thead class="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tenant ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Plan</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Users</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <template x-for="tenant in filteredTenants" :key="tenant.id">
+                <tr class="hover:bg-gray-50 cursor-pointer" 
+                    @click="selectTenant(tenant)"
+                    @contextmenu.prevent="showContextMenu($event, tenant)">
+                  <td class="px-6 py-4 text-sm font-medium text-gray-900" x-text="tenant.id"></td>
+                  <td class="px-6 py-4">
+                    <div class="flex items-center">
+                      <img :src="tenant.avatar" :alt="tenant.company" class="w-8 h-8 rounded-full mr-3">
+                      <div>
+                        <div class="text-sm font-medium text-gray-900" x-text="tenant.company"></div>
+                        <div class="text-sm text-gray-500" x-text="tenant.email"></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td class="px-6 py-4">
+                    <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                          :class="{
+                            'bg-yellow-accent text-dark-bg': tenant.status === 'Active',
+                            'bg-orange-accent text-white': tenant.status === 'Pending',
+                            'bg-green-accent text-white': tenant.status === 'Verified'
+                          }" x-text="tenant.status"></span>
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-900" x-text="tenant.plan"></td>
+                  <td class="px-6 py-4 text-sm text-gray-900" x-text="tenant.users"></td>
+                  <td class="px-6 py-4 text-sm text-gray-500" x-text="tenant.created"></td>
+                </tr>
+              </template>
+            </tbody>
+          </table>
+        </div>
+      </main>
+
+      <!-- Detail Panel -->
+      <aside x-show="selectedTenant" x-transition:enter="transition ease-in-out duration-300"
+             x-transition:enter-start="translate-x-full" x-transition:enter-end="translate-x-0"
+             class="w-96 bg-white shadow-lg overflow-y-auto custom-scrollbar">
+        <template x-if="selectedTenant">
+          <div>
+            <!-- Detail Header -->
+            <div class="p-6 border-b border-gray-200">
+              <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900" x-text="`Tenant #${selectedTenant.id}`"></h2>
+                <button @click="selectedTenant = null" class="text-gray-400 hover:text-gray-600" title="Close tenant details">
+                  <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                  </svg>
+                </button>
+              </div>
+              <div class="flex items-center space-x-3">
+                <span class="px-3 py-1 text-sm font-semibold rounded-full bg-yellow-accent text-dark-bg" x-text="selectedTenant.status"></span>
+                <span class="text-sm text-gray-500" x-text="selectedTenant.created"></span>
+              </div>
+            </div>
+
+            <!-- Company Info -->
+            <div class="p-6 border-b border-gray-200">
+              <div class="flex items-center space-x-4 mb-4">
+                <img :src="selectedTenant.avatar" :alt="selectedTenant.company" class="w-16 h-16 rounded-full">
+                <div>
+                  <h3 class="text-lg font-medium text-gray-900" x-text="selectedTenant.company"></h3>
+                  <p class="text-sm text-gray-500" x-text="selectedTenant.email"></p>
+                </div>
+              </div>
+              <div class="space-y-2">
+                <div class="flex items-center space-x-2 text-sm text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                  </svg>
+                  <span x-text="selectedTenant.email"></span>
+                </div>
+                <div class="flex items-center space-x-2 text-sm text-gray-600">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                  </svg>
+                  <span x-text="selectedTenant.phone"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Subscription Details -->
+            <div class="p-6 border-b border-gray-200">
+              <h4 class="text-sm font-medium text-gray-900 mb-4">Subscription Details</h4>
+              <div class="space-y-3">
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Plan</span>
+                  <span class="font-medium" x-text="selectedTenant.plan"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Monthly Cost</span>
+                  <span class="font-medium" x-text="selectedTenant.cost"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Users</span>
+                  <span class="font-medium" x-text="selectedTenant.users"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-gray-500">Next Billing</span>
+                  <span class="font-medium" x-text="selectedTenant.nextBilling"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="p-6">
+              <h4 class="text-sm font-medium text-gray-900 mb-4">Recent Activity</h4>
+              <div class="space-y-3">
+                <template x-for="activity in selectedTenant.activities" :key="activity.id">
+                  <div class="flex items-start space-x-3">
+                    <div class="w-2 h-2 bg-green-accent rounded-full mt-2"></div>
+                    <div class="flex-1">
+                      <p class="text-sm text-gray-900" x-text="activity.action"></p>
+                      <p class="text-xs text-gray-500" x-text="activity.timestamp"></p>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </div>
+        </template>
+      </aside>
+    </div>
+
+    <!-- Add New Tenant Modal -->
+    <div x-show="showAddTenantModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div @click.away="showAddTenantModal = false" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 transform scale-90"
+           x-transition:enter-end="opacity-100 transform scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 transform scale-100"
+           x-transition:leave-end="opacity-0 transform scale-90"
+           class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-900">Add New Tenant</h2>
+            <button @click="showAddTenantModal = false" title="Close Add Tenant Modal" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <form @submit.prevent="submitNewTenant" class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Pharmacy Name -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Pharmacy Name *</label>
+              <input type="text" x-model="newTenant.pharmacyName" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                     placeholder="Enter pharmacy name">
+            </div>
+
+            <!-- Admin Name -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Admin Name *</label>
+              <input type="text" x-model="newTenant.adminName" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                     placeholder="Enter admin full name">
+            </div>
+
+            <!-- Phone Number -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+              <input type="tel" x-model="newTenant.phoneNumber" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                     placeholder="+260 123 456 789">
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+              <input type="email" x-model="newTenant.email" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                     placeholder="admin@pharmacy.com">
+            </div>
+
+            <!-- Address -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+              <textarea x-model="newTenant.address" required rows="3"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                       placeholder="Enter complete physical address"></textarea>
+            </div>
+
+            <!-- Subscription Plan -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Subscription Plan *</label>
+              <select x-model="newTenant.subscription" required title="Subscription Plan"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+                <option value="">Select a plan</option>
+                <option value="Basic">Basic - K999/month</option>
+                <option value="Professional">Professional - K2,999/month</option>
+                <option value="Enterprise">Enterprise - K5,999/month</option>
+              </select>
+            </div>
+
+            <!-- Password -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Initial Password *</label>
+              <div class="relative">
+                <input :type="showPassword ? 'text' : 'password'" x-model="newTenant.password" required
+                       class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                       placeholder="Enter secure password">
+                <button type="button" @click="showPassword = !showPassword" title="Toggle password visibility" 
+                        class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+                  <svg x-show="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                  </svg>
+                  <svg x-show="showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Additional Fields -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">License Number</label>
+              <input type="text" x-model="newTenant.licenseNumber"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                     placeholder="Pharmacy license number">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Zambia REG Number</label>
+              <input type="text" x-model="newTenant.zambiaRegNumber"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                     placeholder="Zambia registration number">
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="flex justify-end space-x-3 mt-8">
+            <button type="button" @click="showAddTenantModal = false"
+                    class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" title="Cancel adding tenant">
+              Cancel
+            </button>
+            <button type="submit"
+                    class="px-4 py-2 bg-yellow-accent text-dark-bg font-medium rounded-lg hover:bg-yellow-300 transition-colors" title="Create new tenant">
+              Create Tenant
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right-Click Context Menu -->
+    <div x-show="contextMenu.show" 
+         x-transition:enter="transition ease-out duration-100"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-75"
+         x-transition:leave-start="opacity-100 scale-100"
+         x-transition:leave-end="opacity-0 scale-95"
+         :style="`position: fixed; left: ${contextMenu.x}px; top: ${contextMenu.y}px; z-index: 1000;`"
+         @click.away="contextMenu.show = false"
+         class="bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[150px]">
+      <button @click="viewTenantDetails(contextMenu.tenant)" 
+              class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+        </svg>
+        <span>View Details</span>
+      </button>
+      <button @click="editTenant(contextMenu.tenant)" 
+              class="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+        </svg>
+        <span>Edit</span>
+      </button>
+      <button @click="deleteTenant(contextMenu.tenant)" 
+              class="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+        </svg>
+        <span>Delete</span>
+      </button>
+      <button @click="resetPassword(contextMenu.tenant)" 
+              class="w-full px-4 py-2 text-left text-sm text-blue-600 hover:bg-blue-50 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2h2v-2h2l-1.257-1.257A6 6 0 0117 9z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13l-3 3m0 0l-3 3m3-3l-3-3m3 3l3-3"></path>
+        </svg>
+        <span>Reset Password</span>
+      </button>
+      <button @click="viewPassword(contextMenu.tenant)" 
+              class="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 flex items-center space-x-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+        </svg>
+        <span>View Password</span>
+      </button>
+    </div>
+
+    <!-- Edit Tenant Modal -->
+    <div x-show="showEditTenantModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div @click.away="showEditTenantModal = false" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 transform scale-90"
+           x-transition:enter-end="opacity-100 transform scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 transform scale-100"
+           x-transition:leave-end="opacity-0 transform scale-90"
+           class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-900">Edit Tenant</h2>
+            <button @click="showEditTenantModal = false" class="text-gray-400 hover:text-gray-600" title="Close edit tenant modal">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <form @submit.prevent="updateTenant" class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Pharmacy Name -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Pharmacy Name *</label>
+              <input type="text" x-model="editTenantData.pharmacyName" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                     placeholder="Enter pharmacy name">
+            </div>
+
+            <!-- Admin Name -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Admin Name *</label>
+              <input type="text" x-model="editTenantData.adminName" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                     placeholder="Enter admin full name">
+            </div>
+
+            <!-- Phone Number -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+              <input type="tel" x-model="editTenantData.phoneNumber" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                     placeholder="+260 123 456 789">
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+              <input type="email" x-model="editTenantData.email" required
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                     placeholder="admin@pharmacy.com">
+            </div>
+
+            <!-- Address -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+              <textarea x-model="editTenantData.address" required rows="3"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                       placeholder="Enter complete physical address"></textarea>
+            </div>
+
+            <!-- Subscription Plan -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Subscription Plan *</label>
+              <select x-model="editTenantData.subscription" required title="Subscription Plan"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+                <option value="Basic">Basic - K999/month</option>
+                <option value="Professional">Professional - K2,999/month</option>
+                <option value="Enterprise">Enterprise - K5,999/month</option>
+              </select>
+            </div>
+
+            <!-- Status -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
+              <select x-model="editTenantData.status" required
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                      title="Tenant Status" aria-label="Tenant Status">
+                <option value="Active">Active</option>
+                <option value="Pending">Pending</option>
+                <option value="Verified">Verified</option>
+              </select>
+            </div>
+
+            <!-- License Number -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">License Number</label>
+              <input type="text" x-model="editTenantData.licenseNumber"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                     placeholder="Pharmacy license number">
+            </div>
+
+            <!-- Zambia REG Number -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Zambia REG Number</label>
+              <input type="text" x-model="editTenantData.zambiaRegNumber"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                     placeholder="Zambia registration number">
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="flex justify-end space-x-3 mt-8">
+            <button type="button" @click="showEditTenantModal = false"
+                    class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+              Cancel
+            </button>
+            <button type="submit"
+                    class="px-4 py-2 bg-yellow-accent text-dark-bg font-medium rounded-lg hover:bg-yellow-300 transition-colors">
+              Update Tenant
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Tenant Details Modal -->
+    <div x-show="showTenantDetailsModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div @click.away="showTenantDetailsModal = false" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 transform scale-90"
+           x-transition:enter-end="opacity-100 transform scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 transform scale-100"
+           x-transition:leave-end="opacity-0 transform scale-90"
+           class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <img :src="detailsTenant.avatar" :alt="detailsTenant.company" :title="detailsTenant.company" class="w-12 h-12 rounded-full" :aria-label="detailsTenant.company">
+              <div>
+                <h2 class="text-xl font-semibold text-gray-900" x-text="detailsTenant.company"></h2>
+                <p class="text-sm text-gray-500" x-text="`Tenant ID: ${detailsTenant.id}`"></p>
+              </div>
+            </div>
+            <button @click="showTenantDetailsModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal" aria-label="Close tenant details modal">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6">
+          <!-- Status and Plan Info -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-gray-50 rounded-lg p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-600">Status</span>
+                <span class="px-2 py-1 text-xs font-semibold rounded-full"
+                      :class="{
+                        'bg-yellow-accent text-dark-bg': detailsTenant.status === 'Active',
+                        'bg-orange-accent text-white': detailsTenant.status === 'Pending',
+                        'bg-green-accent text-white': detailsTenant.status === 'Verified'
+                      }" x-text="detailsTenant.status"></span>
+              </div>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-600">Subscription Plan</span>
+                <span class="text-sm font-semibold text-gray-900" x-text="detailsTenant.plan"></span>
+              </div>
+              <p class="text-xs text-gray-500" x-text="detailsTenant.cost"></p>
+            </div>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-600">Total Users</span>
+                <span class="text-sm font-semibold text-gray-900" x-text="detailsTenant.users"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Information -->
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-gray-900">Email</p>
+                  <p class="text-sm text-gray-500" x-text="detailsTenant.email"></p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-3">
+                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-gray-900">Phone</p>
+                  <p class="text-sm text-gray-500" x-text="detailsTenant.phone"></p>
+                </div>
+              </div>
+            </div>
+            <div class="mt-4 flex items-start space-x-3">
+              <svg class="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+              </svg>
+              <div>
+                <p class="text-sm font-medium text-gray-900">Address</p>
+                <p class="text-sm text-gray-500" x-text="detailsTenant.address || 'Not provided'"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subscription Details -->
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Subscription Details</h3>
+            <div class="bg-gray-50 rounded-lg p-4">
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <p class="text-sm font-medium text-gray-600">Current Plan</p>
+                  <p class="text-sm font-semibold text-gray-900" x-text="detailsTenant.plan"></p>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-600">Monthly Cost</p>
+                  <p class="text-sm font-semibold text-gray-900" x-text="detailsTenant.cost"></p>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-600">Created Date</p>
+                  <p class="text-sm font-semibold text-gray-900" x-text="detailsTenant.created"></p>
+                </div>
+                <div>
+                  <p class="text-sm font-medium text-gray-600">Next Billing</p>
+                  <p class="text-sm font-semibold text-gray-900" x-text="detailsTenant.nextBilling"></p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Users Section -->
+          <div class="mb-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-lg font-semibold text-gray-900">Users</h3>
+              <span class="px-3 py-1 bg-yellow-accent text-dark-bg text-sm font-semibold rounded-full" x-text="`${detailsTenant.users} users`"></span>
+            </div>
+            <div class="bg-gray-50 rounded-lg overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-gray-100 border-b border-gray-200">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">User</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Role</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
+                      <th class="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Last Login</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    <template x-for="user in detailsTenant.usersList" :key="user.id">
+                      <tr class="hover:bg-gray-100">
+                        <td class="px-4 py-3">
+                          <div class="flex items-center space-x-3">
+                            <img :src="user.avatar" :alt="user.name" class="w-8 h-8 rounded-full">
+                            <div>
+                              <p class="text-sm font-medium text-gray-900" x-text="user.name"></p>
+                              <p class="text-xs text-gray-500" x-text="user.email"></p>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="px-4 py-3">
+                          <span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800" x-text="user.role"></span>
+                        </td>
+                        <td class="px-4 py-3">
+                          <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                :class="{
+                                  'bg-green-100 text-green-800': user.status === 'Active',
+                                  'bg-gray-100 text-gray-800': user.status === 'Inactive'
+                                }" x-text="user.status"></span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-500" x-text="user.lastLogin"></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+            <div class="space-y-3">
+              <template x-for="activity in detailsTenant.activities" :key="activity.id">
+                <div class="flex items-start space-x-3 bg-gray-50 rounded-lg p-4">
+                  <div class="w-2 h-2 bg-green-accent rounded-full mt-2"></div>
+                  <div class="flex-1">
+                    <p class="text-sm text-gray-900" x-text="activity.action"></p>
+                    <p class="text-xs text-gray-500" x-text="activity.timestamp"></p>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+          <button @click="editTenant(detailsTenant)" 
+                  class="px-4 py-2 bg-yellow-accent text-dark-bg font-medium rounded-lg hover:bg-yellow-300 transition-colors flex items-center space-x-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+            </svg>
+            <span>Edit Tenant</span>
+          </button>
+          <button @click="showTenantDetailsModal = false"
+                  class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password Reset Modal -->
+    <div x-show="showPasswordResetModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div @click.away="showPasswordResetModal = false" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 transform scale-90"
+           x-transition:enter-end="opacity-100 transform scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 transform scale-100"
+           x-transition:leave-end="opacity-0 transform scale-90"
+           class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-900">Reset Password</h2>
+            <button @click="showPasswordResetModal = false" title="Close Password Reset Modal" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6">
+          <div class="mb-4">
+            <div class="flex items-center space-x-3 mb-4">
+              <img :src="passwordResetTenant.avatar" :alt="passwordResetTenant.company" :title="passwordResetTenant.company" class="w-12 h-12 rounded-full" :aria-label="passwordResetTenant.company">
+              <div>
+                <h3 class="text-lg font-medium text-gray-900" x-text="passwordResetTenant.company"></h3>
+                <p class="text-sm text-gray-500" x-text="passwordResetTenant.email"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <!-- New Password -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">New Password *</label>
+              <div class="relative">
+                <input :type="showNewPassword ? 'text' : 'password'" x-model="passwordResetData.newPassword" required
+                       class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                       placeholder="Enter new password">
+                <button type="button" @click="showNewPassword = !showNewPassword" title="Toggle new password visibility" 
+                        class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+                  <svg x-show="!showNewPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                  </svg>
+                  <svg x-show="showNewPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Confirm Password *</label>
+              <div class="relative">
+                <input :type="showConfirmPassword ? 'text' : 'password'" x-model="passwordResetData.confirmPassword" required
+                       class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                       placeholder="Confirm new password">
+                <button type="button" @click="showConfirmPassword = !showConfirmPassword" 
+                        class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600" title="Toggle password visibility" aria-label="Toggle password visibility">
+                  <svg x-show="!showConfirmPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                  </svg>
+                  <svg x-show="showConfirmPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Password Requirements -->
+            <div class="bg-gray-50 rounded-lg p-3">
+              <p class="text-xs font-medium text-gray-700 mb-2">Password Requirements:</p>
+              <ul class="text-xs text-gray-600 space-y-1">
+                <li>• At least 6 characters long</li>
+                <li>• Include uppercase and lowercase letters</li>
+                <li>• Include at least one number</li>
+                <li>• Include at least one special character</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+          <button type="button" @click="showPasswordResetModal = false"
+                  class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+            Cancel
+          </button>
+          <button @click="submitPasswordReset"
+                  class="px-4 py-2 bg-yellow-accent text-dark-bg font-medium rounded-lg hover:bg-yellow-300 transition-colors">
+            Reset Password
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- View Password Modal -->
+    <div x-show="showViewPasswordModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div @click.away="showViewPasswordModal = false" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 transform scale-90"
+           x-transition:enter-end="opacity-100 transform scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 transform scale-100"
+           x-transition:leave-end="opacity-0 transform scale-90"
+           class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-900">View Password</h2>
+            <button @click="showViewPasswordModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal" aria-label="Close view password modal">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6">
+          <div class="mb-4">
+            <div class="flex items-center space-x-3 mb-4">
+              <img :src="viewPasswordTenant.avatar" :alt="viewPasswordTenant.company" :title="viewPasswordTenant.company" class="w-12 h-12 rounded-full" :aria-label="viewPasswordTenant.company">
+              <div>
+                <h3 class="text-lg font-medium text-gray-900" x-text="viewPasswordTenant.company"></h3>
+                <p class="text-sm text-gray-500" x-text="viewPasswordTenant.email"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <!-- User Selection -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Select User</label>
+              <select x-model="selectedUserId" @change="loadUserPassword" title="Select User for Password View"
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+                <option value="">Select a user to view password</option>
+                <template x-for="user in viewPasswordTenant.usersList" :key="user.id">
+                  <option :value="user.id" x-text="`${user.name} (${user.role})`"></option>
+                </template>
+              </select>
+            </div>
+
+            <!-- User Information Display -->
+            <div x-show="userInfo">
+              <label class="block text-sm font-medium text-gray-700 mb-2">User Information</label>
+              <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-gray-600">Name:</span>
+                  <span class="text-sm font-medium text-gray-900" x-text="userInfo.userName"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-gray-600">Email:</span>
+                  <span class="text-sm font-medium text-gray-900" x-text="userInfo.userEmail"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-gray-600">Role:</span>
+                  <span class="text-sm font-medium text-gray-900" x-text="userInfo.userRole"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-gray-600">Status:</span>
+                  <span class="text-sm font-medium" 
+                        :class="userInfo.isActive ? 'text-green-600' : 'text-red-600'" 
+                        x-text="userInfo.isActive ? 'Active' : 'Inactive'"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-gray-600">Last Login:</span>
+                  <span class="text-sm font-medium text-gray-900" x-text="userInfo.lastLoginAt ? new Date(userInfo.lastLoginAt).toLocaleString() : 'Never'"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                  <span class="text-sm text-gray-600">Password Updated:</span>
+                  <span class="text-sm font-medium text-gray-900" x-text="new Date(userInfo.passwordUpdatedAt).toLocaleString()"></span>
+                </div>
+              </div>
+              
+              <!-- Password Status -->
+              <div class="mt-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Password Status</label>
+                <div class="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span class="text-sm text-green-800" x-text="currentPassword"></span>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Generate Temporary Password Button -->
+              <button @click="generateTemporaryPassword" 
+                      class="mt-4 px-3 py-2 bg-yellow-accent text-dark-bg text-sm font-medium rounded hover:bg-yellow-300 transition-colors flex items-center space-x-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2h2v-2h2l-1.257-1.257A6 6 0 0117 9z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13l-3 3m0 0l-3 3m3-3l-3-3m3 3l3-3"></path>
+                </svg>
+                <span>Generate Temporary Password</span>
+              </button>
+            </div>
+
+            <!-- Security Warning -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+              <div class="flex items-start space-x-2">
+                <svg class="w-5 h-5 text-yellow-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 2.667 1.732 3L13.732 19c.77 1.333 2.694 1.333 3.464 0l6.464-3.667c.77-1.333.192-2.667-1.732-3L13.732 4z"></path>
+                </svg>
+                <div>
+                  <p class="text-xs font-medium text-yellow-800">Security Notice</p>
+                  <p class="text-xs text-yellow-700">This password is displayed for administrative purposes only. Keep it secure and do not share it unnecessarily.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+          <button @click="showViewPasswordModal = false"
+                  class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Temporary Password Modal -->
+    <div x-show="showTempPasswordModal" 
+         x-transition:enter="transition ease-out duration-300"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-200"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+      <div @click.away="showTempPasswordModal = false" 
+           x-transition:enter="transition ease-out duration-300"
+           x-transition:enter-start="opacity-0 transform scale-90"
+           x-transition:enter-end="opacity-100 transform scale-100"
+           x-transition:leave="transition ease-in duration-200"
+           x-transition:leave-start="opacity-100 transform scale-90"
+           x-transition:leave-end="opacity-0 transform scale-90"
+           class="bg-white rounded-xl shadow-2xl w-full max-w-md">
+        <!-- Modal Header -->
+        <div class="p-6 border-b border-gray-200">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xl font-semibold text-gray-900">Temporary Password Generated</h2>
+            <button @click="showTempPasswordModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal" aria-label="Close temporary password modal">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6" x-show="tempPasswordData">
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <div class="flex items-center space-x-2 mb-2">
+              <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <span class="text-sm font-medium text-green-800">Temporary Password Created</span>
+            </div>
+            <p class="text-sm text-green-700" x-text="tempPasswordData.message"></p>
+          </div>
+
+          <div class="space-y-4">
+            <!-- Password Display -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Temporary Password</label>
+              <div class="bg-gray-50 border border-gray-300 rounded-lg p-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-lg font-mono font-semibold text-gray-900" x-text="tempPasswordData.temporaryPassword"></span>
+                  <button @click="copyTempPassword" 
+                          class="ml-3 px-3 py-1 bg-yellow-accent text-dark-bg text-sm font-medium rounded hover:bg-yellow-300 transition-colors flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 0h6a2 2 0 012 2v2a2 2 0 01-2 2h-8a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2"></path>
+                    </svg>
+                    <span>Copy</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Expiry Information -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Expires At</label>
+              <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div class="flex items-center space-x-2">
+                  <svg class="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <span class="text-sm text-yellow-800" x-text="new Date(tempPasswordData.expiresAt).toLocaleString()"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Security Warning -->
+            <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+              <div class="flex items-start space-x-2">
+                <svg class="w-5 h-5 text-red-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 2.667 1.732 3z"></path>
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-red-800">Security Notice</p>
+                  <p class="text-xs text-red-700">This password is temporary and will expire. Please provide it securely to the user and advise them to change it on first login.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="p-6 border-t border-gray-200 flex justify-end">
+          <button @click="showTempPasswordModal = false"
+                  class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function searchComponent() {
+      return {
+        searchQuery: '',
+        showSuggestions: false,
+        suggestions: [],
+        handleSearch() {
+          const query = this.searchQuery.toLowerCase();
+          if (query.length < 2) {
+            this.suggestions = [];
+            return;
+          }
+          
+          // Filter tenants based on search query
+          this.suggestions = window.tenantsPageInstance.tenants.filter(tenant => 
+            tenant.company.toLowerCase().includes(query) ||
+            tenant.email.toLowerCase().includes(query) ||
+            tenant.id.toLowerCase().includes(query)
+          ).slice(0, 5); // Limit to 5 suggestions
+        },
+        selectSuggestion(suggestion) {
+          this.searchQuery = suggestion.company;
+          this.showSuggestions = false;
+          // Trigger the main search
+          window.tenantsPageInstance.searchQuery = this.searchQuery;
+          window.tenantsPageInstance.filterTenants();
+        }
+      }
+    }
+
+    function tenantsPage() {
+      return {
+        mobileMenuOpen: false,
+        selectedTenant: null,
+        showAddTenantModal: false,
+        showEditTenantModal: false,
+        showTenantDetailsModal: false,
+        showPasswordResetModal: false,
+        showViewPasswordModal: false,
+        showPassword: false,
+        showNewPassword: false,
+        showConfirmPassword: false,
+        showViewPassword: false,
+        showTempPasswordModal: false,
+        tempPasswordData: null,
+        searchQuery: '',
+        statusFilter: 'Any status',
+        priceFilter: 'K100-K1500',
+        sortBy: 'date',
+        contextMenu: {
+          show: false,
+          x: 0,
+          y: 0,
+          tenant: null
+        },
+        detailsTenant: null,
+        passwordResetTenant: null,
+        viewPasswordTenant: null,
+        passwordResetData: {
+          newPassword: '',
+          confirmPassword: ''
+        },
+        selectedUserId: '',
+        currentPassword: '',
+        userInfo: null,
+        editTenantData: {
+          pharmacyName: '',
+          adminName: '',
+          phoneNumber: '',
+          email: '',
+          address: '',
+          subscription: '',
+          status: '',
+          licenseNumber: '',
+          zambiaRegNumber: ''
+        },
+        tenants: [],
+        filteredTenants: [],
+        newTenant: {
+          pharmacyName: '',
+          adminName: '',
+          phoneNumber: '',
+          email: '',
+          address: '',
+          subscription: '',
+          password: '',
+          licenseNumber: '',
+          zambiaRegNumber: ''
+        },
+        init() {
+          // Initialize filtered tenants as empty array
+          this.filteredTenants = [];
+          // Make this instance globally available for search component
+          window.tenantsPageInstance = this;
+          
+          // Load real data from API
+          this.loadTenants();
+          
+          // Set up filter event listeners
+          document.getElementById('status-filter').addEventListener('change', (e) => {
+            this.statusFilter = e.target.value;
+            this.filterTenants();
+          });
+          
+          document.getElementById('price-filter').addEventListener('change', (e) => {
+            this.priceFilter = e.target.value;
+            this.filterTenants();
+          });
+          
+          // Set up real-time data updates
+          this.setupRealTimeUpdates();
+        },
+        async loadTenants() {
+          try {
+            const response = await fetch('/api/superadmin/tenants', {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              this.tenants = data;
+              this.filteredTenants = [...this.tenants];
+              this.broadcastTenantUpdate();
+            } else {
+              console.error('Failed to load tenants:', response.statusText);
+              this.showError('Failed to load tenants. Please check your connection and try again.');
+            }
+          } catch (error) {
+            console.error('Error loading tenants:', error);
+            this.showError('Unable to connect to the server. Please check your internet connection.');
+          }
+        },
+        setupRealTimeUpdates() {
+          // Set up WebSocket or polling for real-time updates
+          // For now, we'll use polling every 30 seconds
+          setInterval(() => {
+            this.loadTenants();
+          }, 30000);
+          
+          // Listen for storage events for cross-tab updates
+          window.addEventListener('storage', (e) => {
+            if (e.key === 'tenantUpdate') {
+              this.loadTenants();
+            }
+          });
+        },
+        broadcastTenantUpdate() {
+          // Broadcast update to other tabs
+          localStorage.setItem('tenantUpdate', Date.now().toString());
+        },
+        showError(message) {
+          // Show error toast notification
+          this.showToast(message, 'error');
+        },
+        showSuccess(message) {
+          // Show success toast notification
+          this.showToast(message, 'success');
+        },
+        showToast(message, type = 'info') {
+          // Create toast container if it doesn't exist
+          if (!document.getElementById('toast-container')) {
+            const toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'fixed top-4 right-4 z-50 space-y-2';
+            document.body.appendChild(toastContainer);
+          }
+          
+          // Create toast element
+          const toast = document.createElement('div');
+          const toastId = 'toast-' + Date.now();
+          toast.id = toastId;
+          
+          // Set toast styles based on type
+          const bgColors = {
+            success: 'bg-green-500',
+            error: 'bg-red-500',
+            info: 'bg-blue-500',
+            warning: 'bg-yellow-500'
+          };
+          
+          const icons = {
+            success: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+            error: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+            info: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+            warning: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 2.667 1.732 3z"></path></svg>'
+          };
+          
+          toast.className = `${bgColors[type]} text-white px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 min-w-[300px] max-w-md transform transition-all duration-300 translate-x-full`;
+          toast.innerHTML = `
+            <div class="flex-shrink-0">
+              ${icons[type]}
+            </div>
+            <div class="flex-1">
+              <p class="text-sm font-medium">${message}</p>
+            </div>
+            <button onclick="this.parentElement.remove()" class="flex-shrink-0 ml-4 text-white hover:text-gray-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          `;
+          
+          // Add toast to container
+          document.getElementById('toast-container').appendChild(toast);
+          
+          // Animate in
+          setTimeout(() => {
+            toast.classList.remove('translate-x-full');
+            toast.classList.add('translate-x-0');
+          }, 100);
+          
+          // Auto remove after 5 seconds
+          setTimeout(() => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => {
+              if (toast.parentElement) {
+                toast.remove();
+              }
+            }, 300);
+          }, 5000);
+        },
+        filterTenants() {
+          let filtered = [...this.tenants];
+          
+          // Apply search filter
+          if (this.searchQuery) {
+            const query = this.searchQuery.toLowerCase();
+            filtered = filtered.filter(tenant => 
+              tenant.company.toLowerCase().includes(query) ||
+              tenant.email.toLowerCase().includes(query) ||
+              tenant.id.toLowerCase().includes(query) ||
+              tenant.phone.toLowerCase().includes(query)
+            );
+          }
+          
+          // Apply status filter
+          if (this.statusFilter !== 'Any status') {
+            filtered = filtered.filter(tenant => tenant.status === this.statusFilter);
+          }
+          
+          // Apply price filter based on subscription plan
+          if (this.priceFilter !== 'K100-K1500') {
+            filtered = filtered.filter(tenant => {
+              const cost = parseInt(tenant.cost.replace(/[^0-9]/g, ''));
+              switch(this.priceFilter) {
+                case 'K1500-K3000': return cost >= 1500 && cost <= 3000;
+                case 'K3000+': return cost > 3000;
+                default: return cost >= 100 && cost <= 1500;
+              }
+            });
+          }
+          
+          this.filteredTenants = filtered;
+        },
+        handleSort(sortBy) {
+          this.sortBy = sortBy;
+          switch(sortBy) {
+            case 'name':
+              this.filteredTenants.sort((a, b) => a.company.localeCompare(b.company));
+              break;
+            case 'status':
+              this.filteredTenants.sort((a, b) => a.status.localeCompare(b.status));
+              break;
+            case 'plan':
+              this.filteredTenants.sort((a, b) => a.plan.localeCompare(b.plan));
+              break;
+            case 'date':
+            default:
+              this.filteredTenants.sort((a, b) => new Date(b.created) - new Date(a.created));
+              break;
+          }
+        },
+        showContextMenu(event, tenant) {
+          this.contextMenu.show = true;
+          this.contextMenu.x = event.clientX;
+          this.contextMenu.y = event.clientY;
+          this.contextMenu.tenant = tenant;
+          
+          // Hide menu when clicking elsewhere
+          document.addEventListener('click', () => {
+            this.contextMenu.show = false;
+          }, { once: true });
+        },
+        async viewTenantDetails(tenant) {
+          this.contextMenu.show = false;
+          
+          try {
+            const response = await fetch(`/api/superadmin/tenants/${tenant.id}`, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const tenantDetail = await response.json();
+              this.detailsTenant = tenantDetail;
+              this.showTenantDetailsModal = true;
+            } else {
+              console.error('Failed to load tenant details:', response.statusText);
+              this.showError('Unable to load tenant details. Please try again.');
+            }
+          } catch (error) {
+            console.error('Error loading tenant details:', error);
+            this.showError('Network error. Please check your connection and try again.');
+          }
+        },
+        editTenant(tenant) {
+          this.contextMenu.show = false;
+          this.editTenantData = {
+            pharmacyName: tenant.company,
+            adminName: tenant.adminName || '',
+            phoneNumber: tenant.phone,
+            email: tenant.email,
+            address: tenant.address || '',
+            subscription: tenant.plan,
+            status: tenant.status,
+            licenseNumber: tenant.licenseNumber || '',
+            zambiaRegNumber: tenant.zambiaRegNumber || ''
+          };
+          this.editingTenant = tenant;
+          this.showEditTenantModal = true;
+        },
+        async updateTenant() {
+          try {
+            const response = await fetch(`/api/superadmin/tenants/${this.editingTenant.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify({
+                pharmacyName: this.editTenantData.pharmacyName,
+                adminName: this.editTenantData.adminName,
+                phoneNumber: this.editTenantData.phoneNumber,
+                address: this.editTenantData.address,
+                subscription: this.editTenantData.subscription,
+                status: this.editTenantData.status,
+                licenseNumber: this.editTenantData.licenseNumber,
+                zambiaRegNumber: this.editTenantData.zambiaRegNumber
+              })
+            });
+            
+            if (response.ok) {
+              const updatedTenant = await response.json();
+              
+              // Update tenant in array
+              const index = this.tenants.findIndex(t => t.id === updatedTenant.id);
+              if (index !== -1) {
+                this.tenants[index] = updatedTenant;
+              }
+              
+              // Refresh filtered tenants
+              this.filterTenants();
+              
+              // Close modal
+              this.showEditTenantModal = false;
+              
+              // Broadcast update to other tabs/pages
+              this.broadcastTenantUpdate();
+              
+              // Show success message
+              this.showSuccess('Tenant updated successfully!');
+            } else {
+              const error = await response.json();
+              this.showError(`Failed to update tenant: ${error.error || 'Unknown error'}`);
+            }
+          } catch (error) {
+            console.error('Error updating tenant:', error);
+            this.showError('Failed to update tenant. Please try again.');
+          }
+        },
+        resetPassword(tenant) {
+          this.contextMenu.show = false;
+          this.passwordResetTenant = tenant;
+          this.passwordResetData = {
+            newPassword: '',
+            confirmPassword: ''
+          };
+          this.showNewPassword = false;
+          this.showConfirmPassword = false;
+          this.showPasswordResetModal = true;
+        },
+        async submitPasswordReset() {
+          // Validate passwords
+          if (!this.passwordResetData.newPassword || !this.passwordResetData.confirmPassword) {
+            this.showToast('Please fill in all password fields.', 'error');
+            return;
+          }
+          
+          if (this.passwordResetData.newPassword !== this.passwordResetData.confirmPassword) {
+            this.showToast('Passwords do not match.', 'error');
+            return;
+          }
+          
+          if (this.passwordResetData.newPassword.length < 6) {
+            this.showToast('Password must be at least 6 characters long.', 'error');
+            return;
+          }
+          
+          try {
+            const response = await fetch(`/api/superadmin/tenants/${this.passwordResetTenant.id}/reset-password`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify({
+                newPassword: this.passwordResetData.newPassword
+              })
+            });
+            
+            if (response.ok) {
+              // Close modal and reset form
+              this.showPasswordResetModal = false;
+              this.passwordResetData = {
+                newPassword: '',
+                confirmPassword: ''
+              };
+              
+              // Show success message
+              this.showToast(`Password reset successfully for ${this.passwordResetTenant.company}!`, 'success');
+            } else {
+              const error = await response.json();
+              this.showToast(`Failed to reset password: ${error.error || 'Unknown error'}`, 'error');
+            }
+          } catch (error) {
+            console.error('Error resetting password:', error);
+            this.showToast('Failed to reset password. Please try again.', 'error');
+          }
+        },
+        viewPassword(tenant) {
+          this.contextMenu.show = false;
+          this.viewPasswordTenant = tenant;
+          this.selectedUserId = '';
+          this.currentPassword = '';
+          this.showViewPassword = false;
+          this.showViewPasswordModal = true;
+        },
+        async loadUserPassword() {
+          if (!this.selectedUserId) {
+            this.currentPassword = '';
+            return;
+          }
+          
+          try {
+            const response = await fetch(`/api/superadmin/tenants/${this.viewPasswordTenant.id}/users/${this.selectedUserId}/password`, {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              this.currentPassword = data.passwordStatus;
+              this.userInfo = data;
+            } else {
+              this.currentPassword = 'User information not available';
+              this.userInfo = null;
+            }
+          } catch (error) {
+            console.error('Error loading user password info:', error);
+            this.currentPassword = 'Error loading user information';
+            this.userInfo = null;
+          }
+        },
+        copyPassword() {
+          if (!this.currentPassword || this.currentPassword === 'Password not available' || this.currentPassword === 'Error loading password') {
+            return;
+          }
+          
+          navigator.clipboard.writeText(this.currentPassword).then(() => {
+            // Show success feedback
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span>Copied!</span>';
+            button.classList.add('bg-green-600', 'text-white');
+            
+            setTimeout(() => {
+              button.innerHTML = originalText;
+              button.classList.remove('bg-green-600', 'text-white');
+            }, 2000);
+          }).catch(err => {
+            console.error('Failed to copy password:', err);
+            this.showToast('Failed to copy password to clipboard', 'error');
+          });
+        },
+        async generateTemporaryPassword() {
+          if (!this.selectedUserId || !this.userInfo) {
+            return;
+          }
+          
+          if (!confirm(`Generate a temporary password for ${this.userInfo.userName}? This will replace their current password and they will need to change it on next login.`)) {
+            return;
+          }
+          
+          try {
+            const response = await fetch(`/api/superadmin/tenants/${this.viewPasswordTenant.id}/users/${this.selectedUserId}/reveal-password`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify({
+                reason: 'Temporary password generation for admin access',
+                adminConfirmation: 'Confirmed by super admin'
+              })
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              
+              // Store temp password data and show modal
+              this.tempPasswordData = data;
+              this.showTempPasswordModal = true;
+              
+              // Refresh user info
+              await this.loadUserPassword();
+              
+              // Show success toast
+              this.showToast('Temporary password generated successfully!', 'success');
+            } else {
+              const error = await response.json();
+              this.showToast(`Failed to generate temporary password: ${error.error || 'Unknown error'}`, 'error');
+            }
+          } catch (error) {
+            console.error('Error generating temporary password:', error);
+            this.showToast('Failed to generate temporary password. Please try again.', 'error');
+          }
+        },
+        copyTempPassword() {
+          if (!this.tempPasswordData || !this.tempPasswordData.temporaryPassword) {
+            return;
+          }
+          
+          navigator.clipboard.writeText(this.tempPasswordData.temporaryPassword).then(() => {
+            // Show success feedback
+            this.showToast('Temporary password copied to clipboard!', 'success');
+          }).catch(err => {
+            console.error('Failed to copy temporary password:', err);
+            this.showToast('Failed to copy password to clipboard', 'error');
+          });
+        },
+        async deleteTenant(tenant) {
+          this.contextMenu.show = false;
+          
+          if (confirm(`Are you sure you want to delete ${tenant.company}? This action cannot be undone.`)) {
+            try {
+              const response = await fetch(`/api/superadmin/tenants/${tenant.id}`, {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+              });
+              
+              if (response.ok) {
+                // Remove tenant from array
+                const index = this.tenants.findIndex(t => t.id === tenant.id);
+                if (index !== -1) {
+                  this.tenants.splice(index, 1);
+                }
+                
+                // Refresh filtered tenants
+                this.filterTenants();
+                
+                // Close detail panel if this tenant was selected
+                if (this.selectedTenant && this.selectedTenant.id === tenant.id) {
+                  this.selectedTenant = null;
+                }
+                
+                // Broadcast update to other tabs/pages
+                this.broadcastTenantUpdate();
+                
+                // Show success message
+                this.showSuccess('Tenant deleted successfully!');
+              } else {
+                const error = await response.json();
+                this.showError(`Failed to delete tenant: ${error.error || 'Unknown error'}`);
+              }
+            } catch (error) {
+              console.error('Error deleting tenant:', error);
+              this.showError('Failed to delete tenant. Please try again.');
+            }
+          }
+        },
+        async submitNewTenant() {
+          try {
+            const response = await fetch('/api/superadmin/tenants', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify({
+                pharmacyName: this.newTenant.pharmacyName,
+                adminName: this.newTenant.adminName,
+                email: this.newTenant.email,
+                phoneNumber: this.newTenant.phoneNumber,
+                address: this.newTenant.address,
+                subscription: this.newTenant.subscription,
+                password: this.newTenant.password,
+                licenseNumber: this.newTenant.licenseNumber,
+                zambiaRegNumber: this.newTenant.zambiaRegNumber
+              })
+            });
+            
+            if (response.ok) {
+              const newTenant = await response.json();
+              
+              // Add to tenants array
+              this.tenants.unshift(newTenant);
+              
+              // Reset filtered tenants
+              this.filterTenants();
+              
+              // Close modal and reset form
+              this.showAddTenantModal = false;
+              this.resetNewTenantForm();
+              
+              // Broadcast update to other tabs/pages
+              this.broadcastTenantUpdate();
+              
+              // Show success message
+              this.showSuccess('Tenant created successfully!');
+            } else {
+              const error = await response.json();
+              this.showError(`Failed to create tenant: ${error.error || 'Unknown error'}`);
+            }
+          } catch (error) {
+            console.error('Error creating tenant:', error);
+            this.showError('Failed to create tenant. Please try again.');
+          }
+        },
+        resetNewTenantForm() {
+          this.newTenant = {
+            pharmacyName: '',
+            adminName: '',
+            phoneNumber: '',
+            email: '',
+            address: '',
+            subscription: '',
+            password: '',
+            licenseNumber: '',
+            zambiaRegNumber: ''
+          };
+          this.showPassword = false;
+        },
+        selectTenant(tenant) {
+          this.selectedTenant = tenant;
+        },
+        logout() {
+          sessionStorage.clear();
+          localStorage.removeItem('umihealthUserRole');
+          window.location.href = '../auth/signin.html';
+        },
+        
+        init() {
+          // Initialize page data
+          this.loadTenants();
+        }
+      }
+    }
+  </script>
+</body>
+</html>
