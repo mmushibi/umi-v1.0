@@ -56,8 +56,8 @@
       <h1 class="text-4xl font-bold text-slate-900 md:text-6xl">Complete Pharmacy Management Solution</h1>
       <p class="max-w-3xl text-lg text-slate-600 md:text-xl">A modern system that helps pharmacies manage sales, inventory, prescriptions, and customer information all in one place. Perfect for single locations or multiple pharmacy chains.</p>
       <div class="flex flex-col gap-3 sm:flex-row">
-        <a href="./modules/auth/signup.html" class="rounded-full bg-ocean-500 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-ocean-500/30 hover:bg-ocean-600">Get Started</a>
-        <a href="./modules/auth/signin.html" class="rounded-full border border-ocean-500 px-8 py-3 text-base font-semibold text-ocean-600 hover:bg-ocean-50">Sign In</a>
+        <a href="./wwwroot/modules/auth/signup.html" class="rounded-full bg-ocean-500 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-ocean-500/30 hover:bg-ocean-600">Get Started</a>
+        <a href="./wwwroot/modules/auth/signin.html" class="rounded-full border border-ocean-500 px-8 py-3 text-base font-semibold text-ocean-600 hover:bg-ocean-50">Sign In</a>
       </div>
       <div class="mt-10 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-3">
         <template x-for="card in heroCards" :key="card.title">
@@ -168,7 +168,7 @@
                   </li>
                 </template>
               </ul>
-              <a href="./modules/auth/signup.html" class="mt-8 inline-flex w-full justify-center rounded-full border border-ocean-500 px-5 py-2 text-sm font-semibold text-ocean-600 hover:bg-ocean-50">Choose plan</a>
+              <a href="./wwwroot/modules/auth/signup.html" class="mt-8 inline-flex w-full justify-center rounded-full border border-ocean-500 px-5 py-2 text-sm font-semibold text-ocean-600 hover:bg-ocean-50">Choose plan</a>
             </div>
           </template>
         </div>
@@ -225,8 +225,8 @@
         <button type="button" data-modal-target="globalTermsModal"
           class="hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white">Terms</button>
         <a href="mailto:support@umihealth.com" class="hover:text-white">Support</a>
-        <a href="./modules/Super-Admin/login.html" class="hover:text-white">Admin</a>
-        <a href="./modules/Sales-Operations/home.html" class="hover:text-white">Sales Ops</a>
+        <a href="./wwwroot/modules/Super-Admin/login.html" class="hover:text-white">Admin</a>
+        <a href="./wwwroot/modules/Sales-Operations/home.html" class="hover:text-white">Sales Ops</a>
       </div>
     </div>
   </footer>
@@ -298,9 +298,9 @@
           { title: 'Business Reports', body: 'Get detailed reports about sales, inventory, and customer trends to grow your business.' }
         ],
         products: [
-          { label: 'Core Module', title: 'Sales & Checkout', body: 'Easy-to-use point of sale system with payment processing and receipt printing.', link: './modules/Cashier/home.html' },
-          { label: 'Essential', title: 'Stock Control', body: 'Keep track of your inventory, get alerts for low stock, and manage expiry dates.', link: './modules/Pharmacist/home.html' },
-          { label: 'Advanced', title: 'Prescription Care', body: 'Handle customer prescriptions safely and stay compliant with health regulations.', link: './modules/Pharmacist/clinical.html' }
+          { label: 'Core Module', title: 'Sales & Checkout', body: 'Easy-to-use point of sale system with payment processing and receipt printing.', link: './wwwroot/modules/Cashier/home.html' },
+          { label: 'Essential', title: 'Stock Control', body: 'Keep track of your inventory, get alerts for low stock, and manage expiry dates.', link: './wwwroot/modules/Pharmacist/home.html' },
+          { label: 'Advanced', title: 'Prescription Care', body: 'Handle customer prescriptions safely and stay compliant with health regulations.', link: './wwwroot/modules/Pharmacist/clinical.html' }
         ],
         plans: [
           { name: 'Starter', body: 'Single location pharmacies digitise sales and stock.', perks: ['3 users included', 'Inventory + customer CRM', 'Offline fallback'], featured: false },
