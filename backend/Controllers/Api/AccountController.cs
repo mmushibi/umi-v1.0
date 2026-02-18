@@ -588,9 +588,26 @@ namespace UmiHealthPOS.Controllers.Api
 
         private int GetUserId()
         {
-            // This would normally extract from JWT token
-            // For now, return a test user ID
-            return 1;
+            var httpContext = HttpContext;
+            var user = httpContext?.User;
+            
+            if (user?.Identity?.IsAuthenticated != true)
+            {
+                throw new UnauthorizedAccessException("User not authenticated");
+            }
+
+            var userIdClaim = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+            {
+                throw new UnauthorizedAccessException("User ID not found in token");
+            }
+
+            if (!int.TryParse(userIdClaim.Value, out int userId))
+            {
+                throw new UnauthorizedAccessException("Invalid user ID format in token");
+            }
+
+            return userId;
         }
 
         private bool IsValidEmail(string email)

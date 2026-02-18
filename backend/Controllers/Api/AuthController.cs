@@ -237,22 +237,20 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 // Create user
-                var user = new User
+                var user = new UserAccount
                 {
-                    Id = Guid.NewGuid().ToString(),
+                    UserId = Guid.NewGuid().ToString(),
                     FirstName = request.FirstName,
                     LastName = request.LastName,
-                    Email = request.Email,
-                    NormalizedEmail = request.Email.ToLower(),
+                    Email = request.Email.ToLower(),
                     PhoneNumber = request.Phone ?? "+260 000 000 000",
-                    Role = request.Role ?? "admin",
-                    Department = "Management",
-                    Status = "active",
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                    Role = request.Role ?? "TenantAdmin",
+                    Department = "Management",
+                    IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
-                    EmailConfirmed = false,
-                    PhoneNumberConfirmed = false
+                    LastLogin = DateTime.UtcNow
                 };
 
                 _context.Users.Add(user);
@@ -316,14 +314,12 @@ namespace UmiHealthPOS.Controllers.Api
                 // Create user-branch relationship
                 var userBranch = new UserBranch
                 {
-                    UserId = user.Id.ToString(),
+                    UserId = user.UserId,
                     BranchId = branch.Id,
                     UserRole = user.Role,
-                    Permission = user.Role == "admin" ? "admin" : "write",
+                    Permission = user.Role == "TenantAdmin" ? "admin" : "write",
                     IsActive = true,
-                    AssignedAt = DateTime.UtcNow,
-                    User = null, // Remove User property assignment
-                    Branch = branch
+                    AssignedAt = DateTime.UtcNow
                 };
 
                 _context.UserBranches.Add(userBranch);
@@ -409,17 +405,17 @@ namespace UmiHealthPOS.Controllers.Api
                 return BadRequest(new { message = "Email already exists." });
             }
 
-            var user = new User
+            var user = new UserAccount
             {
-                Id = Guid.NewGuid().ToString(),
+                UserId = Guid.NewGuid().ToString(),
                 // Split name into first and last name
                 FirstName = request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? request.Name,
                 LastName = string.Join(" ", request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)),
                 Email = request.Email,
                 PhoneNumber = request.Phone,
                 Role = request.Role,
-                Status = "active",
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                Department = "Management",
+                IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -436,9 +432,10 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     var userBranch = new UserBranch
                     {
-                        UserId = user.Id.ToString(),
+                        UserId = user.UserId,
                         BranchId = branch.Id,
                         UserRole = request.Role,
+                        Permission = GetDefaultPermissionForRole(request.Role),
                         IsActive = true,
                         AssignedAt = DateTime.UtcNow
                     };
@@ -450,13 +447,13 @@ namespace UmiHealthPOS.Controllers.Api
 
             var response = new UserResponse
             {
-                Id = int.Parse(user.Id),
+                Id = user.Id,
                 Name = $"{user.FirstName} {user.LastName}",
                 Email = user.Email,
                 Phone = user.PhoneNumber,
                 Role = user.Role,
                 Branch = request.Branch,
-                Status = user.Status,
+                Status = user.IsActive ? "active" : "inactive",
                 LastLogin = user.LastLogin,
                 CreatedAt = user.CreatedAt
             };
@@ -470,16 +467,16 @@ namespace UmiHealthPOS.Controllers.Api
             var user = await _context.Users
                 .Include(u => u.UserBranches)
                 .ThenInclude(ub => ub.Branch)
-                .Where(u => u.Id.ToString() == id)
+                .Where(u => u.Id.ToString() == id || u.UserId == id)
                 .Select(u => new UserResponse
                 {
-                    Id = u.Id.ToString(),
+                    Id = u.Id,
                     Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
                     Phone = u.PhoneNumber,
                     Role = u.Role,
                     Branch = u.UserBranches.FirstOrDefault() != null ? u.UserBranches.FirstOrDefault().Branch.Name : null,
-                    Status = u.Status,
+                    Status = u.IsActive ? "active" : "inactive",
                     LastLogin = u.LastLogin,
                     CreatedAt = u.CreatedAt
                 })
@@ -493,7 +490,7 @@ namespace UmiHealthPOS.Controllers.Api
             return Ok(user);
         }
 
-        private string GenerateJwtToken(User user)
+        private string GenerateJwtToken(UserAccount user)
         {
             var jwtSettings = _configuration.GetSection("Jwt");
             var secretKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key not configured");
@@ -553,6 +550,19 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 return false;
             }
+        }
+
+        private string GetDefaultPermissionForRole(string role)
+        {
+            return role switch
+            {
+                "TenantAdmin" => "admin",
+                "SuperAdmin" => "admin",
+                "Operations" => "admin",
+                "Pharmacist" => "write",
+                "Cashier" => "read",
+                _ => "read"
+            };
         }
     }
 
