@@ -44,7 +44,7 @@ namespace UmiHealthPOS.Controllers.Api
             try
             {
                 var securityContext = await _securityService.GetSecurityContextAsync(User);
-                
+
                 // Only Super Admin can impersonate
                 if (securityContext.Role != UserRoleEnum.SuperAdmin)
                 {
@@ -58,7 +58,7 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 var token = await _impersonationService.StartImpersonationAsync(User, request.TargetUserId, request.Reason);
-                
+
                 var activeSessions = await _impersonationService.GetActiveImpersonationSessionsAsync(User);
                 var impersonationLog = activeSessions.FirstOrDefault(s => s.ImpersonatedUserId == request.TargetUserId);
 
@@ -95,7 +95,7 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 var success = await _impersonationService.StopImpersonationAsync(User);
-                
+
                 if (success)
                 {
                     return Ok(new { Message = "Impersonation ended successfully" });
@@ -120,7 +120,7 @@ namespace UmiHealthPOS.Controllers.Api
             try
             {
                 var securityContext = await _securityService.GetSecurityContextAsync(User);
-                
+
                 // Only Super Admin can view active sessions
                 if (securityContext.Role != UserRoleEnum.SuperAdmin)
                 {
@@ -128,7 +128,7 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 var activeSessions = await _impersonationService.GetActiveImpersonationSessionsAsync(User);
-                
+
                 var sessionDtos = activeSessions.Select(session => new ImpersonationSessionDto
                 {
                     Id = session.Id,
@@ -161,7 +161,7 @@ namespace UmiHealthPOS.Controllers.Api
             try
             {
                 var securityContext = await _securityService.GetSecurityContextAsync(User);
-                
+
                 // Only Super Admin can view impersonation logs
                 if (securityContext.Role != UserRoleEnum.SuperAdmin)
                 {
@@ -169,7 +169,7 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 var history = await _impersonationService.GetImpersonationHistoryAsync(User, fromDate, toDate);
-                
+
                 var historyDtos = history.Select(session => new ImpersonationSessionDto
                 {
                     Id = session.Id,
@@ -226,7 +226,7 @@ namespace UmiHealthPOS.Controllers.Api
             try
             {
                 var securityContext = await _securityService.GetSecurityContextAsync(User);
-                
+
                 // Only Super Admin can search for users to impersonate
                 if (securityContext.Role != UserRoleEnum.SuperAdmin)
                 {
@@ -242,7 +242,7 @@ namespace UmiHealthPOS.Controllers.Api
                 var usersQuery = _context.Users.AsQueryable();
 
                 // Apply search filters
-                usersQuery = usersQuery.Where(u => 
+                usersQuery = usersQuery.Where(u =>
                     (u.FirstName != null && u.FirstName.ToLower().Contains(query.ToLower())) ||
                     (u.LastName != null && u.LastName.ToLower().Contains(query.ToLower())) ||
                     u.Email.ToLower().Contains(query.ToLower()));

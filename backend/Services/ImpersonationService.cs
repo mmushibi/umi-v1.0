@@ -152,8 +152,8 @@ namespace UmiHealthPOS.Services
 
                 // Create enhanced user session for impersonated user
                 var impersonationToken = await _jwtService.GenerateImpersonationTokenAsync(
-                    targetUser, 
-                    superAdminUserId!, 
+                    targetUser,
+                    superAdminUserId!,
                     impersonationLog.Id);
 
                 var enhancedSession = new EnhancedUserSession
@@ -179,7 +179,7 @@ namespace UmiHealthPOS.Services
                 _context.Set<EnhancedUserSession>().Add(enhancedSession);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Super Admin {SuperAdminUserId} started impersonating user {TargetUserId} at {Time}", 
+                _logger.LogInformation("Super Admin {SuperAdminUserId} started impersonating user {TargetUserId} at {Time}",
                     superAdminUserId, targetUserId, DateTime.UtcNow);
 
                 return impersonationToken;
@@ -225,7 +225,7 @@ namespace UmiHealthPOS.Services
 
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Impersonation ended for user {UserId} by Super Admin {SuperAdminUserId} at {Time}", 
+                _logger.LogInformation("Impersonation ended for user {UserId} by Super Admin {SuperAdminUserId} at {Time}",
                     userId, enhancedSession.ImpersonatedByUserId, DateTime.UtcNow);
 
                 return true;

@@ -41,7 +41,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 if (!string.IsNullOrEmpty(search))
                 {
-                    query = query.Where(q => 
+                    query = query.Where(q =>
                         q.QuotationNumber.Contains(search) ||
                         (q.PatientName != null && q.PatientName.Contains(search)) ||
                         (q.Email != null && q.Email.Contains(search)));
@@ -87,7 +87,7 @@ namespace UmiHealthPOS.Controllers.Api
             try
             {
                 var quotationNumber = $"Q{DateTime.UtcNow:yyyyMMddHHmmss}";
-                
+
                 var quotation = new Quotation
                 {
                     QuotationNumber = quotationNumber,
@@ -159,7 +159,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 if (!string.IsNullOrEmpty(search))
                 {
-                    query = query.Where(si => 
+                    query = query.Where(si =>
                         si.InvoiceNumber.Contains(search) ||
                         (si.PatientName != null && si.PatientName.Contains(search)) ||
                         (si.Email != null && si.Email.Contains(search)));
@@ -209,7 +209,7 @@ namespace UmiHealthPOS.Controllers.Api
             try
             {
                 var invoiceNumber = $"INV{DateTime.UtcNow:yyyyMMddHHmmss}";
-                
+
                 var invoice = new SalesInvoice
                 {
                     InvoiceNumber = invoiceNumber,
@@ -339,7 +339,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 if (!string.IsNullOrEmpty(search))
                 {
-                    query = query.Where(scn => 
+                    query = query.Where(scn =>
                         scn.CreditNoteNumber.Contains(search) ||
                         (scn.PatientName != null && scn.PatientName.Contains(search)) ||
                         (scn.Email != null && scn.Email.Contains(search)));
@@ -388,7 +388,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 if (!string.IsNullOrEmpty(search))
                 {
-                    query = query.Where(ic => 
+                    query = query.Where(ic =>
                         ic.ClaimNumber.Contains(search) ||
                         (ic.PatientName != null && ic.PatientName.Contains(search)) ||
                         (ic.InsuranceProvider != null && ic.InsuranceProvider.Contains(search)));

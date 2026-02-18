@@ -72,7 +72,7 @@ namespace UmiHealthPOS.Models
     public class EnhancedUserSession
     {
         public int Id { get; set; }
-        
+
         [Required]
         [StringLength(450)]
         public string UserId { get; set; } = string.Empty;

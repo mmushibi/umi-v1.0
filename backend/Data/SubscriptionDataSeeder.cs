@@ -140,7 +140,7 @@ namespace UmiHealthPOS.Data
                     },
                     new UserAccount
                     {
-                        UserId = "jane-smith-002", 
+                        UserId = "jane-smith-002",
                         FirstName = "Jane",
                         LastName = "Smith",
                         Email = "jane.smith@umihealth.com",

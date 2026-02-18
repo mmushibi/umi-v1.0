@@ -65,7 +65,7 @@ namespace UmiHealthPOS.Security
             {
                 var impersonatedByUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.UserId == activeSession.ImpersonatedByUserId);
-                
+
                 if (impersonatedByUser != null)
                 {
                     securityContext.ImpersonatedByUserId = activeSession.ImpersonatedByUserId;
@@ -96,7 +96,7 @@ namespace UmiHealthPOS.Security
             try
             {
                 var context = await GetSecurityContextAsync(user);
-                
+
                 // Super Admin can access all tenants
                 if (context.Role == UserRoleEnum.SuperAdmin)
                     return true;
@@ -120,7 +120,7 @@ namespace UmiHealthPOS.Security
             try
             {
                 var context = await GetSecurityContextAsync(user);
-                
+
                 // Super Admin and Operations can access all branches
                 if (context.Role == UserRoleEnum.SuperAdmin || context.Role == UserRoleEnum.Operations)
                     return true;
@@ -146,7 +146,7 @@ namespace UmiHealthPOS.Security
         public async Task<IQueryable<T>> ApplyTenantFilter<T>(IQueryable<T> query, ClaimsPrincipal user) where T : class
         {
             var context = await GetSecurityContextAsync(user);
-            
+
             // Super Admin and Operations see all data
             if (context.Role == UserRoleEnum.SuperAdmin || context.Role == UserRoleEnum.Operations)
                 return query;
@@ -167,7 +167,7 @@ namespace UmiHealthPOS.Security
         public async Task<IQueryable<T>> ApplyBranchFilter<T>(IQueryable<T> query, ClaimsPrincipal user) where T : class
         {
             var context = await GetSecurityContextAsync(user);
-            
+
             // Super Admin and Operations see all data
             if (context.Role == UserRoleEnum.SuperAdmin || context.Role == UserRoleEnum.Operations)
                 return query;
@@ -218,12 +218,12 @@ namespace UmiHealthPOS.Security
             }
 
             var securityService = context.HttpContext.RequestServices.GetRequiredService<IRowLevelSecurityService>();
-            
+
             foreach (var permission in _permissions)
             {
                 if (!await securityService.HasPermissionAsync(user, permission))
                 {
-                    _logger?.LogWarning("User {UserId} denied access to resource requiring permission {Permission}", 
+                    _logger?.LogWarning("User {UserId} denied access to resource requiring permission {Permission}",
                         user.FindFirst(ClaimTypes.NameIdentifier)?.Value, permission);
                     context.Result = new ForbidResult();
                     return;
@@ -289,11 +289,11 @@ namespace UmiHealthPOS.Security
                 {
                     var securityService = context.RequestServices.GetRequiredService<IRowLevelSecurityService>();
                     var securityContext = await securityService.GetSecurityContextAsync(context.User);
-                    
+
                     // Add security context to HttpContext items for easy access
                     context.Items["SecurityContext"] = securityContext;
-                    
-                    _logger.LogDebug("Security context established for user {UserId} with role {Role}", 
+
+                    _logger.LogDebug("Security context established for user {UserId} with role {Role}",
                         securityContext.UserId, securityContext.Role);
                 }
                 catch (Exception ex)
@@ -312,8 +312,8 @@ namespace UmiHealthPOS.Security
     {
         public static SecurityContext? GetSecurityContext(this HttpContext context)
         {
-            return context.Items.TryGetValue("SecurityContext", out var contextObj) 
-                ? contextObj as SecurityContext 
+            return context.Items.TryGetValue("SecurityContext", out var contextObj)
+                ? contextObj as SecurityContext
                 : null;
         }
 

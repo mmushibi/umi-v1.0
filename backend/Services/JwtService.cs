@@ -16,7 +16,7 @@ namespace UmiHealthPOS.Services
         string GenerateRefreshToken();
         ClaimsPrincipal? GetPrincipalFromExpiredToken(string token);
         bool ValidateToken(string token);
-        
+
         // New methods for role-based security and impersonation
         Task<string> GenerateTokenAsync(UserAccount user);
         Task<string> GenerateImpersonationTokenAsync(UserAccount targetUser, string superAdminUserId, int impersonationLogId);

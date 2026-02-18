@@ -71,36 +71,36 @@ namespace UmiHealthPOS.Middleware
                     };
 
                     var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
-                if (principal != null)
-                {
-                    var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    var tenantId = principal.FindFirst("TenantId")?.Value;
-
-                    if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(tenantId))
+                    if (principal != null)
                     {
-                        // Check if session has expired using user-specific timeout
-                        var isExpired = await _sessionTimeoutService.IsSessionExpiredAsync(userId, tenantId, token);
+                        var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                        var tenantId = principal.FindFirst("TenantId")?.Value;
 
-                        if (isExpired)
+                        if (!string.IsNullOrEmpty(userId) && !string.IsNullOrEmpty(tenantId))
                         {
-                            _logger.LogInformation($"User {userId} session expired due to inactivity");
+                            // Check if session has expired using user-specific timeout
+                            var isExpired = await _sessionTimeoutService.IsSessionExpiredAsync(userId, tenantId, token);
 
-                            // Return 401 Unauthorized to trigger logout
-                            context.Response.StatusCode = 401;
-                            context.Response.ContentType = "application/json";
-                            var response = new
+                            if (isExpired)
                             {
-                                message = "Session expired due to inactivity. Please log in again.",
-                                code = "INACTIVITY_LOGOUT"
-                            };
-                            await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
-                            return;
-                        }
+                                _logger.LogInformation($"User {userId} session expired due to inactivity");
 
-                        // Update last access time for active sessions
-                        await _sessionTimeoutService.UpdateUserLastActivityAsync(userId, tenantId);
+                                // Return 401 Unauthorized to trigger logout
+                                context.Response.StatusCode = 401;
+                                context.Response.ContentType = "application/json";
+                                var response = new
+                                {
+                                    message = "Session expired due to inactivity. Please log in again.",
+                                    code = "INACTIVITY_LOGOUT"
+                                };
+                                await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
+                                return;
+                            }
+
+                            // Update last access time for active sessions
+                            await _sessionTimeoutService.UpdateUserLastActivityAsync(userId, tenantId);
+                        }
                     }
-                }
                 }
             }
             catch (Exception ex)
