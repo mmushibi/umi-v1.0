@@ -6,6 +6,10 @@ using System.IdentityModel.Tokens.Jwt;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.Services;
+using System;
+using System.Threading.Tasks;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace UmiHealthPOS.Middleware
 {
@@ -51,19 +55,22 @@ namespace UmiHealthPOS.Middleware
             {
                 // Validate token and check inactivity
                 var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-                var key = System.Text.Encoding.UTF8.GetBytes(_serviceProvider.GetRequiredService<IConfiguration>()["Jwt:Key"]);
-                var tokenValidationParameters = new TokenValidationParameters
+                var jwtKey = _serviceProvider.GetRequiredService<IConfiguration>()["Jwt:Key"];
+                if (!string.IsNullOrEmpty(jwtKey))
                 {
-                    ValidateIssuer = true,
-                    ValidIssuer = _serviceProvider.GetRequiredService<IConfiguration>()["Jwt:Issuer"],
-                    ValidateAudience = true,
-                    ValidAudience = _serviceProvider.GetRequiredService<IConfiguration>()["Jwt:Audience"],
-                    ValidateLifetime = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ClockSkew = TimeSpan.Zero
-                };
+                    var key = System.Text.Encoding.UTF8.GetBytes(jwtKey);
+                    var tokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuer = true,
+                        ValidIssuer = _serviceProvider.GetRequiredService<IConfiguration>()["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured"),
+                        ValidateAudience = true,
+                        ValidAudience = _serviceProvider.GetRequiredService<IConfiguration>()["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured"),
+                        ValidateLifetime = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(key),
+                        ClockSkew = TimeSpan.Zero
+                    };
 
-                var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
+                    var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken validatedToken);
                 if (principal != null)
                 {
                     var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -94,6 +101,7 @@ namespace UmiHealthPOS.Middleware
                         await _sessionTimeoutService.UpdateUserLastActivityAsync(userId, tenantId);
                     }
                 }
+                }
             }
             catch (Exception ex)
             {
@@ -103,14 +111,14 @@ namespace UmiHealthPOS.Middleware
             await _next(context);
         }
 
-        private string GetTokenFromRequest(HttpContext context)
+        private string? GetTokenFromRequest(HttpContext context)
         {
-            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
+            var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").LastOrDefault();
             if (!string.IsNullOrEmpty(token) && token.StartsWith("Bearer "))
             {
                 return token.Substring("Bearer ".Length);
             }
-            return token;
+            return string.IsNullOrEmpty(token) ? null : token;
         }
     }
 }

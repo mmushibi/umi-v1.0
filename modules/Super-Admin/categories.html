@@ -25,6 +25,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="../../wwwroot/js/auth.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -140,7 +141,7 @@
             <p class="text-sm font-medium">Super Admin</p>
             <p class="text-xs text-gray-400">admin@umihealth.com</p>
           </div>
-          <button @click="logout()" class="text-gray-400 hover:text-white" title="Sign out">
+          <button @click="logout()" class="text-gray-400 hover:text-white" title="Sign out" aria-label="Sign out">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
             </svg>
@@ -155,7 +156,7 @@
       <main class="flex-1 bg-light-bg p-4 lg:p-6 overflow-y-auto custom-scrollbar h-screen">
         <!-- Mobile Header -->
         <div class="lg:hidden flex items-center justify-between mb-4">
-          <button @click="mobileMenuOpen = true" class="text-gray-600 hover:text-gray-900" title="Open mobile menu">
+          <button @click="mobileMenuOpen = true" class="text-gray-600 hover:text-gray-900" title="Open mobile menu" aria-label="Open mobile menu">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
             </svg>
@@ -254,7 +255,7 @@
               Sync to Tenants
             </button>
             <div class="flex gap-2">
-              <button @click="refreshData()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium flex items-center gap-2" title="Refresh data">
+              <button @click="refreshData()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium flex items-center gap-2" title="Refresh data" aria-label="Refresh categories data">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                 </svg>
@@ -358,7 +359,7 @@
     <div class="bg-white rounded-lg max-w-md w-full p-6" @click.away="showAddCategoryModal = false">
       <div class="flex items-center justify-between mb-6">
         <h3 class="text-lg font-semibold text-gray-900">Add New Category</h3>
-        <button @click="showAddCategoryModal = false" class="text-gray-400 hover:text-gray-600" title="Close add category modal">
+        <button @click="showAddCategoryModal = false" class="text-gray-400 hover:text-gray-600" title="Close add category modal" aria-label="Close add category modal">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>

@@ -101,13 +101,17 @@ namespace UmiHealthPOS.Middleware
                     var parameter = System.Linq.Expressions.Expression.Parameter(typeof(T), "x");
                     var property = System.Linq.Expressions.Expression.Property(parameter, "BranchId");
                     var containsMethod = typeof(System.Collections.Generic.List<int>).GetMethod("Contains", new[] { typeof(int) });
-                    var containsCall = System.Linq.Expressions.Expression.Call(
-                        System.Linq.Expressions.Expression.Constant(branchIds),
-                        containsMethod,
-                        property);
-                    var lambda = System.Linq.Expressions.Expression.Lambda<Func<T, bool>>(containsCall, parameter);
+                    if (containsMethod != null)
+                    {
+                        var containsCall = System.Linq.Expressions.Expression.Call(
+                            System.Linq.Expressions.Expression.Constant(branchIds),
+                            containsMethod,
+                            property);
+                        var lambda = System.Linq.Expressions.Expression.Lambda<Func<T, bool>>(containsCall, parameter);
+                        return query.Where(lambda);
+                    }
 
-                    return query.Where(lambda);
+                    return query;
                 }
             }
 

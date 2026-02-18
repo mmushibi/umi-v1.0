@@ -27,6 +27,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="../../wwwroot/js/auth.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -578,7 +579,7 @@
         <div class="p-6 border-b border-gray-200">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900">Audit: <span x-text="auditSubstance?.name"></span></h2>
-            <button @click="showAuditModal = false" class="text-gray-400 hover:text-gray-600">
+            <button @click="showAuditModal = false" title="Close Audit Modal" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
@@ -605,7 +606,8 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">System Stock Count</label>
                 <input type="text" :value="auditSubstance?.currentStock + ' ' + auditSubstance?.unit" readonly
-                       class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600">
+                       class="w-full px-3 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-600"
+                       title="System Stock Count" aria-label="System Stock Count">
               </div>
             </div>
 
@@ -639,7 +641,8 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">Required Action</label>
                 <select x-model="auditData.requiredAction" 
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                        title="Required Action" aria-label="Required Action">
                   <option value="">Select action</option>
                   <option value="inventory_adjustment">Inventory Adjustment</option>
                   <option value="investigation">Further Investigation</option>
@@ -717,7 +720,7 @@
         <div class="p-6 border-b border-gray-200">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900">Audit History: <span x-text="auditHistorySubstance?.name"></span></h2>
-            <button @click="showAuditHistoryModal = false" class="text-gray-400 hover:text-gray-600" title="Close audit history">
+            <button @click="showAuditHistoryModal = false" title="Close Audit History Modal" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
@@ -784,14 +787,14 @@
               </p>
             </div>
             <div class="flex items-center space-x-3">
-              <button x-show="reportData" @click="downloadReport()" 
+              <button x-show="reportData" @click="downloadReport()" title="Download Report" aria-label="Download Report"
                       class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center space-x-2">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                 </svg>
                 <span>Download PDF</span>
               </button>
-              <button @click="showReportModal = false" class="text-gray-400 hover:text-gray-600">
+              <button @click="showReportModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal" aria-label="Close report modal">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>

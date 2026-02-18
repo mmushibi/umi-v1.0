@@ -9,6 +9,15 @@ namespace UmiHealthPOS.Configuration
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
+            // Add HttpContextAccessor for AuthService
+            services.AddHttpContextAccessor();
+            
+            // Add HttpClient for WebSearchService and SepioAIService
+            services.AddHttpClient();
+            
+            // Add MemoryCache for WebSearchService and SepioAIService
+            services.AddMemoryCache();
+            
             // Register services
             // services.AddScoped<IDashboardService, DashboardService>();
             // services.AddScoped<IDashboardNotificationService, DashboardNotificationService>();

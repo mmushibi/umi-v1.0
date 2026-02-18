@@ -191,12 +191,12 @@ namespace UmiHealthPOS.Data
         {
             var datePrefix = DateTime.Now.ToString("yyyyMMdd");
             var lastPrescription = await _context.Prescriptions
-                .Where(p => p.RxNumber.StartsWith(datePrefix))
+                .Where(p => p.RxNumber != null && p.RxNumber.StartsWith(datePrefix))
                 .OrderByDescending(p => p.RxNumber)
                 .FirstOrDefaultAsync();
 
             int sequence = 1;
-            if (lastPrescription != null)
+            if (lastPrescription?.RxNumber != null)
             {
                 var lastSequence = lastPrescription.RxNumber.Substring(datePrefix.Length);
                 if (int.TryParse(lastSequence, out int lastSeq))

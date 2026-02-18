@@ -25,6 +25,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="../../wwwroot/js/auth.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -404,7 +405,7 @@
             <div>
               <h4 class="text-sm font-medium text-gray-500 mb-1">User</h4>
               <div class="flex items-center space-x-2">
-                <img :src="selectedLog?.userAvatar" :alt="selectedLog?.user" class="w-8 h-8 rounded-full" :title="selectedLog?.user">
+                <img :src="selectedLog?.userAvatar" :alt="selectedLog?.user" class="w-8 h-8 rounded-full" :title="selectedLog?.user" :aria-label="selectedLog?.user">
                 <div>
                   <p class="text-gray-900" x-text="selectedLog?.user"></p>
                   <p class="text-sm text-gray-500" x-text="selectedLog?.role"></p>

@@ -912,6 +912,7 @@
         newQuotation: {
           patient: '',
           email: '',
+          phone: '',
           items: [
             {description: '', quantity: 1, price: 0}
           ],
@@ -920,6 +921,8 @@
         
         newInvoice: {
           patient: '',
+          email: '',
+          phone: '',
           dueDate: '',
           items: [
             {description: '', quantity: 1, price: 0}
@@ -987,6 +990,88 @@
         },
         
         // Methods
+        async init() {
+          await this.loadQuotations();
+          await this.loadInvoices();
+          await this.loadCreditNotes();
+          await this.loadInsuranceClaims();
+        },
+        
+        async loadQuotations() {
+          try {
+            const response = await fetch('/api/payment/quotations', {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              this.quotations = data;
+            } else {
+              console.error('Failed to load quotations');
+            }
+          } catch (error) {
+            console.error('Error loading quotations:', error);
+          }
+        },
+        
+        async loadInvoices() {
+          try {
+            const response = await fetch('/api/payment/invoices', {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              this.invoices = data;
+            } else {
+              console.error('Failed to load invoices');
+            }
+          } catch (error) {
+            console.error('Error loading invoices:', error);
+          }
+        },
+        
+        async loadCreditNotes() {
+          try {
+            const response = await fetch('/api/payment/credit-notes', {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              this.creditNotes = data;
+            } else {
+              console.error('Failed to load credit notes');
+            }
+          } catch (error) {
+            console.error('Error loading credit notes:', error);
+          }
+        },
+        
+        async loadInsuranceClaims() {
+          try {
+            const response = await fetch('/api/payment/insurance-claims', {
+              headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              }
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              this.insuranceClaims = data;
+            } else {
+              console.error('Failed to load insurance claims');
+            }
+          } catch (error) {
+            console.error('Error loading insurance claims:', error);
+          }
+        },
         getInvoiceStatusClass(status) {
           switch(status) {
             case 'Paid': return 'bg-green-100 text-green-800';
@@ -1006,35 +1091,53 @@
           }
         },
         
-        createQuotation() {
-          // Calculate total
-          const total = this.newQuotation.items.reduce((sum, item) => {
-            return sum + (item.quantity * item.price);
-          }, 0);
-          
-          // Create new quotation
-          const newQuotation = {
-            id: this.quotations.length + 1,
-            number: `Q-2024-${String(this.quotations.length + 1).padStart(3, '0')}`,
-            patient: this.newQuotation.patient,
-            date: new Date().toISOString().split('T')[0],
-            amount: total.toFixed(2),
-            status: 'Pending'
-          };
-          
-          this.quotations.unshift(newQuotation);
-          this.pendingQuotations++;
-          
-          // Reset form
-          this.newQuotation = {
-            patient: '',
-            email: '',
-            items: [{description: '', quantity: 1, price: 0}],
-            notes: ''
-          };
-          this.showNewQuotationModal = false;
-          
-          this.showNotification('Quotation created successfully', 'success');
+        async createQuotation() {
+          try {
+            const total = this.newQuotation.items.reduce((sum, item) => {
+              return sum + (item.quantity * item.price);
+            }, 0);
+            
+            const quotationData = {
+              patientName: this.newQuotation.patient,
+              email: this.newQuotation.email,
+              phone: this.newQuotation.phone,
+              items: this.newQuotation.items.filter(item => item.description && item.quantity > 0 && item.price > 0),
+              notes: this.newQuotation.notes
+            };
+            
+            const response = await fetch('/api/payment/quotations', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify(quotationData)
+            });
+            
+            if (response.ok) {
+              const newQuotation = await response.json();
+              this.quotations.unshift(newQuotation);
+              this.pendingQuotations++;
+              
+              // Reset form
+              this.newQuotation = {
+                patient: '',
+                email: '',
+                phone: '',
+                items: [{description: '', quantity: 1, price: 0}],
+                notes: ''
+              };
+              this.showNewQuotationModal = false;
+              
+              this.showNotification('Quotation created successfully', 'success');
+            } else {
+              const error = await response.json();
+              this.showNotification(`Failed to create quotation: ${error.error || 'Unknown error'}`, 'error');
+            }
+          } catch (error) {
+            console.error('Error creating quotation:', error);
+            this.showNotification('Failed to create quotation', 'error');
+          }
         },
         
         convertToInvoice(quotation) {
@@ -1058,35 +1161,52 @@
           this.showNotification('Quotation converted to invoice', 'success');
         },
         
-        createInvoice() {
-          // Calculate total
-          const total = this.newInvoice.items.reduce((sum, item) => {
-            return sum + (item.quantity * item.price);
-          }, 0);
-          
-          // Create new invoice
-          const newInvoice = {
-            id: this.invoices.length + 1,
-            number: `INV-2024-${String(this.invoices.length + 1).padStart(3, '0')}`,
-            patient: this.newInvoice.patient,
-            date: new Date().toISOString().split('T')[0],
-            dueDate: this.newInvoice.dueDate,
-            amount: total.toFixed(2),
-            status: 'Unpaid'
-          };
-          
-          this.invoices.unshift(newInvoice);
-          this.unpaidInvoices++;
-          
-          // Reset form
-          this.newInvoice = {
-            patient: '',
-            dueDate: '',
-            items: [{description: '', quantity: 1, price: 0}]
-          };
-          this.showNewInvoiceModal = false;
-          
-          this.showNotification('Invoice created successfully', 'success');
+        async createInvoice() {
+          try {
+            const total = this.newInvoice.items.reduce((sum, item) => {
+              return sum + (item.quantity * item.price);
+            }, 0);
+            
+            const invoiceData = {
+              patientName: this.newInvoice.patient,
+              email: this.newInvoice.email,
+              phone: this.newInvoice.phone,
+              items: this.newInvoice.items.filter(item => item.description && item.quantity > 0 && item.price > 0)
+            };
+            
+            const response = await fetch('/api/payment/invoices', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+              },
+              body: JSON.stringify(invoiceData)
+            });
+            
+            if (response.ok) {
+              const newInvoice = await response.json();
+              this.invoices.unshift(newInvoice);
+              this.unpaidInvoices++;
+              
+              // Reset form
+              this.newInvoice = {
+                patient: '',
+                email: '',
+                phone: '',
+                dueDate: '',
+                items: [{description: '', quantity: 1, price: 0}]
+              };
+              this.showNewInvoiceModal = false;
+              
+              this.showNotification('Invoice created successfully', 'success');
+            } else {
+              const error = await response.json();
+              this.showNotification(`Failed to create invoice: ${error.error || 'Unknown error'}`, 'error');
+            }
+          } catch (error) {
+            console.error('Error creating invoice:', error);
+            this.showNotification('Failed to create invoice', 'error');
+          }
         },
         
         createCreditNote() {

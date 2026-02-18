@@ -166,8 +166,10 @@ namespace UmiHealthPOS.Data
                         {
                             UserId = users[0].UserId, // Admin user
                             BranchId = branches[0].Id, // Main branch
-                            UserRole = roles.First(r => r.Name == "TenantAdmin"),
-                            Permission = permissions.First(p => p.Name == "admin"),
+                            UserRole = roles.First(r => r.Name == "TenantAdmin").Name,
+                            Permission = permissions.First(p => p.Name == "admin").Name,
+                            User = users[0],
+                            Branch = branches[0],
                             IsActive = true,
                             AssignedAt = DateTime.UtcNow
                         },
@@ -175,8 +177,10 @@ namespace UmiHealthPOS.Data
                         {
                             UserId = users[0].UserId, // Admin user
                             BranchId = branches[1].Id, // Kitwe branch
-                            UserRole = roles.First(r => r.Name == "TenantAdmin"),
-                            Permission = permissions.First(p => p.Name == "admin"),
+                            UserRole = roles.First(r => r.Name == "TenantAdmin").Name,
+                            Permission = permissions.First(p => p.Name == "admin").Name,
+                            User = users[0],
+                            Branch = branches[1],
                             IsActive = true,
                             AssignedAt = DateTime.UtcNow
                         },
@@ -184,8 +188,10 @@ namespace UmiHealthPOS.Data
                         {
                             UserId = users[1].UserId, // Pharmacist user
                             BranchId = branches[0].Id, // Main branch
-                            UserRole = roles.First(r => r.Name == "Pharmacist"),
-                            Permission = permissions.First(p => p.Name == "write"),
+                            UserRole = roles.First(r => r.Name == "Pharmacist").Name,
+                            Permission = permissions.First(p => p.Name == "write").Name,
+                            User = users[1],
+                            Branch = branches[0],
                             IsActive = true,
                             AssignedAt = DateTime.UtcNow
                         },
@@ -193,8 +199,10 @@ namespace UmiHealthPOS.Data
                         {
                             UserId = users[2].UserId, // Cashier user
                             BranchId = branches[0].Id, // Main branch
-                            UserRole = roles.First(r => r.Name == "Cashier"),
-                            Permission = permissions.First(p => p.Name == "read"),
+                            UserRole = roles.First(r => r.Name == "Cashier").Name,
+                            Permission = permissions.First(p => p.Name == "read").Name,
+                            User = users[2],
+                            Branch = branches[0],
                             IsActive = true,
                             AssignedAt = DateTime.UtcNow
                         }
@@ -213,6 +221,7 @@ namespace UmiHealthPOS.Data
                     {
                         new InventoryItem
                         {
+                            Name = "Paracetamol 500mg",
                             InventoryItemName = "Paracetamol 500mg",
                             GenericName = "Paracetamol",
                             BrandName = "Panadol",
@@ -232,6 +241,7 @@ namespace UmiHealthPOS.Data
                         },
                         new InventoryItem
                         {
+                            Name = "Amoxicillin 250mg",
                             InventoryItemName = "Amoxicillin 250mg",
                             GenericName = "Amoxicillin",
                             BrandName = "Amoxil",
@@ -251,6 +261,7 @@ namespace UmiHealthPOS.Data
                         },
                         new InventoryItem
                         {
+                            Name = "Vitamin C 500mg",
                             InventoryItemName = "Vitamin C 500mg",
                             GenericName = "Ascorbic Acid",
                             BrandName = "Cevit",

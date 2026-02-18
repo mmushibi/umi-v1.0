@@ -171,8 +171,8 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Generate supplier code if not provided
                 var supplierCode = !string.IsNullOrEmpty(request.SupplierCode)
-                    ? await GenerateSupplierCode(tenantId)
-                    : request.SupplierCode;
+                    ? request.SupplierCode
+                    : await GenerateSupplierCode(tenantId);
 
                 var supplier = new Supplier
                 {

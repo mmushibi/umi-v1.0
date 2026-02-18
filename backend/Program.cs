@@ -10,7 +10,11 @@ using UmiHealthPOS.Data;
 using UmiHealthPOS.Repositories;
 using UmiHealthPOS.Services;
 using UmiHealthPOS.Middleware;
+using UmiHealthPOS.Security;
+using UmiHealthPOS.Models;
 using Npgsql;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 // Developer: Sepio Corp
 // Umi Health POS System - Backend Application
@@ -24,10 +28,7 @@ builder.WebHost.ConfigureKestrel(options =>
 });
 
 // Configure allowed hosts
-builder.Configuration.AddInMemoryCollection(new KeyValuePair<string, string?>[]
-{
-    new KeyValuePair<string, string?>("AllowedHosts", "*")
-});
+builder.Configuration.AddInMemoryCollection([new("AllowedHosts", "*")]);
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -44,10 +45,10 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"],
-        ValidAudience = builder.Configuration["Jwt:Audience"],
+        ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? throw new InvalidOperationException("JWT Issuer not configured"),
+        ValidAudience = builder.Configuration["Jwt:Audience"] ?? throw new InvalidOperationException("JWT Audience not configured"),
         IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
-            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+            System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT Key not configured")))
     };
 });
 
@@ -55,14 +56,14 @@ builder.Services.AddAuthorization();
 
 // Add database context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Database connection string not configured")));
 
 // Add CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins(builder.Configuration["Frontend:AllowedOrigins"]?.Split(',') ?? new[] { "http://localhost:3000" })
+        policy.WithOrigins([..builder.Configuration["Frontend:AllowedOrigins"]?.Split(',') ?? ["http://localhost:3000"]])
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -72,6 +73,11 @@ builder.Services.AddCors(options =>
 // Add application services
 builder.Services.AddApplicationServices();
 
+// Add security services
+builder.Services.AddScoped<IRowLevelSecurityService, RowLevelSecurityService>();
+builder.Services.AddScoped<IImpersonationService, ImpersonationService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+
 // DataSeeder removed due to static type conflicts
 // builder.Services.AddScoped<DataSeeder>();
 builder.Services.AddScoped<SubscriptionDataSeeder>();
@@ -80,10 +86,11 @@ var app = builder.Build();
 
 // app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
-// app.UseAuthentication();
+app.UseAuthentication();
+app.UseMiddleware<RowLevelSecurityMiddleware>();
 // app.UseBranchIsolation();
 // app.UseInactivityCheck();
-// app.UseAuthorization();
+app.UseAuthorization();
 
 // Map SignalR hubs
 // app.MapHub<DashboardHub>("/dashboardHub");
@@ -94,10 +101,10 @@ app.MapControllers();
 // Seed data in development
 if (app.Environment.IsDevelopment())
 {
-    using (var scope = app.Services.CreateScope())
+    using var scope = app.Services.CreateScope();
     {
         // Data seeding is handled by DataSeeder static class
-        await DataSeeder.SeedDataAsync(scope.ServiceProvider);
+        // await DataSeeder.SeedDataAsync(scope.ServiceProvider);
     }
 }
 

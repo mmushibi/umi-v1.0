@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using static UmiHealthPOS.Models.UserRole;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace UmiHealthPOS.Models
 {
@@ -34,7 +37,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(200)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [StringLength(500)]
         public string? Description { get; set; }
@@ -68,14 +71,45 @@ namespace UmiHealthPOS.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation properties
-        public virtual ICollection<UserAccount> Users { get; set; }
-        public virtual ICollection<Branch> Branches { get; set; }
-        public virtual ICollection<Product> Products { get; set; }
-        public virtual ICollection<Customer> Customers { get; set; }
-        public virtual ICollection<Sale> Sales { get; set; }
-        public virtual ICollection<InventoryItem> InventoryItems { get; set; }
-        public virtual ICollection<Supplier> Suppliers { get; set; }
+        // Navigation properties (temporarily commented for migration)
+        // public virtual ICollection<UserAccount> Users { get; set; } = new List<UserAccount>();
+        // public virtual ICollection<Branch> Branches { get; set; } = new List<Branch>();
+        // public virtual ICollection<Product> Products { get; set; } = new List<Product>();
+        // public virtual ICollection<Customer> Customers { get; set; } = new List<Customer>();
+        // public virtual ICollection<Sale> Sales { get; set; } = new List<Sale>();
+        // public virtual ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
+        // public virtual ICollection<Supplier> Suppliers { get; set; } = new List<Supplier>();
+        // public virtual ICollection<Patient> Patients { get; set; } = new List<Patient>();
+        // public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
+        // public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
+        // public virtual ICollection<ActivityLog> ActivityLogs { get; set; } = new List<ActivityLog>();
+        // public virtual ICollection<UserSession> UserSessions { get; set; } = new List<UserSession>();
+        // public virtual ICollection<DaybookTransaction> DaybookTransactions { get; set; } = new List<DaybookTransaction>();
+        // public virtual ICollection<Invoice> Invoices { get; set; } = new List<Invoice>();
+        // public virtual ICollection<CreditNote> CreditNotes { get; set; } = new List<CreditNote>();
+        // public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
+        // public virtual ICollection<ControlledSubstance> ControlledSubstances { get; set; } = new List<ControlledSubstance>();
+        // public virtual ICollection<Shift> Shifts { get; set; } = new List<Shift>();
+        // public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
+        // public virtual ICollection<ControlledSubstanceAudit> ControlledSubstanceAudits { get; set; } = new List<ControlledSubstanceAudit>();
+        // public virtual ICollection<Category> Categories { get; set; } = new List<Category>();
+        // public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+        // public virtual ICollection<Permission> Permissions { get; set; } = new List<Permission>();
+        // public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+        // public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+        // public virtual ICollection<TenantRole> TenantRoles { get; set; } = new List<TenantRole>();
+        // public virtual ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        // public virtual ICollection<SystemSetting> SystemSettings { get; set; } = new List<SystemSetting>();
+        // public virtual ICollection<SettingsAuditLog> SettingsAuditLogs { get; set; } = new List<SettingsAuditLog>();
+        // public virtual ICollection<AppSetting> AppSettings { get; set; } = new List<AppSetting>();
+        // public virtual ICollection<ApplicationFeature> ApplicationFeatures { get; set; } = new List<ApplicationFeature>();
+        // public virtual ICollection<SubscriptionPlanFeature> SubscriptionPlanFeatures { get; set; } = new List<SubscriptionPlanFeature>();
+        // public virtual ICollection<CategorySync> CategorySyncs { get; set; } = new List<CategorySync>();
+        // public virtual ICollection<TenantCategory> TenantCategories { get; set; } = new List<TenantCategory>();
+        // public virtual ICollection<SupplierContact> SupplierContacts { get; set; } = new List<SupplierContact>();
+        // public virtual ICollection<SupplierProduct> SupplierProducts { get; set; } = new List<SupplierProduct>();
+        // public virtual ICollection<PharmacistProfile> PharmacistProfiles { get; set; } = new List<PharmacistProfile>();
+        // public virtual ICollection<ClinicalNote> ClinicalNotes { get; set; } = new List<ClinicalNote>();
     }
 
     public class Branch
@@ -84,7 +118,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(100)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [StringLength(500)]
         public string? Address { get; set; }
@@ -134,10 +168,10 @@ namespace UmiHealthPOS.Models
 
         // Navigation properties
         public virtual Tenant? Tenant { get; set; }
-        public virtual ICollection<UserAccount> Users { get; set; }
-        public virtual ICollection<InventoryItem> InventoryItems { get; set; }
-        public virtual ICollection<Sale> Sales { get; set; }
-        public virtual ICollection<UserBranch> UserBranches { get; set; }
+        public virtual ICollection<UserAccount> Users { get; set; } = new List<UserAccount>();
+        public virtual ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
+        public virtual ICollection<Sale> Sales { get; set; } = new List<Sale>();
+        public virtual ICollection<UserBranch> UserBranches { get; set; } = new List<UserBranch>();
     }
 
     public class UserAccount
@@ -150,7 +184,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(100)]
-        public string Email { get; set; }
+        public required string Email { get; set; }
 
         [StringLength(100)]
         public string? FirstName { get; set; }
@@ -159,7 +193,7 @@ namespace UmiHealthPOS.Models
         public string? LastName { get; set; }
 
         [StringLength(20)]
-        public string Role { get; set; } = "Cashier";
+        public string Role { get; set; } = UserRoleEnum.Cashier.ToString();
 
         [StringLength(6)]
         public string TenantId { get; set; } = string.Empty;
@@ -189,8 +223,8 @@ namespace UmiHealthPOS.Models
         // Navigation properties
         public virtual Tenant? Tenant { get; set; }
         public virtual Branch? Branch { get; set; }
-        public virtual ICollection<Sale> Sales { get; set; }
-        public virtual ICollection<UserBranch> UserBranches { get; set; }
+        public virtual ICollection<Sale> Sales { get; set; } = new List<Sale>();
+        public virtual ICollection<UserBranch> UserBranches { get; set; } = new List<UserBranch>();
     }
 
     public class Product
@@ -199,7 +233,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(200)]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [StringLength(100)]
         public string? GenericName { get; set; }
@@ -234,37 +268,9 @@ namespace UmiHealthPOS.Models
 
         // Navigation properties
         public virtual Tenant? Tenant { get; set; }
-        public virtual ICollection<SaleItem> SaleItems { get; set; }
-        public virtual ICollection<InventoryItem> InventoryItems { get; set; }
-        public virtual ICollection<StockTransaction> StockTransactions { get; set; }
-    }
-
-    public class Customer
-    {
-        public int Id { get; set; }
-
-        [Required]
-        [StringLength(200)]
-        public string Name { get; set; }
-
-        [StringLength(500)]
-        public string? Address { get; set; }
-
-        [StringLength(20)]
-        public string? Phone { get; set; }
-
-        [StringLength(100)]
-        public string? Email { get; set; }
-
-        [StringLength(6)]
-        public string TenantId { get; set; } = string.Empty;
-
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-        // Navigation properties
-        public virtual Tenant? Tenant { get; set; }
-        public virtual ICollection<Sale> Sales { get; set; }
+        public virtual ICollection<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
+        public virtual ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
+        public virtual ICollection<StockTransaction> StockTransactions { get; set; } = new List<StockTransaction>();
     }
 
     public class Sale
@@ -273,7 +279,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(50)]
-        public string ReceiptNumber { get; set; }
+        public string ReceiptNumber { get; set; } = string.Empty;
 
         [Required]
         [StringLength(6)]
@@ -294,7 +300,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(20)]
-        public string PaymentMethod { get; set; }
+        public string PaymentMethod { get; set; } = string.Empty;
 
         [StringLength(100)]
         public string? PaymentDetails { get; set; }
@@ -325,7 +331,7 @@ namespace UmiHealthPOS.Models
 
         // Navigation properties
         public virtual Customer? Customer { get; set; }
-        public virtual ICollection<SaleItem> SaleItems { get; set; }
+        public virtual ICollection<SaleItem> SaleItems { get; set; } = new List<SaleItem>();
         public virtual Tenant? Tenant { get; set; }
     }
 
@@ -347,8 +353,58 @@ namespace UmiHealthPOS.Models
         public decimal TotalPrice { get; set; }
 
         // Navigation properties
-        public virtual Sale Sale { get; set; }
-        public virtual Product Product { get; set; }
+        public virtual Sale Sale { get; set; } = null!;
+        public virtual required Product Product { get; set; }
+    }
+
+    public class Customer
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(200)]
+        public required string Name { get; set; }
+
+        [StringLength(500)]
+        public string? Address { get; set; }
+
+        [StringLength(20)]
+        public string? Phone { get; set; }
+
+        [StringLength(100)]
+        public string? Email { get; set; }
+
+        [StringLength(50)]
+        public string? IdNumber { get; set; }
+
+        [StringLength(20)]
+        public string? Gender { get; set; }
+
+        public DateTime? DateOfBirth { get; set; }
+
+        [StringLength(6)]
+        public string TenantId { get; set; } = string.Empty;
+
+        public int? BranchId { get; set; }
+
+        [StringLength(20)]
+        public string Status { get; set; } = "Active";
+
+        public bool IsActive { get; set; } = true;
+
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal CreditLimit { get; set; } = 0.00m;
+
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal OutstandingBalance { get; set; } = 0.00m;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual Tenant? Tenant { get; set; }
+        public virtual Branch? Branch { get; set; }
+        public virtual ICollection<Sale> Sales { get; set; } = new List<Sale>();
     }
 
     public class InventoryItem
@@ -357,7 +413,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(200)]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [StringLength(200)]
         public string? InventoryItemName { get; set; }
@@ -422,11 +478,11 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(50)]
-        public string TransactionNumber { get; set; }
+        public required string TransactionNumber { get; set; }
 
         [Required]
         [StringLength(20)]
-        public string TransactionType { get; set; }
+        public string TransactionType { get; set; } = string.Empty;
 
         [Column(TypeName = "decimal(12,2)")]
         public decimal Amount { get; set; }
@@ -435,7 +491,7 @@ namespace UmiHealthPOS.Models
         public string? Description { get; set; }
 
         [StringLength(20)]
-        public string PaymentMethod { get; set; }
+        public required string PaymentMethod { get; set; }
 
         [StringLength(6)]
         public string TenantId { get; set; } = string.Empty;
@@ -450,7 +506,7 @@ namespace UmiHealthPOS.Models
         // Navigation properties
         public virtual Tenant? Tenant { get; set; }
         public virtual Branch? Branch { get; set; }
-        public virtual ICollection<DaybookTransactionItem> Items { get; set; }
+        public virtual ICollection<DaybookTransactionItem> Items { get; set; } = new List<DaybookTransactionItem>();
     }
 
     public class DaybookTransactionItem
@@ -471,7 +527,7 @@ namespace UmiHealthPOS.Models
         public decimal Total { get; set; }
 
         // Navigation properties
-        public virtual DaybookTransaction Transaction { get; set; }
+        public virtual DaybookTransaction Transaction { get; set; } = null!;
         public virtual Product? Product { get; set; }
     }
 
@@ -482,7 +538,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(200)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [StringLength(500)]
         public string? Address { get; set; }
@@ -522,7 +578,7 @@ namespace UmiHealthPOS.Models
 
         // Navigation properties
         public virtual Tenant? Tenant { get; set; }
-        public virtual ICollection<Prescription> Prescriptions { get; set; }
+        public virtual ICollection<Prescription> Prescriptions { get; set; } = new List<Prescription>();
     }
 
     public class Prescription
@@ -531,12 +587,12 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(50)]
-        public string PrescriptionNumber { get; set; }
+        public string PrescriptionNumber { get; set; } = string.Empty;
 
         public int PatientId { get; set; }
 
         [StringLength(200)]
-        public string DoctorName { get; set; }
+        public string DoctorName { get; set; } = string.Empty;
 
         [StringLength(100)]
         public string? DoctorRegistrationNumber { get; set; }
@@ -583,8 +639,8 @@ namespace UmiHealthPOS.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties
-        public virtual Patient Patient { get; set; }
-        public virtual ICollection<PrescriptionItem> PrescriptionItems { get; set; }
+        public virtual Patient Patient { get; set; } = null!;
+        public virtual ICollection<PrescriptionItem> PrescriptionItems { get; set; } = new List<PrescriptionItem>();
     }
 
     public class PrescriptionItem
@@ -607,18 +663,18 @@ namespace UmiHealthPOS.Models
         public string? MedicationName { get; set; }
 
         [StringLength(100)]
-        public string Dosage { get; set; }
+        public string Dosage { get; set; } = string.Empty;
 
         [StringLength(200)]
-        public string Instructions { get; set; }
+        public string Instructions { get; set; } = string.Empty;
 
         public DateTime? ExpiryDate { get; set; }
 
         public int Duration { get; set; }
 
         // Navigation properties
-        public virtual Prescription Prescription { get; set; }
-        public virtual Product Product { get; set; }
+        public virtual Prescription Prescription { get; set; } = null!;
+        public virtual Product Product { get; set; } = null!;
         public virtual InventoryItem? InventoryItem { get; set; }
     }
 
@@ -628,7 +684,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(200)]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [StringLength(500)]
         public string? Address { get; set; }
@@ -675,7 +731,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(100)]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [StringLength(500)]
         public string? Description { get; set; }
@@ -705,7 +761,7 @@ namespace UmiHealthPOS.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties
-        public virtual ICollection<Subscription> Subscriptions { get; set; }
+        public virtual ICollection<Subscription> Subscriptions { get; set; } = new List<Subscription>();
     }
 
     public class Subscription
@@ -756,13 +812,13 @@ namespace UmiHealthPOS.Models
         public string? TenantId { get; set; }
 
         [StringLength(50)]
-        public string Category { get; set; }
+        public required string Category { get; set; }
 
         [StringLength(100)]
-        public string Action { get; set; }
+        public required string Action { get; set; }
 
         [StringLength(1000)]
-        public string Description { get; set; }
+        public string Description { get; set; } = string.Empty;
 
         [StringLength(450)]
         public string? User { get; set; }
@@ -790,13 +846,13 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(450)]
-        public string UserId { get; set; }
+        public required string UserId { get; set; }
 
         [StringLength(6)]
         public string? TenantId { get; set; }
 
         [StringLength(200)]
-        public string SessionToken { get; set; }
+        public string SessionToken { get; set; } = string.Empty;
 
         public DateTime ExpiresAt { get; set; }
 
@@ -831,13 +887,13 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(100)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [StringLength(100)]
         public string? ShiftName { get; set; }
 
-        public TimeOnly StartTime { get; set; }
-        public TimeOnly EndTime { get; set; }
+        public TimeOnly StartTime { get; set; } = new TimeOnly(0, 0);
+        public TimeOnly EndTime { get; set; } = new TimeOnly(0, 0);
 
         public DateTime? ScheduledStart { get; set; }
         public DateTime? ScheduledEnd { get; set; }
@@ -855,7 +911,7 @@ namespace UmiHealthPOS.Models
 
         // Navigation properties
         public virtual Tenant? Tenant { get; set; }
-        public virtual ICollection<ShiftAssignment> Assignments { get; set; }
+        public virtual ICollection<ShiftAssignment> Assignments { get; set; } = new List<ShiftAssignment>();
     }
 
 
@@ -866,7 +922,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(50)]
-        public string InvoiceNumber { get; set; }
+        public string InvoiceNumber { get; set; } = string.Empty;
 
         [StringLength(6)]
         public string TenantId { get; set; } = string.Empty;
@@ -900,7 +956,7 @@ namespace UmiHealthPOS.Models
         // Navigation properties
         public virtual Tenant? Tenant { get; set; }
         public virtual Customer? Customer { get; set; }
-        public virtual ICollection<Payment> Payments { get; set; }
+        public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
     }
 
     public class CreditNote
@@ -909,7 +965,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(50)]
-        public string CreditNoteNumber { get; set; }
+        public string CreditNoteNumber { get; set; } = string.Empty;
 
         [StringLength(6)]
         public string TenantId { get; set; } = string.Empty;
@@ -939,7 +995,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(50)]
-        public string PaymentNumber { get; set; }
+        public string PaymentNumber { get; set; } = string.Empty;
 
         [StringLength(6)]
         public string TenantId { get; set; } = string.Empty;
@@ -974,7 +1030,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(50)]
-        public string TransactionNumber { get; set; }
+        public required string TransactionNumber { get; set; }
 
         [StringLength(6)]
         public string TenantId { get; set; } = string.Empty;
@@ -982,7 +1038,7 @@ namespace UmiHealthPOS.Models
         public int ProductId { get; set; }
 
         [StringLength(20)]
-        public string TransactionType { get; set; }
+        public required string TransactionType { get; set; }
 
         public int Quantity { get; set; }
 
@@ -1002,7 +1058,7 @@ namespace UmiHealthPOS.Models
 
         // Navigation properties
         public virtual Tenant? Tenant { get; set; }
-        public virtual Product Product { get; set; }
+        public virtual Product Product { get; set; } = null!;
     }
 
     // Pharmacy Compliance
@@ -1012,7 +1068,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(200)]
-        public string SubstanceName { get; set; }
+        public string SubstanceName { get; set; } = string.Empty;
 
         [StringLength(200)]
         public string? Name { get; set; }
@@ -1130,13 +1186,13 @@ namespace UmiHealthPOS.Models
         public string ScheduleType { get; set; }
 
         [StringLength(20)]
-        public string Frequency { get; set; }
+        public required string Frequency { get; set; }
 
         [StringLength(50)]
-        public string DateRange { get; set; }
+        public required string DateRange { get; set; }
 
         [StringLength(20)]
-        public string Format { get; set; }
+        public required string Format { get; set; }
 
         [StringLength(200)]
         public string? RecipientEmail { get; set; }
@@ -1200,8 +1256,8 @@ namespace UmiHealthPOS.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties
-        public virtual Shift Shift { get; set; }
-        public virtual UserAccount Employee { get; set; }
+        public virtual required Shift Shift { get; set; }
+        public virtual required UserAccount Employee { get; set; }
     }
 
     public class UserBranch
@@ -1218,6 +1274,14 @@ namespace UmiHealthPOS.Models
 
         public int BranchId { get; set; }
 
+        [Required]
+        [StringLength(50)]
+        public string UserRole { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(20)]
+        public string Permission { get; set; } = "read";
+
         [StringLength(20)]
         public string Status { get; set; } = "Active";
 
@@ -1228,11 +1292,8 @@ namespace UmiHealthPOS.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties
-        public virtual Tenant? Tenant { get; set; }
-        public virtual Branch Branch { get; set; }
-        public virtual UserAccount? User { get; set; }
-        public virtual Role? UserRole { get; set; }
-        public virtual Permission? Permission { get; set; }
+        public virtual required UserAccount? User { get; set; }
+        public virtual required Branch? Branch { get; set; }
     }
 
     // RBAC Entities
@@ -1318,11 +1379,9 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(450)]
-        public string UserId { get; set; }
+        public string UserId { get; set; } = string.Empty;
 
-        [StringLength(6)]
-        public string? TenantId { get; set; }
-
+        [Required]
         public int RoleId { get; set; }
 
         public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
@@ -1332,12 +1391,11 @@ namespace UmiHealthPOS.Models
 
         public bool IsActive { get; set; } = true;
 
-        public DateTime? ExpiresAt { get; set; }
+        public DateTime? LastUsedAt { get; set; }
 
         // Navigation properties
         public virtual UserAccount User { get; set; }
         public virtual Role Role { get; set; }
-        public virtual Tenant? Tenant { get; set; }
     }
 
     public class TenantRole
@@ -2043,13 +2101,13 @@ namespace UmiHealthPOS.Models
         public string TenantId { get; set; } = string.Empty;
 
         [StringLength(100)]
-        public string? FirstName { get; set; }
+        public required string FirstName { get; set; }
 
         [StringLength(100)]
         public string? LastName { get; set; }
 
         [StringLength(100)]
-        public string? Email { get; set; }
+        public required string Email { get; set; }
 
         [StringLength(20)]
         public string? Phone { get; set; }

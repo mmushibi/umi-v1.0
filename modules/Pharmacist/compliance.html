@@ -28,6 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="../../wwwroot/js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -131,7 +132,7 @@
         
         <div class="mt-8 px-4">
           <div class="border-t pt-4">
-            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full">
+            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full" title="Logout">
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
               </svg>
@@ -226,7 +227,7 @@
         
         <div class="mt-8 px-4">
           <div class="border-t pt-4">
-            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full">
+            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full" title="Logout">
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
               </svg>
@@ -373,7 +374,7 @@
                       <span x-text="area.sources.join(', '"></span>
                     </div>
                     <button @click="viewDetails(area.id)" 
-                            class="text-ocean-600 hover:text-ocean-700 font-medium text-sm flex items-center">
+                            class="text-ocean-600 hover:text-ocean-700 font-medium text-sm flex items-center" title="View compliance details">
                       View Details 
                       <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -413,7 +414,7 @@
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-semibold" x-text="areaDetails?.title || 'Compliance Details'"></h3>
               <button @click="closeDetailsModal()" 
-                      class="text-ocean-200 hover:text-white transition-colors">
+                      class="text-ocean-200 hover:text-white transition-colors" title="Close modal">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -485,11 +486,11 @@
           <!-- Modal Footer -->
           <div class="bg-gray-50 px-6 py-3 rounded-b-lg flex justify-end space-x-3">
             <button @click="closeDetailsModal()" 
-                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors" title="Close modal">
               Close
             </button>
             <button @click="generateReport()" 
-                    class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors">
+                    class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors" title="Generate compliance report">
               Generate Report
             </button>
           </div>

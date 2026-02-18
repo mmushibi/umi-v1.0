@@ -28,6 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="../../wwwroot/js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -683,6 +684,11 @@
         patients: [],
         
         init() {
+          // Initialize authentication
+          if (!window.umiAuth.initPageAuth('TenantAdmin')) {
+            return; // Will redirect if not authenticated
+          }
+          
           this.loadPatientsData();
         },
         

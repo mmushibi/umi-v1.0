@@ -28,6 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="../../wwwroot/js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -95,7 +96,7 @@
         
         <div class="mt-8 px-4">
           <div class="border-t pt-4">
-            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full">
+            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full" title="Logout">
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
               </svg>
@@ -155,7 +156,7 @@
         
         <div class="mt-8 px-4">
           <div class="border-t pt-4">
-            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full">
+            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full" title="Logout">
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
               </svg>
@@ -190,7 +191,7 @@
               <h1 class="hidden lg:block text-2xl font-semibold text-gray-900">User Management</h1>
             </div>
             <div class="flex items-center space-x-4">
-              <button @click="openAddUserModal()" class="bg-ocean-600 text-white px-4 py-2 rounded-lg hover:bg-ocean-700 flex items-center space-x-2">
+              <button @click="openAddUserModal()" class="bg-ocean-600 text-white px-4 py-2 rounded-lg hover:bg-ocean-700 flex items-center space-x-2" title="Add new user">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
                 </svg>
@@ -213,7 +214,7 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select x-model="selectedRole" @change="filterUsers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+                <select x-model="selectedRole" @change="filterUsers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Filter by user role">
                   <option value="">All Roles</option>
                   <option value="tenant-admin">Tenant Admin</option>
                   <option value="cashier">Cashier</option>
@@ -223,7 +224,7 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select x-model="selectedStatus" @change="filterUsers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+                <select x-model="selectedStatus" @change="filterUsers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Filter by user status">
                   <option value="">All Status</option>
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
@@ -232,7 +233,7 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
-                <select x-model="selectedBranch" @change="filterUsers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+                <select x-model="selectedBranch" @change="filterUsers()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Filter by branch">
                   <option value="">All Branches</option>
                   <option value="branch-1">Branch 1</option>
                   <option value="branch-2">Branch 2</option>
@@ -288,9 +289,9 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500" x-text="user.created"></td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button @click="editUser(user)" class="text-ocean-600 hover:text-ocean-900 mr-3">Edit</button>
-                      <button @click="toggleUserStatus(user)" class="text-yellow-600 hover:text-yellow-900 mr-3" x-text="user.status === 'active' ? 'Suspend' : 'Activate'"></button>
-                      <button @click="confirmDelete(user)" class="text-red-600 hover:text-red-900">Delete</button>
+                      <button @click="editUser(user)" class="text-ocean-600 hover:text-ocean-900 mr-3" title="Edit user">Edit</button>
+                      <button @click="toggleUserStatus(user)" class="text-yellow-600 hover:text-yellow-900 mr-3" x-text="user.status === 'active' ? 'Suspend' : 'Activate'" title="Toggle user status"></button>
+                      <button @click="confirmDelete(user)" class="text-red-600 hover:text-red-900" title="Delete user">Delete</button>
                     </td>
                   </tr>
                 </template>
@@ -315,8 +316,8 @@
             <p class="mt-3 text-sm text-red-600">This action cannot be undone.</p>
           </div>
           <div class="mt-6 flex justify-end space-x-3">
-            <button @click="closeDeleteModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
-            <button @click="executeDelete()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
+            <button @click="closeDeleteModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400" title="Cancel deletion">Cancel</button>
+            <button @click="executeDelete()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" title="Confirm deletion">Delete</button>
           </div>
         </div>
       </div>
@@ -330,23 +331,23 @@
           <div class="mt-4 space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Full Names</label>
-              <input type="text" x-model="userForm.fullNames" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" required>
+              <input type="text" x-model="userForm.fullNames" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Enter full names" placeholder="Enter full names" required>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input type="email" x-model="userForm.email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" required>
+              <input type="email" x-model="userForm.email" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Enter email address" placeholder="Enter email address" required>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-              <input type="tel" x-model="userForm.phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" required>
+              <input type="tel" x-model="userForm.phone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Enter phone number" placeholder="Enter phone number" required>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Address</label>
-              <textarea x-model="userForm.address" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" required></textarea>
+              <textarea x-model="userForm.address" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Enter address" placeholder="Enter address" required></textarea>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Role</label>
-              <select x-model="userForm.role" @change="onRoleChange()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" required>
+              <select x-model="userForm.role" @change="onRoleChange()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Select user role" required>
                 <option value="">Select Role</option>
                 <option value="tenant-admin">Tenant Admin</option>
                 <option value="cashier">Cashier</option>
@@ -370,7 +371,7 @@
             </div>
             <div x-show="selectedPharmacy && selectedPharmacy.branches && selectedPharmacy.branches.length > 1">
               <label class="block text-sm font-medium text-gray-700 mb-1">Branch</label>
-              <select x-model="userForm.branch" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+              <select x-model="userForm.branch" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Select branch">
                 <option value="">Select Branch</option>
                 <template x-for="branch in selectedPharmacy.branches" :key="branch.id">
                   <option :value="branch.name" x-text="branch.name"></option>
@@ -381,7 +382,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
               <div class="relative">
                 <input :type="showPassword ? 'text' : 'password'" x-model="userForm.password" placeholder="Enter password" class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" required>
-                <button type="button" @click="showPassword = !showPassword" :title="showPassword ? 'Hide password' : 'Show password'" class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                <button type="button" @click="showPassword = !showPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center" :aria-label="showPassword ? 'Hide password' : 'Show password'" :title="showPassword ? 'Hide password' : 'Show password'">
                   <svg x-show="!showPassword" class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -394,8 +395,8 @@
             </div>
           </div>
           <div class="mt-6 flex justify-end space-x-3">
-            <button @click="closeUserModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
-            <button @click="saveUser()" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">Save</button>
+            <button @click="closeUserModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400" title="Cancel">Cancel</button>
+            <button @click="saveUser()" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700" title="Save user">Save</button>
           </div>
         </div>
       </div>
@@ -682,6 +683,11 @@
         
         logout() {
           window.location.reload();
+        },
+        
+        init() {
+          // Initialize page data
+          this.loadUsers();
         }
       }
     }

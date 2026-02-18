@@ -1,6 +1,13 @@
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using UmiHealthPOS.Models.DTOs;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Net.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 
 namespace UmiHealthPOS.Services
 {
@@ -143,32 +150,35 @@ namespace UmiHealthPOS.Services
             }
         }
 
-        public async Task<string> SummarizeContentAsync(string content, string query)
+        public Task<string> SummarizeContentAsync(string content, string query)
         {
-            try
+            return Task.Run(() =>
             {
-                // Simple summarization logic - extract key sentences
-                var sentences = content.Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
-                var relevantSentences = sentences
-                    .Where(s => s.ToLower().Contains(query.ToLower()) ||
-                               s.Length > 50) // Prefer longer, more informative sentences
-                    .Take(3);
-
-                var summary = string.Join(" ", relevantSentences);
-
-                // If summary is too short, return first part of content
-                if (summary.Length < 100 && content.Length > 100)
+                try
                 {
-                    summary = content.Substring(0, Math.Min(200, content.Length)) + "...";
-                }
+                    // Simple summarization logic - extract key sentences
+                    var sentences = content.Split(new[] { '.', '!', '?' }, StringSplitOptions.RemoveEmptyEntries);
+                    var relevantSentences = sentences
+                        .Where(s => s.ToLower().Contains(query.ToLower()) ||
+                                   s.Length > 50) // Prefer longer, more informative sentences
+                        .Take(3);
 
-                return summary.Trim();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error summarizing content");
-                return content.Length > 200 ? content.Substring(0, 197) + "..." : content;
-            }
+                    var summary = string.Join(" ", relevantSentences);
+
+                    // If summary is too short, return first part of content
+                    if (summary.Length < 100 && content.Length > 100)
+                    {
+                        summary = content.Substring(0, Math.Min(200, content.Length)) + "...";
+                    }
+
+                    return summary.Trim();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error summarizing content");
+                    return content.Length > 200 ? content.Substring(0, 197) + "..." : content;
+                }
+            });
         }
 
         private string BuildEnhancedQuery(string query, string searchType)

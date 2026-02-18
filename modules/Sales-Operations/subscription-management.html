@@ -28,6 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="../../wwwroot/js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -258,7 +259,7 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Plan</label>
-                <select x-model="selectedPlan" @change="filterSubscriptions()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+                <select x-model="selectedPlan" @change="filterSubscriptions()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Filter by subscription plan">
                   <option value="">All Plans</option>
                   <option value="basic">Basic</option>
                   <option value="professional">Professional</option>
@@ -267,7 +268,7 @@
               </div>
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select x-model="selectedStatus" @change="filterSubscriptions()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+                <select x-model="selectedStatus" @change="filterSubscriptions()" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Filter by subscription status">
                   <option value="">All Status</option>
                   <option value="active">Active</option>
                   <option value="expired">Expired</option>
@@ -384,7 +385,7 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Plan</label>
-              <select x-model="subscriptionForm.plan" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+              <select x-model="subscriptionForm.plan" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Select subscription plan">
                 <option value="">Select Plan</option>
                 <template x-for="plan in subscriptionPlans" :key="plan.id">
                   <option :value="plan.id" x-text="plan.name"></option>
@@ -393,7 +394,7 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Billing Cycle</label>
-              <select x-model="subscriptionForm.billingCycle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+              <select x-model="subscriptionForm.billingCycle" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Select billing cycle">
                 <option value="monthly">Monthly</option>
                 <option value="quarterly">Quarterly</option>
                 <option value="annually">Annually</option>
@@ -401,11 +402,11 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-              <input type="date" x-model="subscriptionForm.startDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500">
+              <input type="date" x-model="subscriptionForm.startDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-ocean-500" title="Select start date" placeholder="Select start date">
             </div>
           </div>
           <div class="mt-6 flex justify-end space-x-3">
-            <button @click="closeSubscriptionModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">Cancel</button>
+            <button @click="closeSubscriptionModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400" title="Cancel subscription">Cancel</button>
             <button @click="saveSubscription()" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">Save</button>
           </div>
         </div>
@@ -420,7 +421,7 @@
             <h3 class="text-lg font-medium text-gray-900">
               <span x-text="selectedTenant?.tenant"></span> - Subscription History
             </h3>
-            <button @click="closeTenantHistoryModal()" class="text-gray-400 hover:text-gray-600">
+            <button @click="closeTenantHistoryModal()" class="text-gray-400 hover:text-gray-600" title="Close tenant history modal">
               <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
@@ -635,7 +636,7 @@
         },
         
         getMonthlyRevenue() {
-          return 'ZMK ' + this.subscriptions
+          return '💰 ' + this.subscriptions
             .filter(s => s.status === 'active')
             .reduce((total, s) => {
               const amount = parseFloat(s.amount.replace(/[^0-9.]/g, ''));
@@ -684,7 +685,7 @@
                 tenant: this.subscriptionForm.pharmacyName,
                 email: this.subscriptionForm.phoneNumber,
                 ...this.subscriptionForm,
-                amount: '$' + planAmounts[this.subscriptionForm.plan]
+                amount: '💰' + planAmounts[this.subscriptionForm.plan]
               };
             }
           } else {
@@ -694,7 +695,7 @@
               tenant: this.subscriptionForm.pharmacyName,
               email: this.subscriptionForm.phoneNumber,
               ...this.subscriptionForm,
-              amount: '$' + planAmounts[this.subscriptionForm.plan],
+              amount: '💰' + planAmounts[this.subscriptionForm.plan],
               status: 'active',
               nextBilling: this.calculateNextBilling(this.subscriptionForm.startDate, this.subscriptionForm.billingCycle)
             };
@@ -832,7 +833,7 @@
             {
               id: 2,
               description: 'Plan Upgrade Fee',
-              amount: '$100',
+              amount: '💰100',
               method: 'Mobile Money',
               date: '2024-01-15',
               status: 'success'
@@ -840,7 +841,7 @@
             {
               id: 3,
               description: 'Quarterly Subscription Fee',
-              amount: '$450',
+              amount: '💰450',
               method: 'Credit Card',
               date: '2024-02-01',
               status: 'pending'
@@ -980,6 +981,11 @@
         
         logout() {
           window.location.reload();
+        },
+        
+        init() {
+          // Initialize page data
+          this.loadSubscriptions();
         }
       }
     }

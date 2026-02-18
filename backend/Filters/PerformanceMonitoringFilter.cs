@@ -47,7 +47,7 @@ namespace UmiHealthPOS.Filters
                 var metrics = context.HttpContext.Items["PerformanceMetrics"] as List<PerformanceMetric> ?? new List<PerformanceMetric>();
                 metrics.Add(new PerformanceMetric
                 {
-                    ActionName = actionName,
+                    ActionName = actionName ?? "Unknown",
                     Path = path,
                     Duration = duration,
                     Timestamp = DateTime.UtcNow,

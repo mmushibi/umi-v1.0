@@ -210,68 +210,45 @@ namespace UmiHealthPOS.Data
                 {
                     new SubscriptionHistory
                     {
-                        SubscriptionId = subscriptions.First(s => s.Pharmacy.Name == "MediCare Pharmacy").Id,
+                        SubscriptionId = subscriptions.FirstOrDefault(s => s.Pharmacy?.Name == "MediCare Pharmacy")?.Id ?? 0,
                         Action = "created",
                         PreviousPlan = "",
                         NewPlan = "basic",
                         Amount = 1350m,
                         Notes = "New subscription created",
-                        UserId = users.First(u => u.FirstName == "John").Id.ToString(),
+                        UserId = users.FirstOrDefault(u => u.FirstName == "John")?.Id.ToString() ?? "",
                         CreatedAt = DateTime.Now.AddDays(-15)
                     },
                     new SubscriptionHistory
                     {
-                        SubscriptionId = subscriptions.First(s => s.Pharmacy.Name == "HealthPlus Group").Id,
+                        SubscriptionId = subscriptions.FirstOrDefault(s => s.Pharmacy?.Name == "HealthPlus Group")?.Id ?? 0,
                         Action = "created",
                         PreviousPlan = "",
                         NewPlan = "professional",
                         Amount = 4050m,
                         Notes = "Professional plan setup",
-                        UserId = users.First(u => u.FirstName == "John").Id.ToString(),
-                        CreatedAt = DateTime.Now.AddDays(-20)
-                    },
-                    new SubscriptionHistory
-                    {
-                        SubscriptionId = subscriptions.First(s => s.Pharmacy.Name == "City Hospital").Id,
-                        Action = "created",
-                        PreviousPlan = "",
-                        NewPlan = "enterprise",
-                        Amount = 13500m,
-                        Notes = "Enterprise subscription",
-                        UserId = users.First(u => u.FirstName == "Jane").UserId.ToString(),
-                        CreatedAt = DateTime.Now.AddDays(-10)
-                    },
-                    new SubscriptionHistory
-                    {
-                        SubscriptionId = subscriptions.First(s => s.Pharmacy.Name == "Quick Pharmacy").Id,
-                        Action = "cancelled",
-                        PreviousPlan = "basic",
-                        NewPlan = "basic",
-                        Amount = 0m,
-                        Notes = "Customer request",
-                        UserId = users.First(u => u.FirstName == "John").Id.ToString(),
                         CreatedAt = DateTime.Now.AddDays(-5)
                     },
                     new SubscriptionHistory
                     {
-                        SubscriptionId = subscriptions.First(s => s.Pharmacy.Name == "MediCare Pharmacy").Id,
+                        SubscriptionId = subscriptions.FirstOrDefault(s => s.Pharmacy?.Name == "MediCare Pharmacy")?.Id ?? 0,
                         Action = "upgraded",
                         PreviousPlan = "basic",
                         NewPlan = "professional",
                         Amount = 4050m,
                         Notes = "Upgraded from Basic",
-                        UserId = users.First(u => u.FirstName == "Jane").UserId.ToString(),
+                        UserId = users.FirstOrDefault(u => u.FirstName == "Jane")?.UserId.ToString() ?? "",
                         CreatedAt = DateTime.Now.AddDays(-12)
                     },
                     new SubscriptionHistory
                     {
-                        SubscriptionId = subscriptions.First(s => s.Pharmacy.Name == "HealthPlus Group").Id,
+                        SubscriptionId = subscriptions.FirstOrDefault(s => s.Pharmacy?.Name == "HealthPlus Group")?.Id ?? 0,
                         Action = "renewed",
                         PreviousPlan = "professional",
                         NewPlan = "professional",
                         Amount = 4050m,
                         Notes = "Monthly renewal",
-                        UserId = users.First(u => u.FirstName == "John").Id.ToString(),
+                        UserId = users.FirstOrDefault(u => u.FirstName == "John")?.Id.ToString() ?? "",
                         CreatedAt = DateTime.Now.AddDays(-18)
                     }
                 };

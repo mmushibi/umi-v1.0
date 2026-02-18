@@ -120,6 +120,7 @@
                 type="button" 
                 @click="showPassword = !showPassword"
                 class="absolute inset-y-0 right-0 pr-3 flex items-center"
+                :title="showPassword ? 'Hide password' : 'Show password'"
                 :aria-label="showPassword ? 'Hide password' : 'Show password'"
               >
                 <svg x-show="!showPassword" class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -213,6 +214,7 @@
     </div>
   </div>
 
+  <script src="../../wwwroot/js/auth.js"></script>
   <script>
     function superAdminLogin() {
       return {
@@ -227,60 +229,89 @@
         error: '',
         success: false,
 
-        handleLogin() {
+        async handleLogin() {
           this.loading = true;
           this.error = '';
           this.success = false;
 
-          // Simulate authentication process
-          setTimeout(() => {
-            // Demo credentials check (in production, this would be a real API call)
-            if (this.credentials.email === 'admin@umihealth.com' && 
-                this.credentials.password === 'Admin123!' && 
-                this.credentials.totp === '123456') {
-              
-              // Verify this is a Super Admin only portal
-              const userRole = 'superadmin'; // In production, this would come from the API response
-              
-              if (userRole !== 'superadmin') {
-                this.error = 'This portal is restricted to Super Administrators only. Regular users should use the standard login page.';
-                this.loading = false;
-                return;
-              }
-              
-              this.success = true;
-              
-              // Store Super Admin session
-              if (this.credentials.remember) {
-                localStorage.setItem('super-admin-session', 'true');
-                localStorage.setItem('umihealthUserRole', 'superadmin');
-                sessionStorage.setItem('umihealthUserRole', 'superadmin');
-              }
-              
-              // Redirect to dashboard after success
-              setTimeout(() => {
-                window.location.href = './dashboard.html';
-              }, 2000);
-            } else {
-              this.error = 'Invalid Super Admin credentials. Please check your email, password, and 2FA code.';
+          try {
+            // Call the Super Admin specific login endpoint
+            const response = await fetch(`${window.umiAuth.apiBase}/api/auth/superadmin-login`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                email: this.credentials.email,
+                password: this.credentials.password,
+                totpCode: this.credentials.totp,
+                remember: this.credentials.remember
+              })
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}));
+              throw new Error(errorData.message || 'Super Admin authentication failed');
             }
+
+            const data = await response.json();
+            
+            // Verify this is a Super Admin only portal
+            if (data.user.role !== 'SuperAdmin') {
+              throw new Error('This portal is restricted to Super Administrators only. Regular users should use the standard login page.');
+            }
+            
+            // Store tokens using the auth service
+            window.umiAuth.storeTokens(data.accessToken, data.refreshToken, this.credentials.remember);
+            
+            // Store user session with role information
+            const userSession = {
+              userId: data.user.userId,
+              email: data.user.email,
+              name: data.user.name,
+              role: data.user.role,
+              tenantId: data.user.tenantId,
+              tenantName: data.user.tenantName,
+              permissions: data.user.permissions || [],
+              isImpersonated: data.isImpersonated || false,
+              originalUser: data.originalUser || null
+            };
+            
+            const sessionKey = this.credentials.remember ? localStorage : sessionStorage;
+            sessionKey.setItem(window.umiAuth.sessionKey, JSON.stringify(userSession));
+            
+            // Store additional user info
+            localStorage.setItem('umihealthUserId', data.user.userId);
+            localStorage.setItem('umihealthEmail', data.user.email);
+            localStorage.setItem('umihealthUserName', data.user.name);
+            localStorage.setItem('umihealthUserRole', data.user.role);
+            
+            this.success = true;
+            
+            // Redirect to Super Admin dashboard after success
+            setTimeout(() => {
+              window.location.href = './home.html';
+            }, 1500);
+            
+          } catch (error) {
+            console.error('Super Admin login error:', error);
+            this.error = error.message || 'Super Admin authentication failed. Please check your credentials and try again.';
+          } finally {
             this.loading = false;
-          }, 1500);
+          }
         },
 
         init() {
-          // Check if user is already logged in as Super Admin
-          const adminSession = localStorage.getItem('super-admin-session');
-          const userRole = localStorage.getItem('umihealthUserRole') || sessionStorage.getItem('umihealthUserRole');
-          
-          if (adminSession === 'true' && userRole === 'superadmin') {
-            window.location.href = './dashboard.html';
-          } else if (adminSession === 'true' && userRole !== 'superadmin') {
-            // Clear invalid session and show error
-            localStorage.removeItem('super-admin-session');
-            localStorage.removeItem('umihealthUserRole');
-            sessionStorage.removeItem('umihealthUserRole');
-            this.error = 'Access denied. This portal is restricted to Super Administrators only.';
+          // Check if user is already authenticated as Super Admin
+          if (window.umiAuth.isAuthenticated()) {
+            const userRole = window.umiAuth.getUserRole();
+            if (userRole === 'SuperAdmin') {
+              window.location.href = './home.html';
+            } else {
+              // Clear invalid session and show error
+              window.umiAuth.clearSession();
+              this.error = 'Access denied. This portal is restricted to Super Administrators only.';
+            }
           }
         }
       }

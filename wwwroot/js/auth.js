@@ -67,6 +67,50 @@ class UmiAuth {
         return session?.role || sessionStorage.getItem('userRole');
     }
 
+    // Get user hierarchy level
+    getUserRoleLevel() {
+        const role = this.getUserRole();
+        const roleHierarchy = {
+            'SuperAdmin': 5,
+            'Operations': 4,
+            'TenantAdmin': 3,
+            'Pharmacist': 2,
+            'Cashier': 1
+        };
+        return roleHierarchy[role] || 0;
+    }
+
+    // Check if user can manage specified role
+    canManageRole(targetRole) {
+        const userLevel = this.getUserRoleLevel();
+        const targetLevel = this.getRoleLevel(targetRole);
+        return userLevel > targetLevel;
+    }
+
+    // Get role level for specific role
+    getRoleLevel(role) {
+        const roleHierarchy = {
+            'SuperAdmin': 5,
+            'Operations': 4,
+            'TenantAdmin': 3,
+            'Pharmacist': 2,
+            'Cashier': 1
+        };
+        return roleHierarchy[role] || 0;
+    }
+
+    // Check if user is being impersonated
+    isImpersonated() {
+        const session = this.getSession();
+        return session?.isImpersonated === true || sessionStorage.getItem('isImpersonated') === 'true';
+    }
+
+    // Get original user info (for impersonation)
+    getOriginalUserInfo() {
+        const session = this.getSession();
+        return session?.originalUser || null;
+    }
+
     // Get user permissions
     getUserPermissions() {
         const session = this.getSession();
@@ -246,6 +290,120 @@ class UmiAuth {
         const loginUrl = '../auth/signin.html';
         
         // Store the intended destination for redirect after login
+        sessionStorage.setItem('umihealth_redirect_after_login', currentPath);
+        
+        window.location.href = loginUrl;
+    }
+
+    // Redirect to appropriate dashboard based on role
+    redirectToDashboard(role, redirectPath = null) {
+        const rolePaths = {
+            'SuperAdmin': '../Super-Admin/home.html',
+            'Operations': '../Sales-Operations/home.html',
+            'TenantAdmin': '../Tenant-Admin/home.html',
+            'Pharmacist': '../Pharmacist/home.html',
+            'Cashier': '../Cashier/home.html'
+        };
+        
+        // Store user role for dashboard verification
+        if (role) {
+            localStorage.setItem('umihealthUserRole', role);
+            sessionStorage.setItem('umihealthUserRole', role);
+        }
+        
+        // Use provided redirect path or role-based default
+        const targetPath = redirectPath || rolePaths[role];
+        
+        if (targetPath) {
+            window.location.href = targetPath;
+        } else {
+            // Fallback to tenant admin if role not recognized
+            window.location.href = '../Tenant-Admin/home.html';
+        }
+    }
+
+    // Enhanced login method with role-based redirection
+    async login(email, password, remember = true) {
+        try {
+            this.loading = true;
+            this.error = '';
+            this.success = '';
+
+            const response = await fetch(`${this.apiBase}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password, remember })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || 'Login failed');
+            }
+
+            const data = await response.json();
+            
+            // Store tokens
+            this.storeTokens(data.accessToken, data.refreshToken, remember);
+            
+            // Store user session with role information
+            const userSession = {
+                userId: data.user.userId,
+                email: data.user.email,
+                name: data.user.name,
+                role: data.user.role,
+                tenantId: data.user.tenantId,
+                tenantName: data.user.tenantName,
+                permissions: data.user.permissions || [],
+                isImpersonated: data.isImpersonated || false,
+                originalUser: data.originalUser || null
+            };
+            
+            const sessionKey = remember ? localStorage : sessionStorage;
+            sessionKey.setItem(this.sessionKey, JSON.stringify(userSession));
+            
+            // Store additional user info in localStorage for easy access
+            localStorage.setItem('umihealthUserId', data.user.userId);
+            localStorage.setItem('umihealthEmail', data.user.email);
+            localStorage.setItem('umihealthUserName', data.user.name);
+            localStorage.setItem('umihealthTenantId', data.user.tenantId);
+            localStorage.setItem('umihealthTenantName', data.user.tenantName);
+            
+            // Redirect to appropriate dashboard
+            this.redirectToDashboard(data.user.role);
+            
+            return data;
+        } catch (error) {
+            console.error('Login error:', error);
+            this.error = error.message || 'Login failed. Please try again.';
+            throw error;
+        } finally {
+            this.loading = false;
+        }
+    }
+
+    // Check if current user can access specific role-based page
+    canAccessPage(requiredRole) {
+        const userRole = this.getUserRole();
+        const userLevel = this.getUserRoleLevel();
+        const requiredLevel = this.getRoleLevel(requiredRole);
+        
+        // Super Admin can access everything
+        if (userRole === 'SuperAdmin') {
+            return true;
+        }
+        
+        // Check if user has sufficient level
+        return userLevel >= requiredLevel;
+    }
+
+    // Redirect to login page
+    redirectToLogin() {
+        const currentPath = window.location.pathname;
+        const loginUrl = '../auth/signin.html';
+        
+        // Store intended destination for redirect after login
         sessionStorage.setItem('umihealth_redirect_after_login', currentPath);
         
         window.location.href = loginUrl;

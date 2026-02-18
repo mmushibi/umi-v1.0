@@ -1,6 +1,13 @@
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using UmiHealthPOS.Models.DTOs;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Net.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 
 namespace UmiHealthPOS.Services
 {
@@ -139,54 +146,60 @@ namespace UmiHealthPOS.Services
             }
         }
 
-        private async Task<AIResponseDto> GenerateAIResponse(AIRequestDto request, List<SearchResultDto> searchResults)
+        private Task<AIResponseDto> GenerateAIResponse(AIRequestDto request, List<SearchResultDto> searchResults)
         {
-            var startTime = DateTime.UtcNow;
-
-            // Build context from search results
-            var context = string.Join("\n", searchResults.Select(r => $"{r.Title}: {r.Summary}"));
-
-            // Generate response based on query type
-            var response = request.Query.ToLower() switch
+            return Task.Run(() =>
             {
-                var q when q.Contains("drug") || q.Contains("medication") => GenerateDrugResponse(request.Query, context),
-                var q when q.Contains("interaction") => GenerateInteractionResponse(request.Query, context),
-                var q when q.Contains("guideline") || q.Contains("protocol") => GenerateGuidelineResponse(request.Query, context),
-                var q when q.Contains("symptom") => GenerateSymptomResponse(request.Query, context),
-                _ => GenerateGeneralMedicalResponse(request.Query, context)
-            };
+                var startTime = DateTime.UtcNow;
 
-            return new AIResponseDto
-            {
-                Response = response,
-                Sources = new List<SourceInfoDto>(),
-                Confidence = CalculateConfidence(searchResults),
-                ResponseTime = DateTime.UtcNow - startTime,
-                IsMedicalAdvice = ContainsMedicalAdvice(request.Query)
-            };
+                // Build context from search results
+                var context = string.Join("\n", searchResults.Select(r => $"{r.Title}: {r.Summary}"));
+
+                // Generate response based on query type
+                var response = request.Query.ToLower() switch
+                {
+                    var q when q.Contains("drug") || q.Contains("medication") => GenerateDrugResponse(request.Query, context),
+                    var q when q.Contains("interaction") => GenerateInteractionResponse(request.Query, context),
+                    var q when q.Contains("guideline") || q.Contains("protocol") => GenerateGuidelineResponse(request.Query, context),
+                    var q when q.Contains("symptom") => GenerateSymptomResponse(request.Query, context),
+                    _ => GenerateGeneralMedicalResponse(request.Query, context)
+                };
+
+                return new AIResponseDto
+                {
+                    Response = response,
+                    Sources = new List<SourceInfoDto>(),
+                    Confidence = CalculateConfidence(searchResults),
+                    ResponseTime = DateTime.UtcNow - startTime,
+                    IsMedicalAdvice = ContainsMedicalAdvice(request.Query)
+                };
+            });
         }
 
-        private async Task<AIResponseDto> GenerateAIResponseWithContext(AIRequestDto request, List<AIMessageDto> conversationHistory, List<SearchResultDto> searchResults)
+        private Task<AIResponseDto> GenerateAIResponseWithContext(AIRequestDto request, List<AIMessageDto> conversationHistory, List<SearchResultDto> searchResults)
         {
-            var startTime = DateTime.UtcNow;
-
-            // Build conversation context
-            var conversationContext = string.Join("\n", conversationHistory.Select(m => $"{m.Role}: {m.Content}"));
-
-            // Build search context
-            var searchContext = string.Join("\n", searchResults.Select(r => $"{r.Title}: {r.Summary}"));
-
-            // Generate contextual response
-            var response = GenerateContextualResponse(request.Query, conversationContext, searchContext);
-
-            return new AIResponseDto
+            return Task.Run(() =>
             {
-                Response = response,
-                Sources = new List<SourceInfoDto>(),
-                Confidence = CalculateConfidence(searchResults) * 0.9, // Slightly lower confidence for contextual responses
-                ResponseTime = DateTime.UtcNow - startTime,
-                IsMedicalAdvice = ContainsMedicalAdvice(request.Query)
-            };
+                var startTime = DateTime.UtcNow;
+
+                // Build conversation context
+                var conversationContext = string.Join("\n", conversationHistory.Select(m => $"{m.Role}: {m.Content}"));
+
+                // Build search context
+                var searchContext = string.Join("\n", searchResults.Select(r => $"{r.Title}: {r.Summary}"));
+
+                // Generate contextual response
+                var response = GenerateContextualResponse(request.Query, conversationContext, searchContext);
+
+                return new AIResponseDto
+                {
+                    Response = response,
+                    Sources = new List<SourceInfoDto>(),
+                    Confidence = CalculateConfidence(searchResults) * 0.9, // Slightly lower confidence for contextual responses
+                    ResponseTime = DateTime.UtcNow - startTime,
+                    IsMedicalAdvice = ContainsMedicalAdvice(request.Query)
+                };
+            });
         }
 
         private string GenerateDrugResponse(string query, string context)

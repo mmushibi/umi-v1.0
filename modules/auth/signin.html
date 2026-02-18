@@ -154,34 +154,24 @@
             this.error = '';
           }
         },
-        redirectToDashboard(role) {
-          const rolePaths = {
-            'admin': '../Tenant-Admin/home.html',
-            'pharmacist': '../Pharmacist/home.html',
-            'cashier': '../Cashier/home.html',
-            'operations': '../Sales-Operations/home.html'
-          };
-          
-          // Block Super Admin access through regular signin
-          if (role === 'superadmin') {
-            this.error = 'Super Admin must use the dedicated admin portal for authentication.';
+        async submit() {
+          this.loading = true;
+          this.error = '';
+          this.success = '';
+
+          try {
+            // Use the enhanced login method from auth.js
+            await window.umiAuth.login(this.form.email, this.form.password, this.remember);
+            
+            // Success message (though user will be redirected)
+            this.success = 'Login successful! Redirecting...';
+            
+          } catch (error) {
+            this.error = error.message || 'Login failed. Please try again.';
+          } finally {
             this.loading = false;
-            return;
           }
-          
-          // Store user role for dashboard verification
-          if (role) {
-            localStorage.setItem('umihealthUserRole', role);
-            sessionStorage.setItem('umihealthUserRole', role);
-          }
-          
-          if (rolePaths[role]) {
-            window.location.href = rolePaths[role];
-          } else {
-            // Fallback to tenant admin if role not recognized
-            window.location.href = '../Tenant-Admin/home.html';
-          }
-        }
+        },
       }
     }
   </script>

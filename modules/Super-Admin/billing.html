@@ -25,6 +25,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="../../wwwroot/js/auth.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -598,13 +599,13 @@
     <div class="bg-white rounded-lg max-w-5xl w-full p-6 max-h-[90vh] overflow-y-auto" @click.away="showTenantHistoryModal = false">
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center space-x-3">
-          <img :src="selectedTenant?.avatar" :alt="selectedTenant?.name" :title="selectedTenant?.name" class="w-12 h-12 rounded-full">
+          <img :src="selectedTenant?.avatar" :alt="selectedTenant?.name" :title="selectedTenant?.name" class="w-12 h-12 rounded-full" :aria-label="selectedTenant?.name">
           <div>
             <h3 class="text-xl font-semibold text-gray-900" x-text="selectedTenant?.name"></h3>
             <p class="text-sm text-gray-500" x-text="`${selectedTenant?.plan} Plan • Tenant ID: ${selectedTenant?.id}`"></p>
           </div>
         </div>
-        <button @click="showTenantHistoryModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal">
+        <button @click="showTenantHistoryModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal" aria-label="Close modal">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
           </svg>

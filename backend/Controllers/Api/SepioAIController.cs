@@ -25,6 +25,7 @@ namespace UmiHealthPOS.Controllers.Api
         [HttpPost("ask")]
         public async Task<ActionResult<object>> AskSepioAI([FromBody] AIRequestDto request)
         {
+            await Task.Delay(0);
             try
             {
                 if (string.IsNullOrWhiteSpace(request.Query))
@@ -69,6 +70,7 @@ namespace UmiHealthPOS.Controllers.Api
         [HttpPost("suggestions")]
         public async Task<ActionResult<List<string>>> GetAISuggestions([FromBody] AIRequestDto request)
         {
+            await Task.Delay(0);
             try
             {
                 if (string.IsNullOrWhiteSpace(request.Query))

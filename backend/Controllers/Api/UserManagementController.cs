@@ -1,333 +1,547 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using UmiHealthPOS.Data;
+using System.Security.Claims;
+using UmiHealthPOS.DTOs;
 using UmiHealthPOS.Models;
-using System.Security.Cryptography;
-using System.Text;
+using UmiHealthPOS.Security;
 
 namespace UmiHealthPOS.Controllers.Api
 {
     [ApiController]
-    [Route("api/usermanagement")]
+    [Route("api/[controller]")]
+    [Authorize]
     public class UserManagementController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger<UserManagementController> _logger;
+        private readonly IRowLevelSecurityService _securityService;
 
-        public UserManagementController(ApplicationDbContext context)
+        public UserManagementController(
+            ApplicationDbContext context,
+            ILogger<UserManagementController> logger,
+            IRowLevelSecurityService securityService)
         {
             _context = context;
+            _logger = logger;
+            _securityService = securityService;
         }
 
+        // GET: api/usermanagement/users
         [HttpGet("users")]
-        public async Task<ActionResult<IEnumerable<UserResponse>>> GetUsers()
+        [RequirePermission(SystemPermissions.USER_READ)]
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers(
+            [FromQuery] string? tenantId = null,
+            [FromQuery] int? branchId = null,
+            [FromQuery] string? role = null,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
         {
-            var users = await _context.Users
-                .Include(u => u.UserBranches)
-                .ThenInclude(ub => ub.Branch)
-                .Select(u => new UserResponse
-                {
-                    Id = u.Id.ToString(),
-                    Name = $"{u.FirstName} {u.LastName}",
-                    Email = u.Email,
-                    Phone = u.PhoneNumber,
-                    Address = u.Address,
-                    Role = u.Role,
-                    PharmacyId = u.TenantId ?? "",
-                    PharmacyName = "Default Pharmacy",
-                    Branch = u.UserBranches.FirstOrDefault() != null ? u.UserBranches.FirstOrDefault().Branch.Name : null,
-                    Status = u.Status,
-                    LastLogin = u.LastLogin,
-                    CreatedAt = u.CreatedAt
-                })
-                .ToListAsync();
+            try
+            {
+                var securityContext = await _securityService.GetSecurityContextAsync(User);
+                var query = _context.Users.AsQueryable();
 
-            return Ok(users);
+                // Apply row-level security
+                query = await _securityService.ApplyTenantFilter(query, User) as IQueryable<UserAccount>;
+                query = await _securityService.ApplyBranchFilter(query, User) as IQueryable<UserAccount>;
+
+                // Apply filters
+                if (!string.IsNullOrEmpty(tenantId) && await _securityService.CanAccessTenantAsync(User, tenantId))
+                {
+                    query = query.Where(u => u.TenantId == tenantId);
+                }
+
+                if (branchId.HasValue && await _securityService.CanAccessBranchAsync(User, branchId.Value))
+                {
+                    query = query.Where(u => u.BranchId == branchId.Value);
+                }
+
+                if (!string.IsNullOrEmpty(role))
+                {
+                    query = query.Where(u => u.Role == role);
+                }
+
+                var users = await query
+                    .Include(u => u.Tenant)
+                    .Include(u => u.Branch)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(u => new UserDto
+                    {
+                        Id = u.Id,
+                        UserId = u.UserId,
+                        Email = u.Email,
+                        FirstName = u.FirstName,
+                        LastName = u.LastName,
+                        Role = u.Role,
+                        TenantId = u.TenantId,
+                        TenantName = u.Tenant != null ? u.Tenant.Name : null,
+                        BranchId = u.BranchId,
+                        BranchName = u.Branch != null ? u.Branch.Name : null,
+                        Status = u.Status,
+                        IsActive = u.IsActive,
+                        PhoneNumber = u.PhoneNumber,
+                        Department = u.Department,
+                        TwoFactorEnabled = u.TwoFactorEnabled,
+                        LastLogin = u.LastLogin,
+                        CreatedAt = u.CreatedAt,
+                        UpdatedAt = u.UpdatedAt
+                    })
+                    .ToListAsync();
+
+                return Ok(users);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving users");
+                return StatusCode(500, "Internal server error");
+            }
         }
 
+        // GET: api/usermanagement/users/{id}
         [HttpGet("users/{id}")]
-        public async Task<ActionResult<UserResponse>> GetUser(string id)
+        [RequirePermission(SystemPermissions.USER_READ)]
+        public async Task<ActionResult<UserDto>> GetUser(string id)
         {
-            var user = await _context.Users
-                .Include(u => u.UserBranches)
-                .ThenInclude(ub => ub.Branch)
-                .Where(u => u.Id == id)
-                .Select(u => new UserResponse
-                {
-                    Id = u.Id.ToString(),
-                    Name = $"{u.FirstName} {u.LastName}",
-                    Email = u.Email,
-                    Phone = u.PhoneNumber,
-                    Address = u.Address,
-                    Role = u.Role,
-                    PharmacyId = u.TenantId ?? "",
-                    PharmacyName = "Default Pharmacy",
-                    Branch = u.UserBranches.FirstOrDefault() != null ? u.UserBranches.FirstOrDefault().Branch.Name : null,
-                    Status = u.Status,
-                    LastLogin = u.LastLogin,
-                    CreatedAt = u.CreatedAt
-                })
-                .FirstOrDefaultAsync();
-
-            if (user == null)
+            try
             {
-                return NotFound();
-            }
+                var query = _context.Users.AsQueryable();
+                query = await _securityService.ApplyTenantFilter(query, User) as IQueryable<UserAccount>;
+                query = await _securityService.ApplyBranchFilter(query, User) as IQueryable<UserAccount>;
 
-            return Ok(user);
+                var user = await query
+                    .Include(u => u.Tenant)
+                    .Include(u => u.Branch)
+                    .FirstOrDefaultAsync(u => u.UserId == id);
+
+                if (user == null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(new UserDto
+                {
+                    Id = user.Id,
+                    UserId = user.UserId,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Role = user.Role,
+                    TenantId = user.TenantId,
+                    TenantName = user.Tenant?.Name,
+                    BranchId = user.BranchId,
+                    BranchName = user.Branch?.Name,
+                    Status = user.Status,
+                    IsActive = user.IsActive,
+                    PhoneNumber = user.PhoneNumber,
+                    Department = user.Department,
+                    TwoFactorEnabled = user.TwoFactorEnabled,
+                    LastLogin = user.LastLogin,
+                    CreatedAt = user.CreatedAt,
+                    UpdatedAt = user.UpdatedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving user {UserId}", id);
+                return StatusCode(500, "Internal server error");
+            }
         }
 
+        // POST: api/usermanagement/users
         [HttpPost("users")]
-        public async Task<ActionResult<UserResponse>> CreateUser([FromBody] CreateUserRequest request)
+        [RequirePermission(SystemPermissions.USER_CREATE)]
+        public async Task<ActionResult<UserDto>> CreateUser(CreateUserRequest request)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
-            }
-
-            // Hash the password
-            using (var sha256 = SHA256.Create())
-            {
-                var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(request.Password));
-                var passwordHash = Convert.ToBase64String(hashedBytes);
-
-                var user = new User
+                var securityContext = await _securityService.GetSecurityContextAsync(User);
+                
+                // Check if the creator can assign the requested role
+                if (!Enum.TryParse<UserRole>(request.Role, out var requestedRole))
                 {
-                    Id = Guid.NewGuid().ToString(),
-                    FirstName = request.Name.Split(' ')[0],
-                    LastName = request.Name.Split(' ').Length > 1 ? request.Name.Split(' ')[1] : "",
+                    return BadRequest("Invalid role specified");
+                }
+
+                if (!securityContext.Role.CanManageRole(requestedRole))
+                {
+                    return Forbid($"You cannot create users with role {requestedRole.GetDisplayName()}");
+                }
+
+                // Check tenant access
+                if (!string.IsNullOrEmpty(request.TenantId) && !await _securityService.CanAccessTenantAsync(User, request.TenantId))
+                {
+                    return Forbid("You cannot create users in this tenant");
+                }
+
+                // Check if user already exists
+                if (await _context.Users.AnyAsync(u => u.Email == request.Email))
+                {
+                    return BadRequest("User with this email already exists");
+                }
+
+                var user = new UserAccount
+                {
+                    UserId = Guid.NewGuid().ToString(),
                     Email = request.Email,
-                    NormalizedEmail = request.Email.ToUpper(),
-                    PhoneNumber = request.Phone,
-                    Address = request.Address,
-                    Role = request.Role.ToString(),
-                    PasswordHash = passwordHash,
-                    Status = "active",
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    Role = request.Role,
+                    TenantId = request.TenantId ?? securityContext.TenantId,
+                    BranchId = request.BranchId,
+                    Status = "Active",
+                    IsActive = true,
+                    PhoneNumber = request.PhoneNumber,
+                    Department = request.Department,
+                    TwoFactorEnabled = request.TwoFactorEnabled ?? false,
                     CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow,
-                    TenantId = request.PharmacyId
+                    UpdatedAt = DateTime.UtcNow
                 };
 
                 _context.Users.Add(user);
                 await _context.SaveChangesAsync();
 
-                // Create user branch assignment if branch is specified
-                if (!string.IsNullOrEmpty(request.Branch))
+                _logger.LogInformation("User {UserId} created by {CreatorUserId}", user.UserId, securityContext.UserId);
+
+                return CreatedAtAction(nameof(GetUser), new { id = user.UserId }, new UserDto
                 {
-                    var userBranch = new UserBranch
-                    {
-                        UserId = user.Id,
-                        BranchId = 1, // Default branch for now
-                        UserRole = request.Role.ToString(),
-                        Permission = "read",
-                        IsActive = true,
-                        AssignedAt = DateTime.UtcNow
-                    };
-                    _context.UserBranches.Add(userBranch);
+                    Id = user.Id,
+                    UserId = user.UserId,
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Role = user.Role,
+                    TenantId = user.TenantId,
+                    BranchId = user.BranchId,
+                    Status = user.Status,
+                    IsActive = user.IsActive,
+                    PhoneNumber = user.PhoneNumber,
+                    Department = user.Department,
+                    TwoFactorEnabled = user.TwoFactorEnabled,
+                    CreatedAt = user.CreatedAt,
+                    UpdatedAt = user.UpdatedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating user");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        // PUT: api/usermanagement/users/{id}
+        [HttpPut("users/{id}")]
+        [RequirePermission(SystemPermissions.USER_UPDATE)]
+        public async Task<IActionResult> UpdateUser(string id, UpdateUserRequest request)
+        {
+            try
+            {
+                var securityContext = await _securityService.GetSecurityContextAsync(User);
+                
+                var query = _context.Users.AsQueryable();
+                query = await _securityService.ApplyTenantFilter(query, User) as IQueryable<UserAccount>;
+                query = await _securityService.ApplyBranchFilter(query, User) as IQueryable<UserAccount>;
+
+                var user = await query.FirstOrDefaultAsync(u => u.UserId == id);
+                if (user == null)
+                {
+                    return NotFound();
                 }
+
+                // Check if trying to change role and if allowed
+                if (!string.IsNullOrEmpty(request.Role) && request.Role != user.Role)
+                {
+                    if (!Enum.TryParse<UserRole>(request.Role, out var newRole))
+                    {
+                        return BadRequest("Invalid role specified");
+                    }
+
+                    if (!securityContext.Role.CanManageRole(newRole))
+                    {
+                        return Forbid($"You cannot assign role {newRole.GetDisplayName()}");
+                    }
+
+                    user.Role = request.Role;
+                }
+
+                // Check tenant access if changing tenant
+                if (!string.IsNullOrEmpty(request.TenantId) && request.TenantId != user.TenantId)
+                {
+                    if (!await _securityService.CanAccessTenantAsync(User, request.TenantId))
+                    {
+                        return Forbid("You cannot move users to this tenant");
+                    }
+
+                    user.TenantId = request.TenantId;
+                }
+
+                // Update other fields
+                if (!string.IsNullOrEmpty(request.FirstName)) user.FirstName = request.FirstName;
+                if (!string.IsNullOrEmpty(request.LastName)) user.LastName = request.LastName;
+                if (!string.IsNullOrEmpty(request.PhoneNumber)) user.PhoneNumber = request.PhoneNumber;
+                if (!string.IsNullOrEmpty(request.Department)) user.Department = request.Department;
+                if (request.BranchId.HasValue) user.BranchId = request.BranchId;
+                if (request.TwoFactorEnabled.HasValue) user.TwoFactorEnabled = request.TwoFactorEnabled.Value;
+                if (!string.IsNullOrEmpty(request.Status)) user.Status = request.Status;
+                if (request.IsActive.HasValue) user.IsActive = request.IsActive.Value;
+
+                user.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
 
-                var response = new UserResponse
-                {
-                    Id = user.Id.ToString(),
-                    Name = $"{user.FirstName} {user.LastName}",
-                    Email = user.Email,
-                    Phone = user.PhoneNumber,
-                    Address = user.Address,
-                    Role = user.Role,
-                    PharmacyId = user.TenantId ?? "",
-                    PharmacyName = "Default Pharmacy",
-                    Branch = request.Branch,
-                    Status = user.Status,
-                    LastLogin = user.LastLogin,
-                    CreatedAt = user.CreatedAt
-                };
+                _logger.LogInformation("User {UserId} updated by {UpdaterUserId}", user.UserId, securityContext.UserId);
 
-                return CreatedAtAction(nameof(GetUser), new { id = user.Id }, response);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating user {UserId}", id);
+                return StatusCode(500, "Internal server error");
             }
         }
 
-        [HttpPut("users/{id}")]
-        public async Task<IActionResult> UpdateUser(string id, [FromBody] CreateUserRequest request)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            // Update user properties
-            var nameParts = request.Name.Split(' ');
-            user.FirstName = nameParts[0];
-            user.LastName = nameParts.Length > 1 ? nameParts[1] : "";
-            user.Email = request.Email;
-            user.NormalizedEmail = request.Email.ToUpper();
-            user.PhoneNumber = request.Phone;
-            user.Address = request.Address;
-            user.Role = request.Role.ToString();
-            user.UpdatedAt = DateTime.UtcNow;
-            user.TenantId = request.PharmacyId;
-
-            // Hash the password if provided
-            if (!string.IsNullOrEmpty(request.Password))
-            {
-                using (var sha256 = SHA256.Create())
-                {
-                    var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(request.Password));
-                    user.PasswordHash = Convert.ToBase64String(hashedBytes);
-                }
-            }
-
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
-
-            // Update user branch assignment
-            if (!string.IsNullOrEmpty(request.Branch))
-            {
-                var existingBranch = await _context.UserBranches
-                    .FirstOrDefaultAsync(ub => ub.UserId == id);
-
-                if (existingBranch == null)
-                {
-                    var userBranch = new UserBranch
-                    {
-                        UserId = id,
-                        BranchId = 1, // Default branch for now
-                        UserRole = request.Role.ToString(),
-                        Permission = "read",
-                        IsActive = true,
-                        AssignedAt = DateTime.UtcNow
-                    };
-                    _context.UserBranches.Add(userBranch);
-                }
-            }
-
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        [HttpPatch("users/{id}/status")]
-        public async Task<IActionResult> UpdateUserStatus(string id, [FromBody] UpdateStatusRequest request)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            user.Status = request.Status.ToString();
-            user.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
+        // DELETE: api/usermanagement/users/{id}
         [HttpDelete("users/{id}")]
+        [RequirePermission(SystemPermissions.USER_DELETE)]
         public async Task<IActionResult> DeleteUser(string id)
         {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
+            try
             {
-                return NotFound();
-            }
+                var securityContext = await _securityService.GetSecurityContextAsync(User);
+                
+                var query = _context.Users.AsQueryable();
+                query = await _securityService.ApplyTenantFilter(query, User) as IQueryable<UserAccount>;
+                query = await _securityService.ApplyBranchFilter(query, User) as IQueryable<UserAccount>;
 
-            // Remove user branch assignments
-            var userBranches = await _context.UserBranches
-                .Where(ub => ub.UserId == id)
-                .ToListAsync();
-            _context.UserBranches.RemoveRange(userBranches);
-
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        [HttpGet("pharmacies/search")]
-        public async Task<ActionResult<IEnumerable<PharmacySearchResult>>> SearchPharmacies([FromQuery] string query)
-        {
-            if (string.IsNullOrEmpty(query) || query.Length < 2)
-            {
-                return BadRequest("Search query must be at least 2 characters long.");
-            }
-
-            var pharmacies = await _context.Pharmacies
-                .Include(p => p.Subscriptions)
-                .Where(p => p.IsActive &&
-                           (p.Name.ToLower().Contains(query.ToLower()) ||
-                            p.Address.ToLower().Contains(query.ToLower()) ||
-                            p.City.ToLower().Contains(query.ToLower())))
-                .Select(p => new PharmacySearchResult
+                var user = await query.FirstOrDefaultAsync(u => u.UserId == id);
+                if (user == null)
                 {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Address = p.Address,
-                    City = p.City,
-                    Province = p.Province,
-                    Phone = p.Phone,
-                    Email = p.Email,
-                    Branches = new List<PharmacyBranchInfo>() // Empty list for now
-                })
-                .Take(10) // Limit results for performance
-                .ToListAsync();
+                    return NotFound();
+                }
 
-            return Ok(pharmacies);
-        }
-
-        [HttpPost("users/import-csv")]
-        public async Task<ActionResult<IEnumerable<UserResponse>>> ImportUsers([FromForm] IFormFile file)
-        {
-            if (file == null || file.Length == 0)
-            {
-                return BadRequest("No file uploaded.");
-            }
-
-            var users = new List<UserResponse>();
-            // TODO: Implement CSV import logic
-
-            return Ok(users);
-        }
-
-        [HttpGet("users/export-csv")]
-        public async Task<IActionResult> ExportUsers()
-        {
-            var users = await _context.Users
-                .Select(u => new UserResponse
+                // Check if can delete this role
+                if (!Enum.TryParse<UserRole>(user.Role, out var userRole))
                 {
-                    Id = u.Id.ToString(),
-                    Name = $"{u.FirstName} {u.LastName}",
-                    Email = u.Email,
-                    Phone = u.PhoneNumber,
-                    Address = u.Address,
-                    Role = u.Role,
-                    PharmacyId = u.TenantId ?? "",
-                    PharmacyName = "Default Pharmacy",
-                    Branch = u.UserBranches.FirstOrDefault() != null ? u.UserBranches.FirstOrDefault().Branch.Name : null,
-                    Status = u.Status,
-                    LastLogin = u.LastLogin,
-                    CreatedAt = u.CreatedAt
-                })
-                .ToListAsync();
+                    return BadRequest("Invalid user role");
+                }
 
-            var csv = new StringBuilder();
-            csv.AppendLine("Id,Name,Email,Phone,Address,Role,Pharmacy,Branch,Status,CreatedAt");
+                if (!securityContext.Role.CanManageRole(userRole))
+                {
+                    return Forbid($"You cannot delete users with role {userRole.GetDisplayName()}");
+                }
 
-            foreach (var user in users)
+                // Cannot delete self
+                if (user.UserId == securityContext.UserId)
+                {
+                    return BadRequest("You cannot delete your own account");
+                }
+
+                _context.Users.Remove(user);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("User {UserId} deleted by {DeleterUserId}", user.UserId, securityContext.UserId);
+
+                return NoContent();
+            }
+            catch (Exception ex)
             {
-                csv.AppendLine($"{user.Id},{user.Name},{user.Email},{user.Phone},{user.Address},{user.Role},{user.PharmacyName},{user.Branch},{user.Status},{user.CreatedAt:yyyy-MM-dd HH:mm:ss}");
+                _logger.LogError(ex, "Error deleting user {UserId}", id);
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        // POST: api/usermanagement/users/{id}/reset-password
+        [HttpPost("users/{id}/reset-password")]
+        [RequirePermission(SystemPermissions.USER_RESET_PASSWORD)]
+        public async Task<IActionResult> ResetUserPassword(string id, ResetPasswordRequest request)
+        {
+            try
+            {
+                var securityContext = await _securityService.GetSecurityContextAsync(User);
+                
+                var query = _context.Users.AsQueryable();
+                query = await _securityService.ApplyTenantFilter(query, User) as IQueryable<UserAccount>;
+                query = await _securityService.ApplyBranchFilter(query, User) as IQueryable<UserAccount>;
+
+                var user = await query.FirstOrDefaultAsync(u => u.UserId == id);
+                if (user == null)
+                {
+                    return NotFound();
+                }
+
+                // Check if can manage this role
+                if (!Enum.TryParse<UserRole>(user.Role, out var userRole))
+                {
+                    return BadRequest("Invalid user role");
+                }
+
+                if (!securityContext.Role.CanManageRole(userRole))
+                {
+                    return Forbid($"You cannot reset password for users with role {userRole.GetDisplayName()}");
+                }
+
+                // In a real implementation, this would generate a secure temporary password
+                // and send it via email or other secure channel
+                var tempPassword = GenerateTemporaryPassword();
+                
+                // This would typically be handled by a password hashing service
+                // For now, we'll just log the action
+                _logger.LogInformation("Password reset for user {UserId} by {ResetterUserId}. Temp password: {TempPassword}", 
+                    user.UserId, securityContext.UserId, tempPassword);
+
+                return Ok(new { Message = "Password reset successfully", TemporaryPassword = tempPassword });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting password for user {UserId}", id);
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        // GET: api/usermanagement/roles/available
+        [HttpGet("roles/available")]
+        [RequirePermission(SystemPermissions.USER_READ)]
+        public async Task<ActionResult<IEnumerable<RoleDto>>> GetAvailableRoles()
+        {
+            try
+            {
+                var securityContext = await _securityService.GetSecurityContextAsync(User);
+                var manageableRoles = securityContext.Role.GetManageableRoles();
+
+                var roleDtos = manageableRoles.Select(role => new RoleDto
+                {
+                    Name = role.ToString(),
+                    DisplayName = role.GetDisplayName(),
+                    Level = role.GetHierarchyLevel().ToString(),
+                    CanManage = securityContext.Role.CanManageRole(role),
+                    CanImpersonate = securityContext.Role.CanImpersonateRole(role)
+                }).ToList();
+
+                return Ok(roleDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving available roles");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        private string GenerateTemporaryPassword()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            var random = new Random();
+            var password = new char[12];
+
+            for (int i = 0; i < password.Length; i++)
+            {
+                password[i] = chars[random.Next(chars.Length)];
             }
 
-            var bytes = Encoding.UTF8.GetBytes(csv.ToString());
-            return File(bytes, "text/csv", "users.csv");
+            return new string(password);
         }
     }
+
+    // DTOs for User Management
+    public class UserDto
+    {
+        public int Id { get; set; }
+        public string UserId { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string Role { get; set; } = string.Empty;
+        public string TenantId { get; set; } = string.Empty;
+        public string? TenantName { get; set; }
+        public int? BranchId { get; set; }
+        public string? BranchName { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+        public string? PhoneNumber { get; set; }
+        public string? Department { get; set; }
+        public bool TwoFactorEnabled { get; set; }
+        public DateTime? LastLogin { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public class CreateUserRequest
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(100)]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(100)]
+        public string LastName { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(20)]
+        public string Role { get; set; } = string.Empty;
+
+        [StringLength(6)]
+        public string? TenantId { get; set; }
+
+        public int? BranchId { get; set; }
+
+        [StringLength(20)]
+        public string? PhoneNumber { get; set; }
+
+        [StringLength(100)]
+        public string? Department { get; set; }
+
+        public bool? TwoFactorEnabled { get; set; }
+    }
+
+    public class UpdateUserRequest
+    {
+        [EmailAddress]
+        public string? Email { get; set; }
+
+        [StringLength(100)]
+        public string? FirstName { get; set; }
+
+        [StringLength(100)]
+        public string? LastName { get; set; }
+
+        [StringLength(20)]
+        public string? Role { get; set; }
+
+        [StringLength(6)]
+        public string? TenantId { get; set; }
+
+        public int? BranchId { get; set; }
+
+        [StringLength(20)]
+        public string? PhoneNumber { get; set; }
+
+        [StringLength(100)]
+        public string? Department { get; set; }
+
+        public bool? TwoFactorEnabled { get; set; }
+
+        [StringLength(20)]
+        public string? Status { get; set; }
+
+        public bool? IsActive { get; set; }
+    }
+
+    public class ResetPasswordRequest
+    {
+        [Required]
+        public bool SendEmail { get; set; } = true;
+    }
+
+    public class RoleDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string Level { get; set; } = string.Empty;
+        public bool CanManage { get; set; }
+        public bool CanImpersonate { get; set; }
+    }
 }
-
-

@@ -29,6 +29,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="../../wwwroot/js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -541,14 +542,14 @@
           <!-- Date of Birth -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
-            <input type="date" x-model="newPatient.dateOfBirth"
+            <input type="date" x-model="newPatient.dateOfBirth" placeholder="Select date of birth"
                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
           </div>
 
           <!-- Gender -->
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
-            <select x-model="newPatient.gender"
+            <select x-model="newPatient.gender" title="Gender"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
               <option value="">Select Gender</option>
               <option value="Male">Male</option>

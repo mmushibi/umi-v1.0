@@ -42,8 +42,7 @@
     <Compile Remove="Repositories\Repositories.cs" />
     <Compile Remove="Services\SuperAdminDashboardService.cs" />
     <Compile Remove="Services\SubscriptionHistoryService.cs" />
-    <Compile Remove="Services\JwtService.cs" />
-    <Compile Remove="Services\EmployeeService.cs" />
+        <Compile Remove="Services\EmployeeService.cs" />
     <Compile Remove="Services\ZambianComplianceService.cs" />
     <Compile Remove="Services\SubscriptionService.cs" />
     <Compile Remove="Tests\DatabaseIntegrationTest.cs" />

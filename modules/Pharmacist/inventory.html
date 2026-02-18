@@ -28,6 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="../../wwwroot/js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -354,7 +355,7 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Packing Type</label>
-              <select x-model="selectedPackingType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+              <select x-model="selectedPackingType" title="Packing Type Filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
                 <option value="">All Types</option>
                 <option value="Box">Box</option>
                 <option value="Bottle">Bottle</option>
@@ -368,7 +369,7 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Stock Status</label>
-              <select x-model="stockStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+              <select x-model="stockStatus" title="Stock Status Filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
                 <option value="">All Status</option>
                 <option value="in-stock">In Stock</option>
                 <option value="low-stock">Low Stock</option>
@@ -481,7 +482,7 @@
               </div>
               <div>
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button @click="previousPage()" :disabled="currentPage === 1" title="Previous Page" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
@@ -494,7 +495,7 @@
                       x-text="page"
                     ></button>
                   </template>
-                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button @click="nextPage()" :disabled="currentPage === totalPages" title="Next Page" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
@@ -541,49 +542,49 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Inventory Item Name *</label>
-                    <input type="text" x-model="newItem.inventoryItemName" required
+                    <input type="text" x-model="newItem.inventoryItemName" required placeholder="Enter inventory item name"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Generic Name *</label>
-                    <input type="text" x-model="newItem.genericName" required
+                    <input type="text" x-model="newItem.genericName" required placeholder="Enter generic name"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Brand Name *</label>
-                    <input type="text" x-model="newItem.brandName" required
+                    <input type="text" x-model="newItem.brandName" required placeholder="Enter brand name"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Manufacture Date *</label>
-                    <input type="date" x-model="newItem.manufactureDate" required
+                    <input type="date" x-model="newItem.manufactureDate" required placeholder="Select manufacture date"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Batch Number *</label>
-                    <input type="text" x-model="newItem.batchNumber" required
+                    <input type="text" x-model="newItem.batchNumber" required placeholder="Enter batch number"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">License Number</label>
-                    <input type="text" x-model="newItem.licenseNumber"
+                    <input type="text" x-model="newItem.licenseNumber" placeholder="Enter license number"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Zambia REG Number</label>
-                    <input type="text" x-model="newItem.zambiaRegNumber"
+                    <input type="text" x-model="newItem.zambiaRegNumber" placeholder="Enter Zambia REG number"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Packing Type *</label>
-                    <select x-model="newItem.packingType" required
+                    <select x-model="newItem.packingType" required title="Packing Type"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                       <option value="">Select Packing Type</option>
                       <option value="Box">Box</option>
@@ -598,25 +599,25 @@
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
-                    <input type="number" x-model="newItem.quantity" min="0" required
+                    <input type="number" x-model="newItem.quantity" min="0" required placeholder="Enter quantity"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Unit Price *</label>
-                    <input type="number" x-model="newItem.unitPrice" min="0" step="0.01" required
+                    <input type="number" x-model="newItem.unitPrice" min="0" step="0.01" required placeholder="Enter unit price"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price *</label>
-                    <input type="number" x-model="newItem.sellingPrice" min="0" step="0.01" required
+                    <input type="number" x-model="newItem.sellingPrice" min="0" step="0.01" required placeholder="Enter selling price"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Reorder Level</label>
-                    <input type="number" x-model="newItem.reorderLevel" min="0"
+                    <input type="number" x-model="newItem.reorderLevel" min="0" placeholder="Enter reorder level"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                 </div>
@@ -669,49 +670,49 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Inventory Item Name *</label>
-                    <input type="text" x-model="editingItem.inventoryItemName" required
+                    <input type="text" x-model="editingItem.inventoryItemName" required placeholder="Enter inventory item name"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Generic Name *</label>
-                    <input type="text" x-model="editingItem.genericName" required
+                    <input type="text" x-model="editingItem.genericName" required placeholder="Enter generic name"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Brand Name *</label>
-                    <input type="text" x-model="editingItem.brandName" required
+                    <input type="text" x-model="editingItem.brandName" required placeholder="Enter brand name"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Manufacture Date *</label>
-                    <input type="date" x-model="editingItem.manufactureDate" required
+                    <input type="date" x-model="editingItem.manufactureDate" required placeholder="Select manufacture date"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Batch Number *</label>
-                    <input type="text" x-model="editingItem.batchNumber" required
+                    <input type="text" x-model="editingItem.batchNumber" required placeholder="Enter batch number"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">License Number</label>
-                    <input type="text" x-model="editingItem.licenseNumber"
+                    <input type="text" x-model="editingItem.licenseNumber" placeholder="Enter license number"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Zambia REG Number</label>
-                    <input type="text" x-model="editingItem.zambiaRegNumber"
+                    <input type="text" x-model="editingItem.zambiaRegNumber" placeholder="Enter Zambia REG number"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Packing Type *</label>
-                    <select x-model="editingItem.packingType" required
+                    <select x-model="editingItem.packingType" required title="Packing Type"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                       <option value="">Select Packing Type</option>
                       <option value="Box">Box</option>
@@ -726,25 +727,25 @@
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
-                    <input type="number" x-model="editingItem.quantity" min="0" required
+                    <input type="number" x-model="editingItem.quantity" min="0" required placeholder="Enter quantity"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Unit Price *</label>
-                    <input type="number" x-model="editingItem.unitPrice" min="0" step="0.01" required
+                    <input type="number" x-model="editingItem.unitPrice" min="0" step="0.01" required placeholder="Enter unit price"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price *</label>
-                    <input type="number" x-model="editingItem.sellingPrice" min="0" step="0.01" required
+                    <input type="number" x-model="editingItem.sellingPrice" min="0" step="0.01" required placeholder="Enter selling price"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Reorder Level</label>
-                    <input type="number" x-model="editingItem.reorderLevel" min="0"
+                    <input type="number" x-model="editingItem.reorderLevel" min="0" placeholder="Enter reorder level"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
                   </div>
                 </div>

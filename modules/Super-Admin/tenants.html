@@ -25,6 +25,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="../../wwwroot/js/auth.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -229,7 +230,7 @@
             </select>
             
             <!-- Add New Tenant Button -->
-            <button @click="showAddTenantModal = true" class="px-4 py-2 bg-yellow-accent text-dark-bg font-medium rounded-lg hover:bg-yellow-300 transition-colors w-full lg:w-auto">
+            <button @click="showAddTenantModal = true" class="px-4 py-2 bg-yellow-accent text-dark-bg font-medium rounded-lg hover:bg-yellow-300 transition-colors w-full lg:w-auto" title="Add new tenant">
               <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
               </svg>
@@ -396,7 +397,7 @@
         <div class="p-6 border-b border-gray-200">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900">Add New Tenant</h2>
-            <button @click="showAddTenantModal = false" class="text-gray-400 hover:text-gray-600">
+            <button @click="showAddTenantModal = false" title="Close Add Tenant Modal" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
@@ -450,7 +451,7 @@
             <!-- Subscription Plan -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Subscription Plan *</label>
-              <select x-model="newTenant.subscription" required
+              <select x-model="newTenant.subscription" required title="Subscription Plan"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
                 <option value="">Select a plan</option>
                 <option value="Basic">Basic - K999/month</option>
@@ -466,7 +467,7 @@
                 <input :type="showPassword ? 'text' : 'password'" x-model="newTenant.password" required
                        class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
                        placeholder="Enter secure password">
-                <button type="button" @click="showPassword = !showPassword" 
+                <button type="button" @click="showPassword = !showPassword" title="Toggle password visibility" 
                         class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
                   <svg x-show="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -498,11 +499,11 @@
           <!-- Modal Footer -->
           <div class="flex justify-end space-x-3 mt-8">
             <button type="button" @click="showAddTenantModal = false"
-                    class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    class="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors" title="Cancel adding tenant">
               Cancel
             </button>
             <button type="submit"
-                    class="px-4 py-2 bg-yellow-accent text-dark-bg font-medium rounded-lg hover:bg-yellow-300 transition-colors">
+                    class="px-4 py-2 bg-yellow-accent text-dark-bg font-medium rounded-lg hover:bg-yellow-300 transition-colors" title="Create new tenant">
               Create Tenant
             </button>
           </div>
@@ -582,7 +583,7 @@
         <div class="p-6 border-b border-gray-200">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900">Edit Tenant</h2>
-            <button @click="showEditTenantModal = false" class="text-gray-400 hover:text-gray-600">
+            <button @click="showEditTenantModal = false" class="text-gray-400 hover:text-gray-600" title="Close edit tenant modal">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
@@ -636,7 +637,7 @@
             <!-- Subscription Plan -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Subscription Plan *</label>
-              <select x-model="editTenantData.subscription" required
+              <select x-model="editTenantData.subscription" required title="Subscription Plan"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
                 <option value="Basic">Basic - K999/month</option>
                 <option value="Professional">Professional - K2,999/month</option>
@@ -648,7 +649,8 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Status *</label>
               <select x-model="editTenantData.status" required
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                      title="Tenant Status" aria-label="Tenant Status">
                 <option value="Active">Active</option>
                 <option value="Pending">Pending</option>
                 <option value="Verified">Verified</option>
@@ -708,13 +710,13 @@
         <div class="p-6 border-b border-gray-200">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
-              <img :src="detailsTenant.avatar" :alt="detailsTenant.company" class="w-12 h-12 rounded-full">
+              <img :src="detailsTenant.avatar" :alt="detailsTenant.company" :title="detailsTenant.company" class="w-12 h-12 rounded-full" :aria-label="detailsTenant.company">
               <div>
                 <h2 class="text-xl font-semibold text-gray-900" x-text="detailsTenant.company"></h2>
                 <p class="text-sm text-gray-500" x-text="`Tenant ID: ${detailsTenant.id}`"></p>
               </div>
             </div>
-            <button @click="showTenantDetailsModal = false" class="text-gray-400 hover:text-gray-600">
+            <button @click="showTenantDetailsModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal" aria-label="Close tenant details modal">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
@@ -915,7 +917,7 @@
         <div class="p-6 border-b border-gray-200">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900">Reset Password</h2>
-            <button @click="showPasswordResetModal = false" class="text-gray-400 hover:text-gray-600">
+            <button @click="showPasswordResetModal = false" title="Close Password Reset Modal" class="text-gray-400 hover:text-gray-600">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
@@ -927,7 +929,7 @@
         <div class="p-6">
           <div class="mb-4">
             <div class="flex items-center space-x-3 mb-4">
-              <img :src="passwordResetTenant.avatar" :alt="passwordResetTenant.company" class="w-12 h-12 rounded-full">
+              <img :src="passwordResetTenant.avatar" :alt="passwordResetTenant.company" :title="passwordResetTenant.company" class="w-12 h-12 rounded-full" :aria-label="passwordResetTenant.company">
               <div>
                 <h3 class="text-lg font-medium text-gray-900" x-text="passwordResetTenant.company"></h3>
                 <p class="text-sm text-gray-500" x-text="passwordResetTenant.email"></p>
@@ -943,7 +945,7 @@
                 <input :type="showNewPassword ? 'text' : 'password'" x-model="passwordResetData.newPassword" required
                        class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
                        placeholder="Enter new password">
-                <button type="button" @click="showNewPassword = !showNewPassword" 
+                <button type="button" @click="showNewPassword = !showNewPassword" title="Toggle new password visibility" 
                         class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
                   <svg x-show="!showNewPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -964,7 +966,7 @@
                        class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
                        placeholder="Confirm new password">
                 <button type="button" @click="showConfirmPassword = !showConfirmPassword" 
-                        class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600">
+                        class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600" title="Toggle password visibility" aria-label="Toggle password visibility">
                   <svg x-show="!showConfirmPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -1024,7 +1026,7 @@
         <div class="p-6 border-b border-gray-200">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900">View Password</h2>
-            <button @click="showViewPasswordModal = false" class="text-gray-400 hover:text-gray-600">
+            <button @click="showViewPasswordModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal" aria-label="Close view password modal">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
@@ -1036,7 +1038,7 @@
         <div class="p-6">
           <div class="mb-4">
             <div class="flex items-center space-x-3 mb-4">
-              <img :src="viewPasswordTenant.avatar" :alt="viewPasswordTenant.company" class="w-12 h-12 rounded-full">
+              <img :src="viewPasswordTenant.avatar" :alt="viewPasswordTenant.company" :title="viewPasswordTenant.company" class="w-12 h-12 rounded-full" :aria-label="viewPasswordTenant.company">
               <div>
                 <h3 class="text-lg font-medium text-gray-900" x-text="viewPasswordTenant.company"></h3>
                 <p class="text-sm text-gray-500" x-text="viewPasswordTenant.email"></p>
@@ -1048,7 +1050,7 @@
             <!-- User Selection -->
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Select User</label>
-              <select x-model="selectedUserId" @change="loadUserPassword" 
+              <select x-model="selectedUserId" @change="loadUserPassword" title="Select User for Password View"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
                 <option value="">Select a user to view password</option>
                 <template x-for="user in viewPasswordTenant.usersList" :key="user.id">
@@ -1159,7 +1161,7 @@
         <div class="p-6 border-b border-gray-200">
           <div class="flex items-center justify-between">
             <h2 class="text-xl font-semibold text-gray-900">Temporary Password Generated</h2>
-            <button @click="showTempPasswordModal = false" class="text-gray-400 hover:text-gray-600">
+            <button @click="showTempPasswordModal = false" class="text-gray-400 hover:text-gray-600" title="Close modal" aria-label="Close temporary password modal">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>
@@ -1351,7 +1353,7 @@
         },
         async loadTenants() {
           try {
-            const response = await fetch('/api/tenantadmin/tenants', {
+            const response = await fetch('/api/superadmin/tenants', {
               headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
               }
@@ -1526,7 +1528,7 @@
           this.contextMenu.show = false;
           
           try {
-            const response = await fetch(`/api/tenantadmin/tenants/${tenant.id}`, {
+            const response = await fetch(`/api/superadmin/tenants/${tenant.id}`, {
               headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
               }
@@ -1563,7 +1565,7 @@
         },
         async updateTenant() {
           try {
-            const response = await fetch(`/api/tenantadmin/tenants/${this.editingTenant.id}`, {
+            const response = await fetch(`/api/superadmin/tenants/${this.editingTenant.id}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
@@ -1639,7 +1641,7 @@
           }
           
           try {
-            const response = await fetch(`/api/tenantadmin/tenants/${this.passwordResetTenant.id}/reset-password`, {
+            const response = await fetch(`/api/superadmin/tenants/${this.passwordResetTenant.id}/reset-password`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -1684,7 +1686,7 @@
           }
           
           try {
-            const response = await fetch(`/api/tenantadmin/tenants/${this.viewPasswordTenant.id}/users/${this.selectedUserId}/password`, {
+            const response = await fetch(`/api/superadmin/tenants/${this.viewPasswordTenant.id}/users/${this.selectedUserId}/password`, {
               headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
               }
@@ -1735,7 +1737,7 @@
           }
           
           try {
-            const response = await fetch(`/api/tenantadmin/tenants/${this.viewPasswordTenant.id}/users/${this.selectedUserId}/reveal-password`, {
+            const response = await fetch(`/api/superadmin/tenants/${this.viewPasswordTenant.id}/users/${this.selectedUserId}/reveal-password`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -1786,7 +1788,7 @@
           
           if (confirm(`Are you sure you want to delete ${tenant.company}? This action cannot be undone.`)) {
             try {
-              const response = await fetch(`/api/tenantadmin/tenants/${tenant.id}`, {
+              const response = await fetch(`/api/superadmin/tenants/${tenant.id}`, {
                 method: 'DELETE',
                 headers: {
                   'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -1825,7 +1827,7 @@
         },
         async submitNewTenant() {
           try {
-            const response = await fetch('/api/tenantadmin/tenants', {
+            const response = await fetch('/api/superadmin/tenants', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -1892,6 +1894,11 @@
           sessionStorage.clear();
           localStorage.removeItem('umihealthUserRole');
           window.location.href = '../auth/signin.html';
+        },
+        
+        init() {
+          // Initialize page data
+          this.loadTenants();
         }
       }
     }

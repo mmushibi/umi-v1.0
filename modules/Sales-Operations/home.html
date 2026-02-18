@@ -28,6 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="../../wwwroot/js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -219,7 +220,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Total Users</p>
-            <p class="text-2xl font-bold text-gray-900">-</p>
+            <p class="text-2xl font-bold text-gray-900" x-text="getTotalUsers()"></p>
           </div>
         </div>
       </div>
@@ -233,7 +234,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Active Subscriptions</p>
-            <p class="text-2xl font-bold text-gray-900">-</p>
+            <p class="text-2xl font-bold text-gray-900" x-text="getActiveSubscriptions()"></p>
           </div>
         </div>
       </div>
@@ -247,7 +248,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Total Branches</p>
-            <p class="text-2xl font-bold text-gray-900">-</p>
+            <p class="text-2xl font-bold text-gray-900" x-text="getTotalBranches()"></p>
           </div>
         </div>
       </div>
@@ -261,7 +262,7 @@
           </div>
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Monthly Revenue</p>
-            <p class="text-2xl font-bold text-gray-900">-</p>
+            <p class="text-2xl font-bold text-gray-900" x-text="getMonthlyRevenue()"></p>
           </div>
         </div>
       </div>
@@ -338,10 +339,105 @@
     function salesOpsDashboard() {
       return {
         mobileMenuOpen: false,
+        stats: {
+          totalUsers: 0,
+          activeSubscriptions: 0,
+          totalBranches: 0,
+          monthlyRevenue: '💰 0'
+        },
         
         init() {
+          // Initialize authentication
+          if (!window.umiAuth.initPageAuth('Operations')) {
+            return; // Will redirect if not authenticated
+          }
+          
           // Initialize dashboard data
           console.log('Sales Operations Dashboard initialized');
+          this.loadDashboardStats();
+        },
+        
+        async loadDashboardStats() {
+          try {
+            // Load all dashboard statistics in parallel
+            await Promise.all([
+              this.loadActiveSubscriptions(),
+              this.loadTotalUsers(),
+              this.loadTotalBranches(),
+              this.loadMonthlyRevenue()
+            ]);
+          } catch (error) {
+            console.error('Error loading dashboard stats:', error);
+          }
+        },
+        
+        async loadActiveSubscriptions() {
+          try {
+            const response = await fetch('/api/tenantadmin/subscriptions');
+            if (response.ok) {
+              const subscriptions = await response.json();
+              this.stats.activeSubscriptions = subscriptions.filter(s => s.status === 'active').length;
+            }
+          } catch (error) {
+            console.error('Error loading subscriptions:', error);
+          }
+        },
+        
+        async loadTotalUsers() {
+          try {
+            const response = await fetch('/api/usermanagement/users');
+            if (response.ok) {
+              const users = await response.json();
+              this.stats.totalUsers = users.length;
+            }
+          } catch (error) {
+            console.error('Error loading users:', error);
+          }
+        },
+        
+        async loadTotalBranches() {
+          try {
+            const response = await fetch('/api/tenantadmin/branches');
+            if (response.ok) {
+              const branches = await response.json();
+              this.stats.totalBranches = branches.length;
+            }
+          } catch (error) {
+            console.error('Error loading branches:', error);
+          }
+        },
+        
+        async loadMonthlyRevenue() {
+          try {
+            const response = await fetch('/api/tenantadmin/subscriptions');
+            if (response.ok) {
+              const subscriptions = await response.json();
+              const activeSubscriptions = subscriptions.filter(s => s.status === 'active');
+              const monthlyRevenue = activeSubscriptions.reduce((total, sub) => {
+                const amount = parseFloat(sub.amount.replace(/[^0-9.]/g, ''));
+                return total + amount;
+              }, 0);
+              this.stats.monthlyRevenue = `💰 ${monthlyRevenue.toLocaleString('en-ZM', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            }
+          } catch (error) {
+            console.error('Error loading monthly revenue:', error);
+          }
+        },
+        
+        getActiveSubscriptions() {
+          return this.stats.activeSubscriptions;
+        },
+        
+        getTotalUsers() {
+          return this.stats.totalUsers;
+        },
+        
+        getTotalBranches() {
+          return this.stats.totalBranches;
+        },
+        
+        getMonthlyRevenue() {
+          return this.stats.monthlyRevenue;
         },
         
         navigateToUserManagement() {
@@ -357,8 +453,14 @@
         },
         
         logout() {
-          // Simple page reload for demo
-          window.location.reload();
+          if (confirm('Are you sure you want to logout?')) {
+            window.umiAuth.logout();
+          }
+        },
+        
+        init() {
+          // Initialize page data
+          this.loadDashboardData();
         }
       }
     }

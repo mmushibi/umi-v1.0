@@ -25,6 +25,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="../../wwwroot/js/auth.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -324,7 +325,7 @@
       <div class="p-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-900">Add New Role</h3>
-          <button @click="showAddRoleModal = false" class="text-gray-400 hover:text-gray-600">
+          <button @click="showAddRoleModal = false" title="Close Add Role Modal" class="text-gray-400 hover:text-gray-600">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -334,17 +335,17 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Role Name</label>
-              <input type="text" x-model="newRole.name" required
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+              <input type="text" x-model="newRole.name" required title="Role Name"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter role name">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea x-model="newRole.description" rows="3"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"></textarea>
+              <textarea x-model="newRole.description" rows="3" title="Role Description"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter role description"></textarea>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Level</label>
-              <select x-model="newRole.level"
+              <select x-model="newRole.level" title="Role Level"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
@@ -380,7 +381,7 @@
       <div class="p-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-900">Edit Role</h3>
-          <button @click="showEditRoleModal = false" class="text-gray-400 hover:text-gray-600">
+          <button @click="showEditRoleModal = false" title="Close Edit Role Modal" class="text-gray-400 hover:text-gray-600">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -390,17 +391,17 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Role Name</label>
-              <input type="text" x-model="editRoleData.name" required
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+              <input type="text" x-model="editRoleData.name" required title="Role Name"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter role name">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea x-model="editRoleData.description" rows="3"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"></textarea>
+              <textarea x-model="editRoleData.description" rows="3" title="Role Description"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter role description"></textarea>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Level</label>
-              <select x-model="editRoleData.level"
+              <select x-model="editRoleData.level" title="Role Level"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
@@ -436,7 +437,7 @@
       <div class="p-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-900">Add New Permission</h3>
-          <button @click="showAddPermissionModal = false" class="text-gray-400 hover:text-gray-600">
+          <button @click="showAddPermissionModal = false" title="Close Add Permission Modal" class="text-gray-400 hover:text-gray-600">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -446,27 +447,27 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Permission Name</label>
-              <input type="text" x-model="newPermission.name" required
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+              <input type="text" x-model="newPermission.name" required title="Permission Name"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter permission name">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
-              <input type="text" x-model="newPermission.displayName" required
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+              <input type="text" x-model="newPermission.displayName" required title="Permission Display Name"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter display name">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <input type="text" x-model="newPermission.category" required
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+              <input type="text" x-model="newPermission.category" required title="Permission Category"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter permission category">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea x-model="newPermission.description" rows="3"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"></textarea>
+              <textarea x-model="newPermission.description" rows="3" title="Permission Description"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter permission description"></textarea>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Risk Level</label>
-              <select x-model="newPermission.riskLevel"
+              <select x-model="newPermission.riskLevel" title="Risk Level"
                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
@@ -498,7 +499,7 @@
       <div class="p-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-900">Edit Permission</h3>
-          <button @click="showEditPermissionModal = false" class="text-gray-400 hover:text-gray-600">
+          <button @click="showEditPermissionModal = false" title="Close Edit Permission Modal" class="text-gray-400 hover:text-gray-600">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -508,28 +509,29 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Permission Name</label>
-              <input type="text" x-model="editPermissionData.name" required
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+              <input type="text" x-model="editPermissionData.name" required title="Permission Name"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter permission name">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Display Name</label>
-              <input type="text" x-model="editPermissionData.displayName" required
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+              <input type="text" x-model="editPermissionData.displayName" required title="Permission Display Name"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter display name">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
-              <input type="text" x-model="editPermissionData.category" required
-                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+              <input type="text" x-model="editPermissionData.category" required title="Permission Category"
+                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter permission category">
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-              <textarea x-model="editPermissionData.description" rows="3"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"></textarea>
+              <textarea x-model="editPermissionData.description" rows="3" title="Permission Description"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" placeholder="Enter permission description"></textarea>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Risk Level</label>
               <select x-model="editPermissionData.riskLevel"
-                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent">
+                      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent"
+                      title="Risk Level" aria-label="Risk Level">
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
                 <option value="High">High</option>
@@ -560,7 +562,7 @@
       <div class="p-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-900">Role Details</h3>
-          <button @click="showViewRoleModal = false" class="text-gray-400 hover:text-gray-600">
+          <button @click="showViewRoleModal = false" title="Close Role Details Modal" class="text-gray-400 hover:text-gray-600">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -603,7 +605,7 @@
       <div class="p-6">
         <div class="flex items-center justify-between mb-4">
           <h3 class="text-lg font-semibold text-gray-900">Tenant Role Details</h3>
-          <button @click="showViewTenantModal = false" class="text-gray-400 hover:text-gray-600">
+          <button @click="showViewTenantModal = false" title="Close Tenant Role Details Modal" class="text-gray-400 hover:text-gray-600">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
