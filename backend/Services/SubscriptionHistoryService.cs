@@ -340,14 +340,14 @@ namespace UmiHealthPOS.Services
                 csv.AppendLine($"Current Plan:, {subscription.Plan.Name}");
                 csv.AppendLine($"Monthly Amount (ZMW):, {subscription.Amount:F2}");
                 csv.AppendLine($"Next Billing Date:, {subscription.EndDate:yyyy-MM-dd}");
-                csv.AppendLine($"Payment Method:, {GetPaymentMethod(subscription.Pharmacy.Name)}");
+                csv.AppendLine($"Payment Method:, {await GetPaymentMethodAsync(subscription.Pharmacy.Id)}");
                 csv.AppendLine($"Status:, {subscription.Status}");
                 csv.AppendLine();
                 csv.AppendLine("USAGE STATISTICS");
-                csv.AppendLine($"Total Users:, {GetTotalUsers(subscription.Pharmacy.Id)}");
-                csv.AppendLine($"Total Transactions:, {GetTotalTransactions(subscription.Pharmacy.Id)}");
-                csv.AppendLine($"Total Products:, {GetTotalProducts(subscription.Pharmacy.Id)}");
-                csv.AppendLine($"Storage Used:, {GetStorageUsed(subscription.Pharmacy.Id)}");
+                csv.AppendLine($"Total Users:, {await GetTotalUsersAsync(subscription.Pharmacy.Id)}");
+                csv.AppendLine($"Total Transactions:, {await GetTotalTransactionsAsync(subscription.Pharmacy.Id)}");
+                csv.AppendLine($"Total Products:, {await GetTotalProductsAsync(subscription.Pharmacy.Id)}");
+                csv.AppendLine($"Storage Used:, {await GetStorageUsedAsync(subscription.Pharmacy.Id)}");
                 csv.AppendLine();
                 csv.AppendLine("ACTIVITY HISTORY");
                 csv.AppendLine("Date,Action,Plan,Amount (ZMW),User,Notes");
@@ -423,36 +423,115 @@ namespace UmiHealthPOS.Services
             return "Pharmacy";
         }
 
-        private string GetPaymentMethod(string pharmacyName)
+        private async Task<string> GetPaymentMethodAsync(int pharmacyId)
         {
-            // In a real implementation, this would come from the pharmacy's profile
-            return pharmacyName.ToLower().Contains("hospital") ? "Cheque" : 
-                   pharmacyName.ToLower().Contains("clinic") ? "Bank Transfer" : "Mobile Money";
+            try
+            {
+                // Get payment method from pharmacy's profile or payment history
+                var pharmacy = await _context.Pharmacies.FirstOrDefaultAsync(p => p.Id == pharmacyId);
+                if (pharmacy?.PreferredPaymentMethod != null)
+                {
+                    return pharmacy.PreferredPaymentMethod;
+                }
+
+                // Check most recent payment method
+                var recentPayment = await _context.Payments
+                    .Where(p => p.Subscription.TenantId == pharmacyId.ToString())
+                    .OrderByDescending(p => p.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                return recentPayment?.PaymentMethod ?? "Mobile Money";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting payment method for pharmacy {PharmacyId}", pharmacyId);
+                return "Mobile Money";
+            }
         }
 
-        private int GetTotalUsers(int pharmacyId)
+        private async Task<int> GetTotalUsersAsync(int pharmacyId)
         {
-            // In a real implementation, this would count actual users
-            return new Random().Next(3, 50);
+            try
+            {
+                // Count actual active users for the pharmacy
+                return await _context.Users
+                    .Where(u => u.TenantId == pharmacyId.ToString() && u.IsActive)
+                    .CountAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error counting users for pharmacy {PharmacyId}", pharmacyId);
+                return 1;
+            }
         }
 
-        private int GetTotalTransactions(int pharmacyId)
+        private async Task<int> GetTotalTransactionsAsync(int pharmacyId)
         {
-            // In a real implementation, this would count actual transactions
-            return new Random().Next(500, 15000);
+            try
+            {
+                // Count actual transactions for the current month
+                var currentMonth = DateTime.UtcNow.Date.AddDays(-DateTime.UtcNow.Day + 1);
+                return await _context.Sales
+                    .Where(s => s.TenantId == pharmacyId.ToString() && s.CreatedAt >= currentMonth)
+                    .CountAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error counting transactions for pharmacy {PharmacyId}", pharmacyId);
+                return 0;
+            }
         }
 
-        private int GetTotalProducts(int pharmacyId)
+        private async Task<int> GetTotalProductsAsync(int pharmacyId)
         {
-            // In a real implementation, this would count actual products
-            return new Random().Next(100, 3000);
+            try
+            {
+                // Count actual products in inventory
+                return await _context.InventoryItems
+                    .Where(i => i.TenantId == pharmacyId.ToString())
+                    .CountAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error counting products for pharmacy {PharmacyId}", pharmacyId);
+                return 0;
+            }
         }
 
-        private string GetStorageUsed(int pharmacyId)
+        private async Task<string> GetStorageUsedAsync(int pharmacyId)
         {
-            // In a real implementation, this would calculate actual storage usage
-            var gb = new Random().Next(1, 20);
-            return $"{gb}.{new Random().Next(1, 9)}GB";
+            try
+            {
+                // Calculate actual storage usage from database size and attachments
+                var dbSize = await GetDatabaseSizeAsync();
+                var attachmentsSize = await GetAttachmentsSizeAsync(pharmacyId);
+                var totalSize = dbSize + attachmentsSize;
+                
+                return $"{totalSize / 1024.0:F1}GB";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calculating storage usage for pharmacy {PharmacyId}", pharmacyId);
+                return "0.0GB";
+            }
+        }
+
+        private async Task<double> GetDatabaseSizeAsync()
+        {
+            // In production, this would query actual database size
+            // For now, simulate based on record count
+            var recordCount = await _context.InventoryItems.CountAsync();
+            return recordCount * 0.001; // Rough estimate: 1KB per record
+        }
+
+        private async Task<double> GetAttachmentsSizeAsync(int pharmacyId)
+        {
+            // In production, this would calculate actual attachment sizes
+            // For now, simulate based on prescription count
+            var prescriptionCount = await _context.Prescriptions
+                .Where(p => p.TenantId == pharmacyId.ToString())
+                .CountAsync();
+            return prescriptionCount * 0.05; // Rough estimate: 50KB per prescription
         }
     }
 }

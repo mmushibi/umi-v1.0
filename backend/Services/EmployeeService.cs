@@ -6,13 +6,13 @@ namespace UmiHealthPOS.Services
 {
     public interface IEmployeeService
     {
-        Task<IEnumerable<Employee>> GetAllEmployeesAsync(int tenantId);
-        Task<Employee?> GetEmployeeByIdAsync(int id, int tenantId);
-        Task<Employee> CreateEmployeeAsync(Employee employee, int tenantId);
-        Task<Employee> UpdateEmployeeAsync(Employee employee, int tenantId);
-        Task<bool> DeleteEmployeeAsync(int id, int tenantId);
-        Task<string> ResetPasswordAsync(int id, int tenantId);
-        Task<string> GetPasswordAsync(int id, int tenantId);
+        Task<IEnumerable<Employee>> GetAllEmployeesAsync(string tenantId);
+        Task<Employee?> GetEmployeeByIdAsync(int id, string tenantId);
+        Task<Employee> CreateEmployeeAsync(Employee employee, string tenantId);
+        Task<Employee> UpdateEmployeeAsync(Employee employee, string tenantId);
+        Task<bool> DeleteEmployeeAsync(int id, string tenantId);
+        Task<string> ResetPasswordAsync(int id, string tenantId);
+        Task<string> GetPasswordAsync(int id, string tenantId);
     }
 
     public class EmployeeService : IEmployeeService
@@ -26,7 +26,7 @@ namespace UmiHealthPOS.Services
             _passwordService = passwordService;
         }
 
-        public async Task<IEnumerable<Employee>> GetAllEmployeesAsync(int tenantId)
+        public async Task<IEnumerable<Employee>> GetAllEmployeesAsync(string tenantId)
         {
             return await _context.Employees
                 .Where(e => e.TenantId == tenantId)
@@ -34,22 +34,25 @@ namespace UmiHealthPOS.Services
                 .ToListAsync();
         }
 
-        public async Task<Employee?> GetEmployeeByIdAsync(int id, int tenantId)
+        public async Task<Employee?> GetEmployeeByIdAsync(int id, string tenantId)
         {
             return await _context.Employees
                 .FirstOrDefaultAsync(e => e.Id == id && e.TenantId == tenantId);
         }
 
-        public async Task<Employee> CreateEmployeeAsync(Employee employee, int tenantId)
+        public async Task<Employee> CreateEmployeeAsync(Employee employee, string tenantId)
         {
             // Generate unique employee number
             employee.EmployeeNumber = await GenerateEmployeeIdAsync();
-            employee.TenantId = tenantId.ToString();
+            employee.TenantId = tenantId;
             employee.CreatedAt = DateTime.UtcNow;
             employee.UpdatedAt = DateTime.UtcNow;
             
-            // Note: Employee entity doesn't have Password property
-            // Password handling would need to be implemented separately
+            // Hash password if provided
+            if (!string.IsNullOrEmpty(employee.PasswordHash))
+            {
+                employee.PasswordHash = _passwordService.HashPassword(employee.PasswordHash);
+            }
             
             _context.Employees.Add(employee);
             await _context.SaveChangesAsync();
@@ -57,7 +60,7 @@ namespace UmiHealthPOS.Services
             return employee;
         }
 
-        public async Task<Employee> UpdateEmployeeAsync(Employee employee, int tenantId)
+        public async Task<Employee> UpdateEmployeeAsync(Employee employee, string tenantId)
         {
             var existingEmployee = await _context.Employees
                 .FirstOrDefaultAsync(e => e.Id == employee.Id && e.TenantId == tenantId);
@@ -72,17 +75,21 @@ namespace UmiHealthPOS.Services
             existingEmployee.Position = employee.Position;
             existingEmployee.Role = employee.Role;
             existingEmployee.Status = employee.Status;
-            // Note: Employee doesn't have Avatar, LicenseNumber, ZambiaRegNumber properties
+            existingEmployee.Salary = employee.Salary;
+            existingEmployee.IsActive = employee.IsActive;
             existingEmployee.UpdatedAt = DateTime.UtcNow;
 
-            // Note: Employee entity doesn't have Password property
-            // Password update would need to be implemented separately
+            // Update password if provided
+            if (!string.IsNullOrEmpty(employee.PasswordHash))
+            {
+                existingEmployee.PasswordHash = _passwordService.HashPassword(employee.PasswordHash);
+            }
 
             await _context.SaveChangesAsync();
             return existingEmployee;
         }
 
-        public async Task<bool> DeleteEmployeeAsync(int id, int tenantId)
+        public async Task<bool> DeleteEmployeeAsync(int id, string tenantId)
         {
             var employee = await _context.Employees
                 .FirstOrDefaultAsync(e => e.Id == id && e.TenantId == tenantId);
@@ -95,7 +102,7 @@ namespace UmiHealthPOS.Services
             return true;
         }
 
-        public async Task<string> ResetPasswordAsync(int id, int tenantId)
+        public async Task<string> ResetPasswordAsync(int id, string tenantId)
         {
             var employee = await _context.Employees
                 .FirstOrDefaultAsync(e => e.Id == id && e.TenantId == tenantId);
@@ -103,17 +110,15 @@ namespace UmiHealthPOS.Services
             if (employee == null)
                 throw new Exception("Employee not found");
 
-            // Note: Employee entity doesn't have Password property
-            // Password reset would need to be implemented separately
             var newPassword = _passwordService.GenerateRandomPassword();
-            // employee.Password = _passwordService.HashPassword(newPassword); // Commented out as property doesn't exist
+            employee.PasswordHash = _passwordService.HashPassword(newPassword);
             employee.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
             return newPassword;
         }
 
-        public async Task<string> GetPasswordAsync(int id, int tenantId)
+        public async Task<string> GetPasswordAsync(int id, string tenantId)
         {
             var employee = await _context.Employees
                 .FirstOrDefaultAsync(e => e.Id == id && e.TenantId == tenantId);
@@ -121,9 +126,9 @@ namespace UmiHealthPOS.Services
             if (employee == null)
                 throw new Exception("Employee not found");
 
-            // Note: Employee entity doesn't have Password property
-            // Password retrieval would need to be implemented separately
-            return "Password not available - property doesn't exist";
+            // For security reasons, we don't return the actual password
+            // Instead, we return whether the employee has a password set
+            return string.IsNullOrEmpty(employee.PasswordHash) ? "No password set" : "Password is set";
         }
 
         private async Task<string> GenerateEmployeeIdAsync()

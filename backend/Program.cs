@@ -85,6 +85,13 @@ builder.Services.AddScoped<IRowLevelSecurityService, RowLevelSecurityService>();
 builder.Services.AddScoped<IImpersonationService, ImpersonationService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 
+// Add subscription services
+builder.Services.AddScoped<ISubscriptionExpirationService, SubscriptionExpirationService>();
+builder.Services.AddHostedService<SubscriptionExpirationService>();
+builder.Services.AddScoped<IUsageTrackingService, UsageTrackingService>();
+builder.Services.AddScoped<ILimitService, LimitService>();
+builder.Services.AddScoped<ISubscriptionNotificationService, SubscriptionNotificationService>();
+
 // DataSeeder removed due to static type conflicts
 // builder.Services.AddScoped<DataSeeder>();
 builder.Services.AddScoped<SubscriptionDataSeeder>();
@@ -95,6 +102,7 @@ var app = builder.Build();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseMiddleware<RowLevelSecurityMiddleware>();
+app.UseSubscriptionMiddleware();
 // app.UseBranchIsolation();
 // app.UseInactivityCheck();
 app.UseAuthorization();

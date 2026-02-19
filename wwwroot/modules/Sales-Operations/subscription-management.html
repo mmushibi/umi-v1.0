@@ -28,7 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="../js/auth.js"></script>
+  <script src="../../js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -46,7 +46,7 @@
       <div class="p-4">
         <div class="flex items-center justify-between">
           <div class="flex flex-col items-center space-y-2">
-            <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+            <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           </div>
           <button @click="mobileMenuOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700" title="Close menu">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,7 +111,7 @@
     <aside class="hidden lg:block w-64 bg-white shadow-lg">
       <div class="p-4">
         <div class="flex flex-col items-center space-y-2">
-          <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+          <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           <span class="text-xl font-semibold text-ocean-800">Sales Operations</span>
         </div>
       </div>
@@ -183,7 +183,7 @@
               
               <!-- Mobile logo -->
               <div class="lg:hidden flex items-center space-x-2">
-                <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+                <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
                 <span class="text-xl font-semibold text-ocean-800">Sales Operations</span>
               </div>
               
@@ -636,7 +636,7 @@
         },
         
         getMonthlyRevenue() {
-          return '💰 ' + this.subscriptions
+          return 'ZMW ' + this.subscriptions
             .filter(s => s.status === 'active')
             .reduce((total, s) => {
               const amount = parseFloat(s.amount.replace(/[^0-9.]/g, ''));
@@ -685,7 +685,7 @@
                 tenant: this.subscriptionForm.pharmacyName,
                 email: this.subscriptionForm.phoneNumber,
                 ...this.subscriptionForm,
-                amount: '💰' + planAmounts[this.subscriptionForm.plan]
+                amount: 'ZMW' + planAmounts[this.subscriptionForm.plan]
               };
             }
           } else {
@@ -695,7 +695,7 @@
               tenant: this.subscriptionForm.pharmacyName,
               email: this.subscriptionForm.phoneNumber,
               ...this.subscriptionForm,
-              amount: '💰' + planAmounts[this.subscriptionForm.plan],
+              amount: 'ZMW' + planAmounts[this.subscriptionForm.plan],
               status: 'active',
               nextBilling: this.calculateNextBilling(this.subscriptionForm.startDate, this.subscriptionForm.billingCycle)
             };
@@ -833,7 +833,7 @@
             {
               id: 2,
               description: 'Plan Upgrade Fee',
-              amount: '💰100',
+              amount: 'ZMW100',
               method: 'Mobile Money',
               date: '2024-01-15',
               status: 'success'
@@ -841,7 +841,7 @@
             {
               id: 3,
               description: 'Quarterly Subscription Fee',
-              amount: '💰450',
+              amount: 'ZMW450',
               method: 'Credit Card',
               date: '2024-02-01',
               status: 'pending'
@@ -884,8 +884,10 @@
             date: new Date().toLocaleString()
           };
           
-          // In a real application, this would be saved to the database
+          // Activity logging should be sent to backend API
+          // POST /api/activity-logs endpoint
           console.log('Activity Log:', activity);
+          // In production, this would be saved to the database via API call
         },
         
         showNotification(message, type = 'info') {

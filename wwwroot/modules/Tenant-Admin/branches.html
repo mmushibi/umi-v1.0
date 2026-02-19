@@ -28,7 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="../js/auth.js"></script>
+  <script src="../../js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -46,7 +46,7 @@
       <div class="p-4">
         <div class="flex items-center justify-between">
           <div class="flex flex-col items-center space-y-2">
-            <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+            <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           </div>
           <button @click="mobileMenuOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700" title="Close menu">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +153,7 @@
     <aside class="hidden lg:block w-64 bg-white shadow-lg">
       <div class="p-4">
         <div class="flex flex-col items-center space-y-2">
-          <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+          <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           <span class="text-xl font-semibold text-ocean-800">Pharmacy Admin</span>
         </div>
       </div>
@@ -265,7 +265,7 @@
               </button>
               
               <div class="lg:hidden flex items-center space-x-2">
-                <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+                <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
                 <span class="text-xl font-semibold text-ocean-800">Pharmacy Admin</span>
               </div>
               
@@ -357,7 +357,7 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select x-model="selectedStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+              <select x-model="selectedStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" aria-label="Filter by branch status" title="Filter by branch status">
                 <option value="">All Status</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -602,7 +602,7 @@
             <div class="p-6">
               <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-900" x-text="editingBranch ? 'Edit Branch' : 'Add New Branch'"></h2>
-                <button @click="showAddBranch = false; editingBranch = null; resetBranchForm()" class="text-gray-400 hover:text-gray-600">
+                <button @click="showAddBranch = false; editingBranch = null; resetBranchForm()" class="text-gray-400 hover:text-gray-600" aria-label="Close branch form" title="Close branch form">
                   <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                   </svg>
@@ -633,7 +633,7 @@
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Province</label>
-                    <select x-model="branchForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+                    <select x-model="branchForm.region" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" aria-label="Select province" title="Select province">
                       <option value="">Select Province</option>
                       <option value="central">Central Province</option>
                       <option value="copperbelt">Copperbelt Province</option>
@@ -650,7 +650,7 @@
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                    <select x-model="branchForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+                    <select x-model="branchForm.status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" aria-label="Select branch status" title="Select branch status">
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
                       <option value="maintenance">Under Maintenance</option>
@@ -700,7 +700,7 @@
             <div class="p-6">
               <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-900">Manage Branch Users</h2>
-                <button @click="showBranchUsers = false; selectedBranch = null;" class="text-gray-400 hover:text-gray-600">
+                <button @click="showBranchUsers = false; selectedBranch = null;" class="text-gray-400 hover:text-gray-600" aria-label="Close branch users modal" title="Close branch users modal">
                   <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                   </svg>
@@ -714,13 +714,13 @@
                 <div class="bg-gray-50 rounded-lg p-4 mb-6">
                   <h4 class="text-md font-medium text-gray-900 mb-3">Assign New User</h4>
                   <div class="flex space-x-3">
-                    <select x-model="selectedUserId" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+                    <select x-model="selectedUserId" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" aria-label="Select user to assign" title="Select user to assign">
                       <option value="">Select User to Assign</option>
                       <template x-for="user in availableUsers" :key="user.id">
                         <option :value="user.id" x-text="`${user.firstName} ${user.lastName} (${user.email})`"></option>
                       </template>
                     </select>
-                    <select x-model="selectedPermission" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+                    <select x-model="selectedPermission" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" aria-label="Select permission level" title="Select permission level">
                       <option value="read">Read Only</option>
                       <option value="write">Read & Write</option>
                       <option value="admin">Admin</option>
@@ -797,7 +797,7 @@
                 <p class="mt-1 text-sm text-gray-500" x-text="notification.message"></p>
               </div>
               <div class="ml-auto pl-3">
-                <button @click="notification.show = false" class="text-gray-400 hover:text-gray-600">
+                <button @click="notification.show = false" class="text-gray-400 hover:text-gray-600" aria-label="Dismiss notification" title="Dismiss notification">
                   <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                   </svg>

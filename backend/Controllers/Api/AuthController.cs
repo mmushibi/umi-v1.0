@@ -56,6 +56,28 @@ namespace UmiHealthPOS.Controllers.Api
                 return Unauthorized(new { message = "Invalid email or password" });
             }
 
+            // Check device limit (max 5 concurrent sessions per user)
+            var activeSessionCount = await _context.UserSessions
+                .CountAsync(s => s.UserId == user.UserId && s.IsActive && s.ExpiresAt > DateTime.UtcNow);
+
+            var maxDevices = 5; // Default device limit
+            var deviceLimitSetting = await _context.AppSettings
+                .FirstOrDefaultAsync(s => s.Key == "maxDeviceLimit" && s.Category == "security");
+            
+            if (deviceLimitSetting != null && int.TryParse(deviceLimitSetting.Value, out int configuredLimit))
+            {
+                maxDevices = configuredLimit;
+            }
+
+            if (activeSessionCount >= maxDevices)
+            {
+                return BadRequest(new { 
+                    message = $"Device limit exceeded. Maximum {maxDevices} devices allowed per account. Please logout from another device and try again.",
+                    currentDevices = activeSessionCount,
+                    maxDevices = maxDevices
+                });
+            }
+
             // Update last login
             user.LastLogin = DateTime.UtcNow;
             await _context.SaveChangesAsync();

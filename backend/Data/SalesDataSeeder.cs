@@ -59,7 +59,7 @@ namespace UmiHealthPOS.Data
                     foreach (var product in selectedProducts)
                     {
                         var quantity = random.Next(1, 5);
-                        var unitPrice = product.Price;
+                        var unitPrice = product.SellingPrice;
                         var totalPrice = unitPrice * quantity;
 
                         saleItems.Add(new SaleItem

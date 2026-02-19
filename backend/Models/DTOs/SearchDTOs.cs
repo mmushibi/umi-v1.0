@@ -66,6 +66,9 @@ namespace UmiHealthPOS.Models.DTOs
         public string? SessionId { get; set; }
         public bool IncludeSources { get; set; } = true;
         public string? ConversationId { get; set; }
+        public bool IncludeRealTimeData { get; set; } = false;
+        public string SearchType { get; set; } = "general";
+        public int MaxTokens { get; set; } = 1000;
     }
 
     public class AIResponseDto
@@ -77,6 +80,9 @@ namespace UmiHealthPOS.Models.DTOs
         public bool IsMedicalAdvice { get; set; }
         public string? SessionId { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public bool HasRealTimeData { get; set; } = false;
+        public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+        public List<AISuggestionDto> Suggestions { get; set; } = new();
     }
 
     public class AIMessageDto

@@ -28,7 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="../js/auth.js"></script>
+  <script src="../../js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -46,7 +46,7 @@
       <div class="p-4">
         <div class="flex items-center justify-between">
           <div class="flex flex-col items-center space-y-2">
-            <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+            <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           </div>
           <button @click="mobileMenuOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700" title="Close menu">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +153,7 @@
     <aside class="hidden lg:block w-64 bg-white shadow-lg">
       <div class="p-4">
         <div class="flex flex-col items-center space-y-2">
-          <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+          <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           <span class="text-xl font-semibold text-ocean-800">Pharmacy Admin</span>
         </div>
       </div>
@@ -258,14 +258,14 @@
         <div class="px-6 py-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
-              <button @click="mobileMenuOpen = true" class="lg:hidden text-gray-500 hover:text-gray-700" title="Open menu">
+              <button @click="mobileMenuOpen = true" class="lg:hidden text-gray-500 hover:text-gray-700" title="Open menu" aria-label="Open mobile menu">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
               </svg>
               </button>
               
               <div class="lg:hidden flex items-center space-x-2">
-                <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+                <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
                 <span class="text-xl font-semibold text-ocean-800">Pharmacy Admin</span>
               </div>
               
@@ -407,7 +407,7 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
-              <select x-model="selectedMethod" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+              <select x-model="selectedMethod" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" aria-label="Filter by payment method" title="Filter by payment method">
                 <option value="">All Methods</option>
                 <option value="cash">Cash</option>
                 <option value="card">Card</option>
@@ -418,7 +418,7 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select x-model="selectedStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+              <select x-model="selectedStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" aria-label="Filter by payment status" title="Filter by payment status">
                 <option value="">All Status</option>
                 <option value="completed">Completed</option>
                 <option value="pending">Pending</option>
@@ -433,6 +433,9 @@
                 type="date" 
                 x-model="selectedDate"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                aria-label="Filter by date"
+                title="Filter by date"
+                placeholder="Select date"
               >
             </div>
           </div>
@@ -547,7 +550,7 @@
               </div>
               <div>
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" aria-label="Previous page" title="Previous page">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
@@ -560,7 +563,7 @@
                       x-text="page"
                     ></button>
                   </template>
-                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" aria-label="Next page" title="Next page">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
@@ -597,16 +600,122 @@
           this.loadPaymentsData();
         },
         
-        loadPaymentsData() {
-          // This would typically fetch from an API
-          this.payments = [];
+        async loadPaymentsData() {
+          try {
+            // Load quotations
+            const quotationsResponse = await fetch('/api/payment/quotations');
+            if (quotationsResponse.ok) {
+              const quotations = await quotationsResponse.json();
+              // Convert quotations to payment format
+              quotations.forEach(q => {
+                this.payments.push({
+                  id: q.id,
+                  transactionId: `Q${q.id.toString().padStart(6, '0')}`,
+                  type: 'quotation',
+                  customerName: q.customerName,
+                  amount: q.totalAmount,
+                  status: q.status,
+                  date: q.createdAt,
+                  method: 'N/A'
+                });
+              });
+            }
+
+            // Load invoices
+            const invoicesResponse = await fetch('/api/payment/invoices');
+            if (invoicesResponse.ok) {
+              const invoices = await invoicesResponse.json();
+              // Convert invoices to payment format
+              invoices.forEach(inv => {
+                this.payments.push({
+                  id: inv.id,
+                  transactionId: `INV${inv.id.toString().padStart(6, '0')}`,
+                  type: 'invoice',
+                  customerName: inv.customerName,
+                  amount: inv.totalAmount,
+                  status: inv.status,
+                  date: inv.createdAt,
+                  method: inv.paymentMethod || 'Pending'
+                });
+              });
+            }
+
+            // Load credit notes
+            const creditNotesResponse = await fetch('/api/payment/credit-notes');
+            if (creditNotesResponse.ok) {
+              const creditNotes = await creditNotesResponse.json();
+              // Convert credit notes to payment format
+              creditNotes.forEach(cn => {
+                this.payments.push({
+                  id: cn.id,
+                  transactionId: `CN${cn.id.toString().padStart(6, '0')}`,
+                  type: 'credit-note',
+                  customerName: cn.customerName,
+                  amount: cn.amount,
+                  status: cn.status,
+                  date: cn.createdAt,
+                  method: 'Credit'
+                });
+              });
+            }
+
+            // Load insurance claims
+            const insuranceClaimsResponse = await fetch('/api/payment/insurance-claims');
+            if (insuranceClaimsResponse.ok) {
+              const insuranceClaims = await insuranceClaimsResponse.json();
+              // Convert insurance claims to payment format
+              insuranceClaims.forEach(ic => {
+                this.payments.push({
+                  id: ic.id,
+                  transactionId: `IC${ic.id.toString().padStart(6, '0')}`,
+                  type: 'insurance-claim',
+                  customerName: ic.patientName,
+                  amount: ic.claimAmount,
+                  status: ic.status,
+                  date: ic.submittedDate,
+                  method: 'Insurance'
+                });
+              });
+            }
+
+            // Sort by date descending
+            this.payments.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // Update payment method statistics
+            this.updatePaymentMethodStats();
+
+            // Set recent transactions (last 10)
+            this.recentTransactions = this.payments.slice(0, 10);
+
+          } catch (error) {
+            console.error('Error loading payments data:', error);
+          }
+        },
+
+        updatePaymentMethodStats() {
+          // Reset payment methods
           this.paymentMethods = [
             { name: 'Cash', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1', amount: 0, count: 0 },
             { name: 'Card', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', amount: 0, count: 0 },
             { name: 'Mobile', icon: 'M12 18h.01M8 21h8m-4-18h.01M12 8.01V3m0 0l-4 4m4-4l-4 4m0 0V12.01M16 20.01a4 4 0 01-4-4 4 4 0 01-4-4z', amount: 0, count: 0 },
             { name: 'Insurance', icon: 'M20.618 4.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', amount: 0, count: 0 }
           ];
-          this.recentTransactions = [];
+
+          // Calculate statistics
+          this.payments.forEach(payment => {
+            if (payment.status === 'completed') {
+              const method = this.paymentMethods.find(m => 
+                m.name.toLowerCase() === payment.method.toLowerCase() ||
+                (payment.method === 'Credit' && m.name === 'Cash') ||
+                (payment.type === 'insurance-claim' && m.name === 'Insurance')
+              );
+              
+              if (method) {
+                method.amount += payment.amount;
+                method.count += 1;
+              }
+            }
+          });
         },
         
         get todayRevenue() {

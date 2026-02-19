@@ -119,14 +119,41 @@ update_ssl() {
     log "SSL certificates updated"
 }
 
-# Database migrations
+# Database migrations with AI schema
 run_migrations() {
     log "Running database migrations..."
     
     # Run migrations using Docker
     docker-compose exec backend dotnet ef database update
     
+    # Apply AI learning schema if exists
+    if [ -f "backend/Data/Migrations/AI_Learning_Schema.sql" ]; then
+        log "Applying AI learning schema..."
+        docker-compose exec postgres psql -U ${POSTGRES_USER:-umihealth_user} -d ${POSTGRES_DB:-umi_health_pos_prod} -f /docker-entrypoint-initdb.d/AI_Learning_Schema.sql
+    fi
+    
     log "Database migrations completed"
+}
+
+# Initialize AI services
+initialize_ai_services() {
+    log "Initializing AI services..."
+    
+    # Wait for backend to be ready
+    until curl -f -s http://localhost:8080/health > /dev/null; do
+        log "Waiting for backend to be ready..."
+        sleep 5
+    done
+    
+    # Seed AI knowledge base if needed
+    log "Seeding AI knowledge base..."
+    docker-compose exec backend dotnet run --project . --seed-ai-data || log "AI data seeding optional"
+    
+    # Pre-warm AI cache
+    log "Pre-warming AI cache..."
+    curl -X POST http://localhost:8080/api/sepioai/warmup -H "Content-Type: application/json" -d '{}' || log "AI cache warmup optional"
+    
+    log "AI services initialized"
 }
 
 # Health check
@@ -177,6 +204,7 @@ main() {
     update_nginx
     update_ssl
     run_migrations
+    initialize_ai_services
     health_check
     cleanup
     

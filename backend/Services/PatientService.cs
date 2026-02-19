@@ -9,7 +9,10 @@ using System.Text;
 using System.Threading.Tasks;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
+using UmiHealthPOS.DTOs;
 using UmiHealthPOS.Hubs;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 
 namespace UmiHealthPOS.Services
 {
@@ -30,15 +33,21 @@ namespace UmiHealthPOS.Services
         private readonly ApplicationDbContext _context;
         private readonly IHubContext<PatientHub> _hubContext;
         private readonly ILogger<PatientService> _logger;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IAuthService _authService;
 
         public PatientService(
             ApplicationDbContext context,
             IHubContext<PatientHub> hubContext,
-            ILogger<PatientService> logger)
+            ILogger<PatientService> logger,
+            IHttpContextAccessor httpContextAccessor,
+            IAuthService authService)
         {
             _context = context;
             _hubContext = hubContext;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
+            _authService = authService;
         }
 
         public async Task<List<Patient>> GetPatientsAsync()
@@ -113,7 +122,7 @@ namespace UmiHealthPOS.Services
                     DateOfBirth = request.DateOfBirth,
                     Address = request.Address?.Trim(),
                     MedicalHistory = request.MedicalHistory?.Trim(),
-                    Allergies = request.Allergies?.Trim(),
+                    Allergies = request.Allergies != null ? string.Join(", ", request.Allergies.Select(a => a.Trim())) : null,
                     IsActive = true,
                     TenantId = GetCurrentTenantId(),
                     BranchId = GetCurrentBranchId(),
@@ -178,7 +187,7 @@ namespace UmiHealthPOS.Services
                 patient.DateOfBirth = request.DateOfBirth ?? patient.DateOfBirth;
                 patient.Address = request.Address?.Trim() ?? patient.Address;
                 patient.MedicalHistory = request.MedicalHistory?.Trim() ?? patient.MedicalHistory;
-                patient.Allergies = request.Allergies?.Trim() ?? patient.Allergies;
+                patient.Allergies = request.Allergies != null ? string.Join(", ", request.Allergies.Select(a => a.Trim())) : patient.Allergies;
                 patient.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
@@ -364,7 +373,7 @@ namespace UmiHealthPOS.Services
                         }
 
                         _context.Patients.Add(patient);
-                        result.ImportedCount++;
+                        result.SuccessCount++;
                     }
                     catch (Exception ex)
                     {
@@ -483,14 +492,43 @@ namespace UmiHealthPOS.Services
 
         private string GetCurrentTenantId()
         {
-            // TODO: Get from current user context
-            return "TEN001";
+            try
+            {
+                if (_authService.IsAuthenticated())
+                {
+                    var tenantId = _authService.GetCurrentTenantId();
+                    return $"TEN{tenantId:D3}";
+                }
+                return "TEN001";
+            }
+            catch
+            {
+                return "TEN001";
+            }
         }
 
         private int? GetCurrentBranchId()
         {
-            // TODO: Get from current user context
-            return 1;
+            try
+            {
+                if (_authService.IsAuthenticated())
+                {
+                    var user = _httpContextAccessor.HttpContext?.User;
+                    if (user?.Identity?.IsAuthenticated == true)
+                    {
+                        var branchIdClaim = user.FindFirst("BranchId");
+                        if (branchIdClaim != null && int.TryParse(branchIdClaim.Value, out var branchId))
+                        {
+                            return branchId;
+                        }
+                    }
+                }
+                return 1;
+            }
+            catch
+            {
+                return 1;
+            }
         }
     }
 

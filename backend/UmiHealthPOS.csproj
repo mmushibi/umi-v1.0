@@ -19,53 +19,35 @@
     <PackageReference Include="Npgsql" Version="8.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.3" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.1.2" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <Compile Remove="Controllers\Api\AuthController.cs" />
     <Compile Remove="Controllers\Api\BillingController.cs" />
     <Compile Remove="Controllers\Api\SuperAdminController.cs" />
-    <Compile Remove="Controllers\Api\PharmacistController.cs" />
-    <Compile Remove="Controllers\Api\TenantAdminController.cs" />
     <Compile Remove="Controllers\Api\EmployeeController.cs" />
     <Compile Remove="Controllers\Api\RBACController.cs" />
     <Compile Remove="Controllers\Api\SubscriptionHistoryController.cs" />
     <Compile Remove="Controllers\Api\DatabaseTestController.cs" />
-    <Compile Remove="Controllers\Api\ClinicalController.cs" />
-    <Compile Remove="Controllers\Api\ShiftManagementController.cs" />
-    <Compile Remove="Controllers\Api\AccountController.cs" />
-    <Compile Remove="Controllers\Api\ComplianceController.cs" />
-    <Compile Remove="Controllers\Api\PrescriptionController.cs" />
+    <Compile Remove="Controllers\AuthController.cs" />
     <Compile Remove="Controllers\EmployeeController.cs" />
     <Compile Remove="Data\CategoryDataSeeder.cs" />
-    <Compile Remove="Data\SalesDataSeeder.cs" />
-    <Compile Remove="Repositories\Repositories.cs" />
     <Compile Remove="Services\SuperAdminDashboardService.cs" />
     <Compile Remove="Services\SubscriptionHistoryService.cs" />
-        <Compile Remove="Services\EmployeeService.cs" />
-    <Compile Remove="Services\ZambianComplianceService.cs" />
-    <Compile Remove="Services\SubscriptionService.cs" />
+        <Compile Remove="Services\SubscriptionService.cs" />
     <Compile Remove="Tests\DatabaseIntegrationTest.cs" />
-    <Compile Remove="Services\PrescriptionService.cs" />
     <Compile Remove="Services\ISubscriptionService.cs" />
     <Compile Remove="Models\DTOs\TenantDTOs.cs" />
-    <Compile Remove="Services\PatientService.cs" />
-    <Compile Remove="Controllers\Api\ReportsController.cs" />
-    <Compile Remove="Controllers\Api\CashierController.cs" />
     <Compile Remove="Controllers\Api\SettingsController.cs" />
-    <Compile Remove="Services\InventoryService.cs" />
     <Compile Remove="Services\BranchService.cs" />
     <Compile Remove="Controllers\Api\BranchController.cs" />
-    <Compile Remove="Controllers\Api\InventoryController.cs" />
-    <Compile Remove="Services\ReportsService.cs" />
-    <Compile Remove="Models\Dashboard\DashboardModels.cs" />
-    <Compile Remove="Models\Dashboard\SuperAdminDashboardModels.cs" />
-    <Compile Remove="Services\DashboardNotificationService.cs" />
-    <Compile Remove="Services\DashboardService.cs" />
     <Compile Remove="Models\User.cs" />
     <Compile Remove="Services\BillingService.cs" />
     <Compile Remove="Controllers\Api\UserManagementController.cs" />
     <Compile Remove="Models\TenantImpersonation.cs" />
+    <Compile Remove="Tests\**" />
   </ItemGroup>
 
 </Project>

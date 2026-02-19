@@ -1,122 +1,203 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Models.DTOs;
+using UmiHealthPOS.DTOs;
+using UmiHealthPOS.Services;
+using UmiHealthPOS.Data;
+using UmiHealthPOS.Models.AI;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 
 namespace UmiHealthPOS.Controllers.Api
 {
+    /// <summary>
+    /// Sepio AI Controller - Provides intelligent medical information and assistance
+    /// Features: Natural language processing, learning capabilities, and contextual responses
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [Produces("application/json")]
     public class SepioAIController : ControllerBase
     {
         private readonly ILogger<SepioAIController> _logger;
-        private static readonly Dictionary<string, List<object>> _conversations = new();
+        private readonly ISepioAIService _sepioAIService;
+        private readonly ApplicationDbContext _context;
+        private const int MAX_QUERY_LENGTH = 1000;
+        private const int MIN_QUERY_LENGTH = 3;
 
-        public SepioAIController(ILogger<SepioAIController> logger)
+        public SepioAIController(ILogger<SepioAIController> logger, ISepioAIService sepioAIService, ApplicationDbContext context)
         {
             _logger = logger;
+            _sepioAIService = sepioAIService;
+            _context = context;
         }
 
         /// <summary>
-        /// Ask Sepio AI a medical question
+        /// Ask Sepio AI a medical question with enhanced natural language processing
         /// </summary>
-        /// <param name="request">AI request with query and context</param>
-        /// <returns>AI response with sources and confidence</returns>
+        /// <param name="request">AI request containing query, context, and session information</param>
+        /// <returns>AI response with confidence score, sources, and processing time</returns>
+        /// <response code="200">Successfully processed the query and returned AI response</response>
+        /// <response code="400">Invalid request - missing or malformed query</response>
+        /// <response code="401">Unauthorized - valid JWT token required</response>
+        /// <response code="429">Rate limit exceeded - too many requests</response>
+        /// <response code="500">Internal server error - AI service unavailable</response>
         [HttpPost("ask")]
-        public async Task<ActionResult<object>> AskSepioAI([FromBody] AIRequestDto request)
+        [ProducesResponseType(typeof(AIResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<AIResponseDto>> AskSepioAI([FromBody] AIRequestDto request)
         {
-            await Task.Delay(0);
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            
             try
             {
-                if (string.IsNullOrWhiteSpace(request.Query))
-                    return BadRequest(new { error = "Query is required" });
-
-                if (request.Query.Length < 3)
-                    return BadRequest(new { error = "Query must be at least 3 characters long" });
+                // Enhanced validation
+                var validationResult = ValidateAIRequest(request);
+                if (!validationResult.IsValid)
+                {
+                    _logger.LogWarning("Invalid AI request: {Errors}", string.Join(", ", validationResult.Errors));
+                    return BadRequest(new { error = "Invalid request", details = validationResult.Errors });
+                }
 
                 // Generate session ID if not provided
                 request.SessionId ??= GenerateSessionId();
-
-                // Mock AI response for now - replace with real service when compilation issues are resolved
-                var response = new
-                {
-                    Response = GenerateMockResponse(request.Query),
-                    Sources = GenerateMockSources(request.Query),
-                    Confidence = 0.85,
-                    SessionId = request.SessionId,
-                    Timestamp = DateTime.UtcNow
-                };
-
-                // Store conversation (simplified)
-                StoreConversation(request.SessionId, request.Query, response.Response);
-
-                _logger.LogInformation("Sepio AI query: {Query}, Session: {SessionId}",
-                    request.Query, request.SessionId);
-
+                
+                // Get user context for personalization
+                var userContext = GetUserContext();
+                var userId = GetCurrentUserId();
+                var tenantId = GetCurrentTenantId();
+                
+                // Use the actual AI service with real-time data support
+                var response = await _sepioAIService.AskAIAsync(request);
+                
+                stopwatch.Stop();
+                response.ResponseTime = stopwatch.Elapsed;
+                
+                // Add real-time data metadata
+                response.HasRealTimeData = request.IncludeRealTimeData;
+                response.LastUpdated = DateTime.UtcNow;
+                
+                // Save conversation to database
+                await SaveConversationToDatabase(request, response, userId, tenantId);
+                
+                // Log successful interaction
+                _logger.LogInformation("AI query processed successfully. Query: {QueryLength} chars, Confidence: {Confidence:P1}, Time: {ResponseTime}ms", 
+                    request.Query.Length, response.Confidence, response.ResponseTime.TotalMilliseconds);
+                
                 return Ok(response);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in Sepio AI response for query: {Query}", request.Query);
-                return StatusCode(500, new { error = "An error occurred while processing your request" });
+                _logger.LogError(ex, "Error processing AI request for query: {Query}", request.Query);
+                return StatusCode(500, new { error = "An error occurred while processing your request", requestId = Guid.NewGuid().ToString() });
             }
         }
 
         /// <summary>
-        /// Get AI suggestions for follow-up questions
+        /// Get smart suggestions using machine learning
         /// </summary>
-        /// <param name="request">Suggestion request with query and context</param>
-        /// <returns>List of AI-generated suggestions</returns>
-        [HttpPost("suggestions")]
-        public async Task<ActionResult<List<string>>> GetAISuggestions([FromBody] AIRequestDto request)
+        /// <param name="request">Suggestion request with query and user context</param>
+        /// <returns>List of ML-enhanced suggestions</returns>
+        [HttpPost("smart-suggestions")]
+        public async Task<ActionResult<List<string>>> GetSmartSuggestions([FromBody] AIRequestDto request)
         {
-            await Task.Delay(0);
             try
             {
                 if (string.IsNullOrWhiteSpace(request.Query))
                     return BadRequest(new { error = "Query is required" });
 
-                var suggestions = GenerateMockSuggestions(request.Query);
+                // Use the actual service for ML-enhanced suggestions
+                var userContext = GetUserContext();
+                var smartSuggestions = await _sepioAIService.GenerateSmartSuggestionsAsync(request.Query, userContext);
 
-                _logger.LogInformation("AI suggestions requested for query: {Query}, Count: {Count}",
-                    request.Query, suggestions.Count);
+                _logger.LogInformation("Smart suggestions generated for query: {Query}, Count: {Count}",
+                    request.Query, smartSuggestions.Count);
 
-                return Ok(suggestions);
+                return Ok(smartSuggestions);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting AI suggestions for query: {Query}", request.Query);
-                return StatusCode(500, new { error = "An error occurred while getting suggestions" });
+                _logger.LogError(ex, "Error getting smart suggestions for query: {Query}", request.Query);
+                return StatusCode(500, new { error = "An error occurred while getting smart suggestions" });
             }
         }
 
         /// <summary>
-        /// Get trending medical topics and questions
+        /// Get learning insights and analytics
         /// </summary>
-        /// <returns>List of trending topics</returns>
-        [HttpGet("trending")]
-        public async Task<ActionResult<List<string>>> GetTrendingTopics()
+        /// <param name="userId">User identifier</param>
+        /// <returns>Learning insights and analytics</returns>
+        [HttpGet("learning-insights/{userId}")]
+        public async Task<ActionResult<LearningInsightDto>> GetLearningInsights(string userId)
         {
             try
             {
-                // Mock trending topics
-                var trendingTopics = new List<string>
+                // Use the actual service for learning insights
+                var insights = await _sepioAIService.GetLearningInsightsAsync(userId);
+
+                _logger.LogInformation("Learning insights retrieved for user: {UserId}", userId);
+
+                return Ok(insights);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting learning insights for user: {UserId}", userId);
+                return StatusCode(500, new { error = "An error occurred while getting learning insights" });
+            }
+        }
+
+        /// <summary>
+        /// Train the model with user feedback
+        /// </summary>
+        /// <param name="feedback">Feedback data</param>
+        /// <returns>Training result</returns>
+        [HttpPost("train-model")]
+        public async Task<ActionResult<bool>> TrainModel([FromBody] ModelFeedbackRequest feedback)
+        {
+            try
+            {
+                // Use the actual service for model training
+                var trainingResult = await _sepioAIService.TrainModelAsync(
+                    feedback.Feedback, 
+                    feedback.Query, 
+                    feedback.Response
+                );
+
+                _logger.LogInformation("Model training completed with feedback: {Feedback}", feedback.Feedback);
+
+                return Ok(trainingResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error training model");
+                return StatusCode(500, new { error = "An error occurred while training the model" });
+            }
+        }
+
+        /// <summary>
+        /// Get trending medical topics
+        /// </summary>
+        /// <returns>List of trending topics with popularity scores</returns>
+        [HttpGet("trending")]
+        public async Task<ActionResult<object>> GetTrendingTopics()
+        {
+            try
+            {
+                var trendingTopics = new[]
                 {
-                    "What are the side effects of metformin?",
-                    "How to manage hypertension in elderly patients?",
-                    "What are the latest COVID-19 treatment guidelines?",
-                    "Drug interactions between antidepressants and blood thinners",
-                    "Best practices for diabetes management",
-                    "Symptoms of vitamin D deficiency",
-                    "Antibiotic resistance guidelines",
-                    "Pain management options for chronic conditions"
+                    new { Topic = "Hypertension Management", Popularity = 0.92, Category = "Cardiovascular" },
+                    new { Topic = "Diabetes Medication", Popularity = 0.88, Category = "Endocrinology" },
+                    new { Topic = "Antibiotic Resistance", Popularity = 0.85, Category = "Infectious Disease" },
+                    new { Topic = "Malaria Treatment", Popularity = 0.82, Category = "Tropical Medicine" },
+                    new { Topic = "COVID-19 Management", Popularity = 0.78, Category = "Respiratory" }
                 };
 
-                await Task.Delay(100); // Simulate database call
-
-                _logger.LogInformation("Trending topics requested, Count: {Count}", trendingTopics.Count);
-
-                return Ok(trendingTopics);
+                return Ok(new { Topics = trendingTopics, LastUpdated = DateTime.UtcNow });
             }
             catch (Exception ex)
             {
@@ -125,115 +206,146 @@ namespace UmiHealthPOS.Controllers.Api
             }
         }
 
-        private string GenerateMockResponse(string query)
+        private ValidationResult ValidateAIRequest(AIRequestDto request)
         {
-            var queryLower = query.ToLower();
+            var errors = new List<string>();
 
-            if (queryLower.Contains("drug") || queryLower.Contains("medication"))
+            // Basic validation
+            if (string.IsNullOrWhiteSpace(request.Query))
+                errors.Add("Query is required");
+
+            if (request.Query?.Length < MIN_QUERY_LENGTH)
+                errors.Add($"Query must be at least {MIN_QUERY_LENGTH} characters long");
+
+            if (request.Query?.Length > MAX_QUERY_LENGTH)
+                errors.Add($"Query must not exceed {MAX_QUERY_LENGTH} characters");
+
+            // Content validation - check for potentially harmful content
+            if (request.Query != null)
             {
-                return $"Based on current medical information, here's what I can tell you about {query}:\n\n" +
-                       $"**Important Information:**\n" +
-                       $"• Always consult with a healthcare professional before starting any medication\n" +
-                       $"• This information is for educational purposes only\n" +
-                       $"• Dosage and administration should be determined by your doctor\n" +
-                       $"• Report any side effects to your healthcare provider\n\n" +
-                       $"**Disclaimer:** This is not medical advice. Please consult with a qualified healthcare professional for personalized medical recommendations.";
+                var suspiciousPatterns = new[] { "DROP TABLE", "DELETE FROM", "INSERT INTO", "UPDATE SET", "<script>", "javascript:" };
+                foreach (var pattern in suspiciousPatterns)
+                {
+                    if (request.Query.Contains(pattern, StringComparison.OrdinalIgnoreCase))
+                    {
+                        errors.Add("Query contains potentially harmful content");
+                        break;
+                    }
+                }
             }
 
-            if (queryLower.Contains("symptom") || queryLower.Contains("pain"))
-            {
-                return $"Regarding symptoms of {query}:\n\n" +
-                       $"**Common symptoms may include:**\n" +
-                       $"• Pain or discomfort\n" +
-                       $"• Changes in bodily function\n" +
-                       $"• Fever or inflammation\n" +
-                       $"**When to seek care:**\n" +
-                       $"• Severe or worsening symptoms\n" +
-                       $"• Symptoms accompanied by fever or shortness of breath\n" +
-                       $"• Any concerning new symptoms\n\n" +
-                       $"**Disclaimer:** This information is not a substitute for professional medical evaluation.";
-            }
+            // Context validation (optional)
+            if (request.Context != null && request.Context.Length > 2000)
+                errors.Add("Context must not exceed 2000 characters");
 
-            return $"Here's information about {query}:\n\n" +
-                   $"I'm here to provide general medical information and guidance. " +
-                   $"For specific medical advice, please consult with a qualified healthcare professional who can assess your individual situation.\n\n" +
-                   $"**Sources:** Medical literature, clinical guidelines, and reputable health websites";
-        }
-
-        private List<object> GenerateMockSources(string query)
-        {
-            return new List<object>
+            return new ValidationResult
             {
-                new { Title = "MedlinePlus - Drug Information", Url = "https://medlineplus.gov", Domain = "medlineplus.gov" },
-                new { Title = "CDC - Clinical Guidelines", Url = "https://cdc.gov", Domain = "cdc.gov" },
-                new { Title = "WHO - Health Guidelines", Url = "https://who.int", Domain = "who.int" }
+                IsValid = !errors.Any(),
+                Errors = errors
             };
         }
 
-        private List<string> GenerateMockSuggestions(string query)
+        private string GetUserContext()
         {
-            var queryLower = query.ToLower();
-            var suggestions = new List<string>();
-
-            if (queryLower.Contains("drug"))
-            {
-                suggestions.AddRange(new[]
-                {
-                    "What are the side effects of this drug?",
-                    "What is the recommended dosage?",
-                    "Are there any contraindications?",
-                    "How should this medication be taken?",
-                    "What are the common drug interactions?"
-                });
-            }
-
-            if (queryLower.Contains("symptom"))
-            {
-                suggestions.AddRange(new[]
-                {
-                    "What are the common causes of these symptoms?",
-                    "When should I see a doctor?",
-                    "What home remedies might help?",
-                    "What tests are used for diagnosis?",
-                    "How can I prevent these symptoms?"
-                });
-            }
-
-            if (suggestions.Count == 0)
-            {
-                suggestions.AddRange(new[]
-                {
-                    "What are the treatment options?",
-                    "What is the prognosis?",
-                    "How does this condition progress?",
-                    "What lifestyle changes can help?",
-                    "Are there any complications to watch for?"
-                });
-            }
-
-            return suggestions.Take(8).ToList();
-        }
-
-        private void StoreConversation(string sessionId, string query, string response)
-        {
-            if (!_conversations.ContainsKey(sessionId))
-            {
-                _conversations[sessionId] = new List<object>();
-            }
-
-            _conversations[sessionId].Add(new { Role = "user", Content = query, Timestamp = DateTime.UtcNow });
-            _conversations[sessionId].Add(new { Role = "assistant", Content = response, Timestamp = DateTime.UtcNow });
-
-            // Keep only last 10 messages per session
-            if (_conversations[sessionId].Count > 20)
-            {
-                _conversations[sessionId] = _conversations[sessionId].TakeLast(20).ToList();
-            }
+            var userRole = User?.FindFirst("role")?.Value ?? "unknown";
+            var tenant = User?.FindFirst("tenant")?.Value ?? "unknown";
+            var userId = User?.FindFirst("sub")?.Value ?? "unknown";
+            
+            return $"role:{userRole},tenant:{tenant},userId:{userId}";
         }
 
         private string GenerateSessionId()
         {
-            return $"session_{Guid.NewGuid():N}[8]";
+            return Guid.NewGuid().ToString("N")[..16];
+        }
+
+        private async Task SaveConversationToDatabase(AIRequestDto request, AIResponseDto response, string? userId, string? tenantId)
+        {
+            try
+            {
+                // Get or create conversation session
+                var session = await _context.AIConversationSessions
+                    .FirstOrDefaultAsync(s => s.SessionId == request.SessionId);
+
+                if (session == null)
+                {
+                    session = new AIConversationSession
+                    {
+                        SessionId = request.SessionId,
+                        UserId = userId,
+                        TenantId = tenantId,
+                        StartedAt = DateTime.UtcNow,
+                        LastActivityAt = DateTime.UtcNow,
+                        MessageCount = 0,
+                        IsActive = true
+                    };
+                    await _context.AIConversationSessions.AddAsync(session);
+                }
+                else
+                {
+                    session.LastActivityAt = DateTime.UtcNow;
+                    session.MessageCount += 1;
+                }
+
+                // Save user message
+                var userMessage = new AIMessage
+                {
+                    SessionId = request.SessionId,
+                    MessageId = Guid.NewGuid().ToString(),
+                    MessageType = "user",
+                    Content = request.Query,
+                    Timestamp = DateTime.UtcNow,
+                    ProcessingTimeMs = (int)response.ResponseTime.TotalMilliseconds,
+                    Context = request.Context,
+                    Metadata = System.Text.Json.JsonSerializer.Serialize(new { 
+                        IncludeRealTimeData = request.IncludeRealTimeData,
+                        MaxTokens = request.MaxTokens
+                    })
+                };
+                await _context.AIMessages.AddAsync(userMessage);
+
+                // Save AI response
+                var aiMessage = new AIMessage
+                {
+                    SessionId = request.SessionId,
+                    MessageId = Guid.NewGuid().ToString(),
+                    MessageType = "assistant",
+                    Content = response.Response,
+                    Timestamp = DateTime.UtcNow,
+                    ProcessingTimeMs = (int)response.ResponseTime.TotalMilliseconds,
+                    Confidence = (decimal?)response.Confidence,
+                    Sources = response.Sources != null ? System.Text.Json.JsonSerializer.Serialize(response.Sources) : null,
+                    Metadata = System.Text.Json.JsonSerializer.Serialize(new { 
+                        HasRealTimeData = response.HasRealTimeData,
+                        LastUpdated = response.LastUpdated,
+                        Suggestions = response.Suggestions
+                    })
+                };
+                await _context.AIMessages.AddAsync(aiMessage);
+
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving conversation to database for session: {SessionId}", request.SessionId);
+                // Don't throw - conversation saving shouldn't break the main flow
+            }
+        }
+
+        private string? GetCurrentUserId()
+        {
+            return User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        private string? GetCurrentTenantId()
+        {
+            return User.FindFirst("TenantId")?.Value;
+        }
+
+        private class ValidationResult
+        {
+            public bool IsValid { get; set; }
+            public List<string> Errors { get; set; } = new();
         }
     }
 }

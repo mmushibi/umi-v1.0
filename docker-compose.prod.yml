@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # Backend API Service
+  # Backend API Service with AI Optimizations
   backend:
     build:
       context: ./backend
@@ -17,11 +17,23 @@ services:
       - Jwt:Audience=https://umihealth.zm
       - Jwt:Key=${JWT_SECRET_KEY}
       - Frontend:AllowedOrigins=https://umihealth.zm,https://www.umihealth.zm
+      # AI Service Configuration
+      - AI:CacheExpirationMinutes=30
+      - AI:MaxConcurrentRequests=100
+      - AI:SemanticCacheEnabled=true
+      - AI:LearningEnabled=true
+      - AI:PerformanceMonitoringEnabled=true
+      # External AI Services
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AZURE_COGNITIVE_SERVICES_KEY=${AZURE_COGNITIVE_SERVICES_KEY}
+      - PUBMED_API_KEY=${PUBMED_API_KEY}
     ports:
       - "8080:8080"
     volumes:
       - ./logs:/app/logs
       - ./uploads:/app/uploads
+      - ai_cache:/app/cache
+      - ai_models:/app/models
     depends_on:
       - postgres
       - redis
@@ -33,6 +45,14 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
 
   # PostgreSQL Database
   postgres:
@@ -145,6 +165,10 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  ai_cache:
+    driver: local
+  ai_models:
     driver: local
 
 networks:

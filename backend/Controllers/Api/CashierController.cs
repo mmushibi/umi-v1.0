@@ -5,9 +5,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using UmiHealthPOS.Services;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.Data;
+using UmiHealthPOS.DTOs;
 using UmiHealthPOS.Filters;
 
 namespace UmiHealthPOS.Controllers.Api
@@ -195,13 +197,40 @@ namespace UmiHealthPOS.Controllers.Api
                     return BadRequest(new { error = "Search query must be at least 2 characters" });
                 }
 
-                // Return empty list - no mock data
-                // When database is implemented, this will search products filtered by tenant
-                return Ok(new List<ProductSearchResult>());
+                // Real database implementation - search products filtered by tenant
+                var searchQuery = query.ToLower().Trim();
+                
+                var products = await _context.Products
+                    .Where(p => p.TenantId == tenantId && p.Status == "Active")
+                    .Where(p => p.Name.ToLower().Contains(searchQuery) || 
+                               p.Description != null && p.Description.ToLower().Contains(searchQuery) ||
+                               p.Category != null && p.Category.ToLower().Contains(searchQuery) ||
+                               p.BrandName != null && p.BrandName.ToLower().Contains(searchQuery) ||
+                               p.GenericName != null && p.GenericName.ToLower().Contains(searchQuery))
+                    .OrderBy(p => p.Name)
+                    .Take(20) // Limit results for performance
+                    .Select(p => new ProductSearchResult
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Description = p.Description ?? "",
+                        Price = p.SellingPrice,
+                        StockLevel = p.Stock,
+                        Category = p.Category ?? "Uncategorized",
+                        Brand = p.BrandName,
+                        GenericName = p.GenericName,
+                        RequiresPrescription = false, // Product doesn't have this property
+                        Barcode = "", // Product doesn't have this property
+                        Unit = "Each" // Default unit
+                    })
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                return Ok(products);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error searching products");
+                _logger.LogError(ex, "Error searching products with query: {Query}", query);
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
@@ -274,7 +303,7 @@ namespace UmiHealthPOS.Controllers.Api
                     {
                         Id = s.Id,
                         ReceiptNumber = s.ReceiptNumber,
-                        DateTime = s.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                        DateTime = s.CreatedAt,
                         CustomerName = s.Customer != null ? s.Customer.Name : "Walk-in",
                         CustomerId = s.CustomerId.HasValue ? s.CustomerId.Value.ToString() : null,
                         ItemCount = s.SaleItems.Count,
@@ -322,7 +351,7 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     Id = sale.Id,
                     ReceiptNumber = sale.ReceiptNumber,
-                    DateTime = sale.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                    DateTime = sale.CreatedAt,
                     CustomerName = sale.Customer != null ? sale.Customer.Name : "Walk-in",
                     CustomerId = sale.CustomerId.HasValue ? sale.CustomerId.Value.ToString() : null,
                     Subtotal = sale.Subtotal,
@@ -334,7 +363,7 @@ namespace UmiHealthPOS.Controllers.Api
                     Change = sale.Change,
                     Status = sale.Status,
                     RefundReason = sale.RefundReason,
-                    RefundedAt = sale.RefundedAt.HasValue ? sale.RefundedAt.Value.ToString("yyyy-MM-dd HH:mm:ss") : null,
+                    RefundedAt = sale.RefundedAt,
                     Items = sale.SaleItems.Select(si => new SaleItemDto
                     {
                         ProductName = si.Product.Name,
@@ -419,7 +448,7 @@ namespace UmiHealthPOS.Controllers.Api
                     {
                         Id = s.Id,
                         ReceiptNumber = s.ReceiptNumber,
-                        DateTime = s.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                        DateTime = s.CreatedAt,
                         CustomerName = s.Customer != null ? s.Customer.Name : "Walk-in",
                         CustomerId = s.CustomerId.HasValue ? s.CustomerId.Value.ToString() : null,
                         ItemCount = s.SaleItems.Count,
@@ -451,14 +480,43 @@ namespace UmiHealthPOS.Controllers.Api
 
         private string GetCurrentUserId()
         {
-            // In a real implementation, this would extract from JWT claims
-            return User.FindFirst("sub") != null ? User.FindFirst("sub").Value : (User.FindFirst("userId") != null ? User.FindFirst("userId").Value : null);
+            try
+            {
+                var user = HttpContext.User;
+                if (user?.Identity?.IsAuthenticated != true)
+                    throw new UnauthorizedAccessException("User not authenticated");
+
+                return user.FindFirst("sub")?.Value ?? 
+                       user.FindFirst("userId")?.Value ?? 
+                       user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? 
+                       throw new UnauthorizedAccessException("User ID not found in token");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current user ID");
+                throw new UnauthorizedAccessException("User not authenticated");
+            }
         }
 
         private string GetCurrentTenantId()
         {
-            // In a real implementation, this would extract from JWT claims
-            return User.FindFirst("tenantId") != null ? User.FindFirst("tenantId").Value : null;
+            try
+            {
+                var user = HttpContext.User;
+                if (user?.Identity?.IsAuthenticated != true)
+                    throw new UnauthorizedAccessException("User not authenticated");
+
+                var tenantId = user.FindFirst("tenantId")?.Value;
+                if (string.IsNullOrEmpty(tenantId))
+                    throw new UnauthorizedAccessException("Tenant ID not found in token");
+
+                return tenantId;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current tenant ID");
+                throw new UnauthorizedAccessException("User not authenticated");
+            }
         }
     }
 
@@ -509,6 +567,11 @@ namespace UmiHealthPOS.Controllers.Api
         public decimal Price { get; set; }
         public int StockLevel { get; set; }
         public string Category { get; set; }
+        public string Brand { get; set; }
+        public string GenericName { get; set; }
+        public bool RequiresPrescription { get; set; }
+        public string Barcode { get; set; }
+        public string Unit { get; set; }
     }
 }
 

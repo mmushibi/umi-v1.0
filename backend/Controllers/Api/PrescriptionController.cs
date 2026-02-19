@@ -10,6 +10,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.Data;
+using UmiHealthPOS.DTOs;
 
 namespace UmiHealthPOS.Controllers.Api
 {
@@ -221,7 +222,7 @@ namespace UmiHealthPOS.Controllers.Api
                         var prescriptionItem = new PrescriptionItem
                         {
                             PrescriptionId = prescription.Id,
-                            ProductId = itemRequest.ProductId ?? 0,
+                            ProductId = itemRequest.ProductId,
                             InventoryItemId = itemRequest.InventoryItemId,
                             Quantity = itemRequest.Quantity,
                             UnitPrice = itemRequest.UnitPrice,
@@ -332,119 +333,5 @@ namespace UmiHealthPOS.Controllers.Api
 
             return $"RX{datePrefix}{(count + 1):D4}";
         }
-    }
-
-    // Request/Response DTOs
-    public class CreatePrescriptionRequest
-    {
-        // ... (rest of the code remains the same)
-        [Required]
-        public int PatientId { get; set; }
-
-        [Required]
-        [StringLength(200)]
-        public string DoctorName { get; set; } = string.Empty;
-
-        [StringLength(100)]
-        public string? DoctorRegistrationNumber { get; set; }
-
-        [StringLength(500)]
-        public string? Notes { get; set; }
-
-        [StringLength(200)]
-        public string? Medication { get; set; }
-
-        [StringLength(100)]
-        public string? Dosage { get; set; }
-
-        [StringLength(200)]
-        public string? Instructions { get; set; }
-
-        public DateTime? PrescriptionDate { get; set; }
-        public DateTime? FilledDate { get; set; }
-        public DateTime? ExpiryDate { get; set; }
-
-        [Column(TypeName = "decimal(10,2)")]
-        public decimal? TotalCost { get; set; }
-
-        public bool? IsUrgent { get; set; }
-
-        [StringLength(50)]
-        public string? RxNumber { get; set; }
-
-        public int? BranchId { get; set; }
-
-        public List<CreatePrescriptionItemRequest>? PrescriptionItems { get; set; }
-    }
-
-    public class UpdatePrescriptionRequest
-    {
-        [Required]
-        [StringLength(200)]
-        public string DoctorName { get; set; } = string.Empty;
-
-        [StringLength(100)]
-        public string? DoctorRegistrationNumber { get; set; }
-
-        [StringLength(500)]
-        public string? Notes { get; set; }
-
-        [StringLength(200)]
-        public string? Medication { get; set; }
-
-        [StringLength(100)]
-        public string? Dosage { get; set; }
-
-        [StringLength(200)]
-        public string? Instructions { get; set; }
-
-        public DateTime? PrescriptionDate { get; set; }
-        public DateTime? FilledDate { get; set; }
-        public DateTime? ExpiryDate { get; set; }
-
-        [Column(TypeName = "decimal(10,2)")]
-        public decimal? TotalCost { get; set; }
-
-        public bool? IsUrgent { get; set; }
-
-        [StringLength(50)]
-        public string? RxNumber { get; set; }
-
-        public int? PatientId { get; set; }
-        public string? Status { get; set; }
-    }
-
-    public class CreatePrescriptionItemRequest
-    {
-        public int? ProductId { get; set; }
-        public int? InventoryItemId { get; set; }
-
-        [Required]
-        public int Quantity { get; set; }
-
-        [Column(TypeName = "decimal(10,2)")]
-        public decimal UnitPrice { get; set; }
-
-        [Column(TypeName = "decimal(10,2)")]
-        public decimal TotalPrice { get; set; }
-
-        [StringLength(200)]
-        public string? MedicationName { get; set; }
-
-        [StringLength(100)]
-        public string? Dosage { get; set; }
-
-        [StringLength(200)]
-        public string? Instructions { get; set; }
-
-        public DateTime? ExpiryDate { get; set; }
-        public int Duration { get; set; }
-    }
-
-    public class UpdateStatusRequest
-    {
-        [Required]
-        [StringLength(20)]
-        public string Status { get; set; } = string.Empty;
     }
 }

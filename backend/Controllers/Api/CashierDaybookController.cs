@@ -6,9 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.Filters;
+using UmiHealthPOS.Services;
 
 namespace UmiHealthPOS.Controllers.Api
 {
@@ -20,25 +22,51 @@ namespace UmiHealthPOS.Controllers.Api
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<CashierDaybookController> _logger;
+        private readonly IAuthService _authService;
 
         public CashierDaybookController(
             ApplicationDbContext context,
-            ILogger<CashierDaybookController> logger)
+            ILogger<CashierDaybookController> logger,
+            IAuthService authService)
         {
             _context = context;
             _logger = logger;
+            _authService = authService;
         }
 
         private string GetCurrentUserId()
         {
-            // TODO: Implement proper JWT token extraction
-            return User?.Identity?.Name ?? "demo-user";
+            try
+            {
+                if (_authService.IsAuthenticated())
+                {
+                    return _authService.GetCurrentUserId();
+                }
+                throw new UnauthorizedAccessException("User not authenticated");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current user ID");
+                throw new UnauthorizedAccessException("User not authenticated");
+            }
         }
 
         private string GetCurrentTenantId()
         {
-            // TODO: Implement proper tenant extraction from JWT
-            return "demo-tenant";
+            try
+            {
+                if (_authService.IsAuthenticated())
+                {
+                    var tenantId = _authService.GetCurrentTenantId();
+                    return $"TEN{tenantId:D3}";
+                }
+                throw new UnauthorizedAccessException("User not authenticated");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current tenant ID");
+                throw new UnauthorizedAccessException("User not authenticated");
+            }
         }
 
         [HttpGet("transactions")]

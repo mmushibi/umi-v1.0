@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Net.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using System.Web;
 
 namespace UmiHealthPOS.Services
 {
@@ -60,12 +61,19 @@ namespace UmiHealthPOS.Services
                 // Build enhanced query based on search type
                 var enhancedQuery = BuildEnhancedQuery(request.Query, request.SearchType);
 
-                // Search multiple medical sources
-                var searchTasks = GetSearchSources(request.SearchType).Select(source =>
-                    SearchSourceAsync(source, enhancedQuery, request.SearchType));
+                // Perform real web search using multiple APIs
+                var realTimeResults = await PerformRealTimeWebSearch(enhancedQuery, request.SearchType);
+                results.AddRange(realTimeResults);
 
-                var sourceResults = await Task.WhenAll(searchTasks);
-                results = sourceResults.SelectMany(r => r).ToList();
+                // Fallback to medical sources if no real-time results
+                if (!results.Any())
+                {
+                    var searchTasks = GetSearchSources(request.SearchType).Select(source =>
+                        SearchSourceAsync(source, enhancedQuery, request.SearchType));
+
+                    var sourceResults = await Task.WhenAll(searchTasks);
+                    results = sourceResults.SelectMany(r => r).ToList();
+                }
 
                 // Sort by relevance and limit results
                 results = results.OrderByDescending(r => r.RelevanceScore).Take(request.MaxResults).ToList();
@@ -88,8 +96,8 @@ namespace UmiHealthPOS.Services
                     SearchTime = DateTime.UtcNow - startTime
                 };
 
-                // Cache results for 30 minutes
-                _cache.Set(cacheKey, response, TimeSpan.FromMinutes(30));
+                // Cache results for 15 minutes (shorter for real-time data)
+                _cache.Set(cacheKey, response, TimeSpan.FromMinutes(15));
 
                 return response;
             }
@@ -200,15 +208,53 @@ namespace UmiHealthPOS.Services
         {
             try
             {
-                // Simulate API call to search source
-                // In production, this would call actual search APIs
-                await Task.Delay(Random.Shared.Next(100, 300)); // Simulate network delay
+                // Enhanced API simulation - in production, this would call actual search APIs
+                // For now, we'll simulate different API behaviors based on source type
+                
+                // Simulate API call with realistic timing and potential failures
+                var random = new Random(source.GetHashCode());
+                var baseDelay = source.ToLower() switch
+                {
+                    "pubmed" => 200,    // Medical database - slower but reliable
+                    "web" => 150,       // Web search - moderate speed
+                    "local" => 50,      // Local database - fast
+                    "clinical" => 300,  // Clinical guidelines - slower due to complexity
+                    _ => 100
+                };
+                
+                // Add random variation to simulate network conditions
+                var delay = baseDelay + random.Next(-50, 100);
+                await Task.Delay(Math.Max(50, delay));
+
+                // Simulate occasional API failures (5% failure rate)
+                if (random.NextDouble() < 0.05)
+                {
+                    _logger.LogWarning("Simulated API failure for source: {Source}", source);
+                    throw new HttpRequestException($"Service {source} temporarily unavailable");
+                }
+
+                // Simulate rate limiting (2% rate limit hits)
+                if (random.NextDouble() < 0.02)
+                {
+                    _logger.LogWarning("Simulated rate limit for source: {Source}", source);
+                    throw new HttpRequestException($"Rate limit exceeded for {source}");
+                }
 
                 return GenerateMockResultsForSource(source, query, searchType);
             }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, "HTTP error searching source: {Source}", source);
+                return new List<SearchResultDto>();
+            }
+            catch (TaskCanceledException ex)
+            {
+                _logger.LogError(ex, "Timeout searching source: {Source}", source);
+                return new List<SearchResultDto>();
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error searching source: {Source}", source);
+                _logger.LogError(ex, "Unexpected error searching source: {Source}", source);
                 return new List<SearchResultDto>();
             }
         }
@@ -353,5 +399,265 @@ namespace UmiHealthPOS.Services
                 })
                 .ToList();
         }
+
+        private async Task<List<SearchResultDto>> PerformRealTimeWebSearch(string query, string searchType)
+        {
+            var results = new List<SearchResultDto>();
+            
+            try
+            {
+                // Use Bing Search API for real-time web search
+                var bingResults = await SearchBingAsync(query, searchType);
+                results.AddRange(bingResults);
+
+                // Use Google Custom Search API as backup
+                if (!results.Any())
+                {
+                    var googleResults = await SearchGoogleAsync(query, searchType);
+                    results.AddRange(googleResults);
+                }
+
+                // Use DuckDuckGo for additional results
+                if (results.Count < 3)
+                {
+                    var duckDuckResults = await SearchDuckDuckGoAsync(query, searchType);
+                    results.AddRange(duckDuckResults);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Real-time web search failed, falling back to cached sources");
+            }
+
+            return results;
+        }
+
+        private async Task<List<SearchResultDto>> SearchBingAsync(string query, string searchType)
+        {
+            var results = new List<SearchResultDto>();
+            
+            try
+            {
+                var apiKey = _configuration["BingSearchAPI:Key"];
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    _logger.LogWarning("Bing Search API key not configured");
+                    return results;
+                }
+
+                var searchUrl = $"https://api.bing.microsoft.com/v7.0/search?q={Uri.EscapeDataString(query)}&mkt=en-US&count=5";
+                
+                _httpClient.DefaultRequestHeaders.Clear();
+                _httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", apiKey);
+
+                var response = await _httpClient.GetAsync(searchUrl);
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonContent = await response.Content.ReadAsStringAsync();
+                    var searchResult = JsonSerializer.Deserialize<BingSearchResponse>(jsonContent, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (searchResult?.WebPages?.Value != null)
+                    {
+                        results = searchResult.WebPages.Value.Select(item => new SearchResultDto
+                        {
+                            Title = item.Name,
+                            Url = item.Url,
+                            Description = item.Snippet,
+                            Date = DateTime.Now.ToString("yyyy-MM-dd"),
+                            Domain = new Uri(item.Url).Host,
+                            RelevanceScore = CalculateRelevanceScore(query, item.Name, item.Snippet)
+                        }).ToList();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching Bing for query: {Query}", query);
+            }
+
+            return results;
+        }
+
+        private async Task<List<SearchResultDto>> SearchGoogleAsync(string query, string searchType)
+        {
+            var results = new List<SearchResultDto>();
+            
+            try
+            {
+                var apiKey = _configuration["GoogleSearchAPI:Key"];
+                var searchEngineId = _configuration["GoogleSearchAPI:SearchEngineId"];
+                
+                if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(searchEngineId))
+                {
+                    _logger.LogWarning("Google Search API not properly configured");
+                    return results;
+                }
+
+                var searchUrl = $"https://www.googleapis.com/customsearch/v1?key={apiKey}&cx={searchEngineId}&q={Uri.EscapeDataString(query)}&num=5";
+                
+                var response = await _httpClient.GetAsync(searchUrl);
+                if (response.IsSuccessStatusCode)
+                {
+                    var jsonContent = await response.Content.ReadAsStringAsync();
+                    var searchResult = JsonSerializer.Deserialize<GoogleSearchResponse>(jsonContent, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (searchResult?.Items != null)
+                    {
+                        results = searchResult.Items.Select(item => new SearchResultDto
+                        {
+                            Title = item.Title,
+                            Url = item.Link,
+                            Description = item.Snippet,
+                            Date = DateTime.Now.ToString("yyyy-MM-dd"),
+                            Domain = new Uri(item.Link).Host,
+                            RelevanceScore = CalculateRelevanceScore(query, item.Title, item.Snippet)
+                        }).ToList();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching Google for query: {Query}", query);
+            }
+
+            return results;
+        }
+
+        private async Task<List<SearchResultDto>> SearchDuckDuckGoAsync(string query, string searchType)
+        {
+            var results = new List<SearchResultDto>();
+            
+            try
+            {
+                // DuckDuckGo Instant Answer API (HTML format)
+                var searchUrl = $"https://duckduckgo.com/html/?q={Uri.EscapeDataString(query)}";
+                
+                var response = await _httpClient.GetAsync(searchUrl);
+                if (response.IsSuccessStatusCode)
+                {
+                    var htmlContent = await response.Content.ReadAsStringAsync();
+                    results = ParseDuckDuckGoResults(htmlContent, query);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error searching DuckDuckGo for query: {Query}", query);
+            }
+
+            return results;
+        }
+
+        private List<SearchResultDto> ParseDuckDuckGoResults(string html, string query)
+        {
+            var results = new List<SearchResultDto>();
+            
+            try
+            {
+                // Simple HTML parsing for DuckDuckGo results
+                // In production, use a proper HTML parser like HtmlAgilityPack
+                var lines = html.Split('\n');
+                var inResult = false;
+                var currentResult = new SearchResultDto();
+
+                foreach (var line in lines)
+                {
+                    if (line.Contains("class=\"result__a\""))
+                    {
+                        // Extract title and URL
+                        var titleMatch = System.Text.RegularExpressions.Regex.Match(line, @"<a[^>]*>([^<]+)</a>");
+                        var urlMatch = System.Text.RegularExpressions.Regex.Match(line, @"href=""([^""]+)""");
+                        
+                        if (titleMatch.Success && urlMatch.Success)
+                        {
+                            currentResult.Title = System.Web.HttpUtility.HtmlDecode(titleMatch.Groups[1].Value);
+                            currentResult.Url = urlMatch.Groups[1].Value;
+                            currentResult.Domain = new Uri(currentResult.Url).Host;
+                            inResult = true;
+                        }
+                    }
+                    else if (inResult && line.Contains("class=\"result__snippet\""))
+                    {
+                        var snippetMatch = System.Text.RegularExpressions.Regex.Match(line, @"<a[^>]*>([^<]+)</a>");
+                        if (snippetMatch.Success)
+                        {
+                            currentResult.Description = System.Web.HttpUtility.HtmlDecode(snippetMatch.Groups[1].Value);
+                            currentResult.RelevanceScore = CalculateRelevanceScore(query, currentResult.Title, currentResult.Description);
+                            currentResult.Date = DateTime.Now.ToString("yyyy-MM-dd");
+                            
+                            results.Add(currentResult);
+                            currentResult = new SearchResultDto();
+                            inResult = false;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error parsing DuckDuckGo results");
+            }
+
+            return results.Take(3).ToList();
+        }
+
+        private double CalculateRelevanceScore(string query, string title, string description)
+        {
+            var score = 0.0;
+            var queryTerms = query.ToLower().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var titleLower = title.ToLower();
+            var descLower = description.ToLower();
+
+            foreach (var term in queryTerms)
+            {
+                // Title matches are more important
+                if (titleLower.Contains(term))
+                    score += 0.4;
+                
+                // Description matches
+                if (descLower.Contains(term))
+                    score += 0.2;
+                
+                // Exact phrase match
+                if (titleLower.Contains(query.ToLower()) || descLower.Contains(query.ToLower()))
+                    score += 0.3;
+            }
+
+            return Math.Min(1.0, score);
+        }
+    }
+
+    // DTOs for API responses
+    public class BingSearchResponse
+    {
+        public BingWebPages WebPages { get; set; }
+    }
+
+    public class BingWebPages
+    {
+        public List<BingSearchItem> Value { get; set; }
+    }
+
+    public class BingSearchItem
+    {
+        public string Name { get; set; }
+        public string Url { get; set; }
+        public string Snippet { get; set; }
+    }
+
+    public class GoogleSearchResponse
+    {
+        public List<GoogleSearchItem> Items { get; set; }
+    }
+
+    public class GoogleSearchItem
+    {
+        public string Title { get; set; }
+        public string Link { get; set; }
+        public string Snippet { get; set; }
     }
 }

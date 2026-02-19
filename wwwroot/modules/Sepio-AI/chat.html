@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sepio AI - Medical Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+        .typing-indicator::after {
+            content: '.';
+            animation: typing 1.4s infinite;
+        }
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+        .message-fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .suggestion-chip {
+            transition: all 0.2s ease;
+        }
+        .suggestion-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #fdf4ff 0%, #f3e8ff 100%);
+        }
+        .feature-card {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+            border-color: rgba(139, 92, 246, 0.2);
+        }
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+        .sidebar-item:hover {
+            background: linear-gradient(135deg, #fdf4ff 0%, #f3e8ff 100%);
+            border-left: 3px solid #8b5cf6;
+        }
+        .chat-message {
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        body {
+            background: linear-gradient(135deg, #fce7f3 0%, #e9d5ff 50%, #ddd6fe 100%);
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div x-data="sepioAI()" x-cloak class="min-h-screen flex relative">
+        <!-- Left Sidebar -->
+        <aside x-show="sidebarOpen" 
+               x-transition:enter="transition ease-out duration-300"
+               x-transition:enter-start="opacity-0 transform -translate-x-full"
+               x-transition:enter-end="opacity-100 transform translate-x-0"
+               x-transition:leave="transition ease-in duration-300"
+               x-transition:leave-start="opacity-100 transform translate-x-0"
+               x-transition:leave-end="opacity-0 transform -translate-x-full"
+               class="w-80 bg-white shadow-xl flex flex-col fixed left-0 top-0 h-full z-40">
+            <!-- Logo Section -->
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-gradient-to-r from-pink-500 to-purple-600 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-brain text-white text-lg"></i>
+                        </div>
+                        <div>
+                            <h1 class="text-xl font-bold text-gray-900">Sepio AI</h1>
+                            <p class="text-sm text-gray-500">Medical Intelligence</p>
+                        </div>
+                    </div>
+                    <button @click="sidebarOpen = !sidebarOpen" class="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="p-4 border-b border-gray-100">
+                <div class="relative">
+                    <input type="text" 
+                           placeholder="Search chat" 
+                           class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+
+
+            <!-- Recent Chats -->
+            <div class="flex-1 p-4 overflow-y-auto">
+                <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Recent Chats</h3>
+                <div class="space-y-2">
+                    <template x-for="chat in recentChats" :key="chat.id">
+                        <button @click="loadChat(chat.id)" 
+                                class="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors group">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <i class="fas fa-message text-purple-500 text-sm"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-medium text-gray-900 truncate" x-text="chat.title"></p>
+                                    <p class="text-xs text-gray-500" x-text="chat.timestamp"></p>
+                                </div>
+                            </div>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col transition-all duration-300" 
+              :class="sidebarOpen ? 'ml-80' : 'ml-0'">
+            <!-- Top Bar with Menu Button -->
+            <header class="bg-white shadow-sm border-b border-gray-100 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <button @click="sidebarOpen = !sidebarOpen" 
+                            class="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                            :class="sidebarOpen ? 'mr-6' : ''">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div></div> <!-- Empty profile area -->
+                </div>
+            </header>
+
+            <!-- Chat Content -->
+            <div class="flex-1 overflow-y-auto">
+                <!-- Welcome Screen -->
+                <div x-show="messages.length === 0" class="px-8 py-12">
+                    <div class="max-w-4xl mx-auto text-center">
+                        <h1 class="text-5xl font-bold mb-4">
+                            <span class="gradient-text">Hi There</span>
+                        </h1>
+                        <p class="text-xl text-gray-600 mb-12">How can I help you today?</p>
+                        
+                        <!-- Feature Cards -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                            <div class="feature-card bg-white rounded-xl p-6 cursor-pointer">
+                                <div class="w-12 h-12 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center mb-4">
+                                    <i class="fas fa-clock text-purple-500 text-xl"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">What's Happen in 24 hours?</h3>
+                                <p class="text-sm text-gray-600">Get real-time updates on medical news and research</p>
+                            </div>
+                            
+                            <div class="feature-card bg-white rounded-xl p-6 cursor-pointer">
+                                <div class="w-12 h-12 bg-gradient-to-r from-green-100 to-blue-100 rounded-lg flex items-center justify-center mb-4">
+                                    <i class="fas fa-chart-line text-green-500 text-xl"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Stock market update</h3>
+                                <p class="text-sm text-gray-600">Track pharmaceutical stocks and market trends</p>
+                            </div>
+                            
+                            <div class="feature-card bg-white rounded-xl p-6 cursor-pointer">
+                                <div class="w-12 h-12 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg flex items-center justify-center mb-4">
+                                    <i class="fas fa-microscope text-purple-500 text-xl"></i>
+                                </div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Deep economic research</h3>
+                                <p class="text-sm text-gray-600">Comprehensive analysis of healthcare economics</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages Container -->
+                <div x-show="messages.length > 0" class="px-8 py-6 space-y-6" ref="messagesContainer">
+                    <template x-for="message in messages" :key="message.id">
+                        <div class="chat-message flex" 
+                             :class="message.role === 'user' ? 'justify-end' : 'justify-start'">
+                            <div class="flex max-w-3xl" 
+                                 :class="message.role === 'user' ? 'flex-row-reverse' : 'flex-row'">
+                                <!-- Avatar -->
+                                <div class="flex-shrink-0 mx-3">
+                                    <div class="w-10 h-10 rounded-full flex items-center justify-center"
+                                         :class="message.role === 'user' ? 'bg-blue-500' : 'bg-gradient-to-r from-purple-500 to-pink-500'">
+                                        <i class="fas text-white text-sm"
+                                           :class="message.role === 'user' ? 'fa-user' : 'fa-robot'"></i>
+                                    </div>
+                                </div>
+                                
+                                <!-- Message Content -->
+                                <div class="px-4 py-3 rounded-2xl max-w-2xl"
+                                     :class="message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-800'">
+                                    <p class="text-sm whitespace-pre-wrap" x-text="message.content"></p>
+                                    
+                                    <!-- AI Response Metadata -->
+                                    <div x-show="message.role === 'assistant' && message.confidence" 
+                                         class="mt-3 pt-3 border-t border-gray-200">
+                                        <!-- Real-time Data Indicator -->
+                                        <div x-show="message.hasRealTimeData" class="mb-2">
+                                            <div class="flex items-center space-x-2 text-xs">
+                                                <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                                <span class="text-green-600 font-medium">Live Data</span>
+                                                <span class="text-gray-500">Updated <span x-text="formatTime(message.lastUpdated)"></span></span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="flex items-center justify-between text-xs text-gray-500">
+                                            <div class="flex items-center space-x-2">
+                                                <span>Confidence:</span>
+                                                <div class="flex items-center">
+                                                    <div class="w-16 bg-gray-200 rounded-full h-1.5 mr-2">
+                                                        <div class="bg-green-500 h-1.5 rounded-full" 
+                                                             :style="`width: ${message.confidence * 100}%`"></div>
+                                                    </div>
+                                                    <span x-text="`${Math.round(message.confidence * 100)}%`"></span>
+                                                </div>
+                                            </div>
+                                            <span x-text="formatTime(message.timestamp)"></span>
+                                        </div>
+                                        
+                                        <!-- Sources -->
+                                        <div x-show="message.sources && message.sources.length > 0" class="mt-2">
+                                            <p class="text-xs font-medium text-gray-600 mb-1">
+                                                <span x-show="message.hasRealTimeData">🌐 Real-time Sources:</span>
+                                                <span x-show="!message.hasRealTimeData">Sources:</span>
+                                            </p>
+                                            <div class="flex flex-wrap gap-1">
+                                                <template x-for="source in message.sources" :key="source">
+                                                    <a :href="source.url" target="_blank" 
+                                                       class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full hover:bg-purple-200 transition-colors"
+                                                       x-show="source.url"
+                                                       x-text="source.title || source"></a>
+                                                    <span x-show="!source.url" 
+                                                          class="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded-full"
+                                                          x-text="source"></span>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Typing Indicator -->
+                    <div x-show="isTyping" class="flex justify-start">
+                        <div class="flex items-center space-x-3">
+                            <div class="bg-gradient-to-r from-purple-500 to-pink-500 w-10 h-10 rounded-full flex items-center justify-center">
+                                <i class="fas fa-robot text-white text-sm"></i>
+                            </div>
+                            <div class="bg-gray-100 px-4 py-3 rounded-2xl">
+                                <span class="typing-indicator text-gray-600">Thinking</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="bg-white border-t border-gray-100 px-8 py-6">
+                <form @submit.prevent="sendMessage(currentMessage)" class="max-w-4xl mx-auto">
+                    <div class="flex items-center space-x-4">
+                        <div class="flex-1 relative">
+                            <input x-model="currentMessage"
+                                   @keydown.ctrl.enter="sendMessage(currentMessage)"
+                                   type="text"
+                                   placeholder="Ask something..."
+                                   class="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-12"
+                                   :disabled="isTyping">
+                            <button type="button" 
+                                    @click="recordVoice"
+                                    :class="isRecording ? 'text-red-500' : 'text-gray-400'"
+                                    class="absolute right-4 top-1/2 transform -translate-y-1/2 hover:text-gray-600 transition-colors"
+                                    title="Voice Input">
+                                <i class="fas fa-microphone"></i>
+                            </button>
+                        </div>
+                        <button type="submit"
+                                :disabled="!currentMessage.trim() || isTyping"
+                                class="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-4 rounded-2xl hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+                
+                
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function sepioAI() {
+            return {
+                messages: [],
+                currentMessage: '',
+                isTyping: false,
+                isRecording: false,
+                sidebarOpen: true,
+                showInsights: false,
+                showSettings: false,
+                showTrainingModal: false,
+                loadingInsights: false,
+                smartSuggestions: [],
+                insights: null,
+                sessionId: null,
+                recentChats: [],
+                
+                quickSuggestions: [
+                    'What are the side effects of metformin?',
+                    'How do I manage hypertension in elderly patients?',
+                    'What are the latest guidelines for diabetes treatment?',
+                    'Can you explain drug interactions for antibiotics?',
+                    'What are the symptoms of malaria?',
+                    'How should I store insulin properly?'
+                ],
+                
+                settings: {
+                    smartSuggestions: true,
+                    showConfidence: true,
+                    voiceInput: false,
+                    responseStyle: 'professional'
+                },
+                
+                trainingFeedback: {
+                    rating: 0,
+                    feedback: ''
+                },
+                
+                init() {
+                    this.sessionId = this.generateSessionId();
+                    this.loadSettings();
+                    this.$watch('showInsights', (value) => {
+                        if (value) {
+                            this.loadInsights();
+                        }
+                    });
+                },
+                
+                async sendMessage(message) {
+                    if (!message.trim() || this.isTyping) return;
+                    
+                    // Add user message
+                    const userMessage = {
+                        id: Date.now(),
+                        role: 'user',
+                        content: message.trim(),
+                        timestamp: new Date()
+                    };
+                    this.messages.push(userMessage);
+                    
+                    // Clear input
+                    this.currentMessage = '';
+                    this.smartSuggestions = [];
+                    
+                    // Start typing indicator
+                    this.isTyping = true;
+                    this.scrollToBottom();
+                    
+                    try {
+                        // Call AI API with real-time web search
+                        const response = await fetch('/api/sepioai/ask', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${this.getAuthToken()}`
+                            },
+                            body: JSON.stringify({
+                                query: message,
+                                sessionId: this.sessionId,
+                                context: this.getUserContext(),
+                                requestType: 'medical_query',
+                                includeRealTimeData: true,
+                                searchType: this.determineSearchType(message)
+                            })
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error('Failed to get AI response');
+                        }
+                        
+                        const aiResponse = await response.json();
+                        
+                        // Add AI response with enhanced real-time data
+                        const assistantMessage = {
+                            id: Date.now() + 1,
+                            role: 'assistant',
+                            content: aiResponse.response,
+                            confidence: aiResponse.confidence,
+                            sources: aiResponse.sources || [],
+                            hasRealTimeData: aiResponse.hasRealTimeData || false,
+                            lastUpdated: aiResponse.lastUpdated || new Date(),
+                            timestamp: new Date()
+                        };
+                        this.messages.push(assistantMessage);
+                        
+                        // Get smart suggestions
+                        if (this.settings.smartSuggestions) {
+                            this.getSmartSuggestions(message);
+                        }
+                        
+                        // Update recent chats if this is a new conversation
+                        this.updateRecentChats(message);
+                        
+                    } catch (error) {
+                        console.error('Error sending message:', error);
+                        this.messages.push({
+                            id: Date.now() + 1,
+                            role: 'assistant',
+                            content: 'Sorry, I encountered an error while fetching real-time data. Please try again.',
+                            timestamp: new Date()
+                        });
+                    } finally {
+                        this.isTyping = false;
+                        this.scrollToBottom();
+                    }
+                },
+                
+                async getSmartSuggestions(query) {
+                    try {
+                        const response = await fetch('/api/sepioai/smart-suggestions', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${this.getAuthToken()}`
+                            },
+                            body: JSON.stringify({
+                                query: query,
+                                sessionId: this.sessionId
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const suggestions = await response.json();
+                            this.smartSuggestions = suggestions.slice(0, 5); // Limit to 5 suggestions
+                        }
+                    } catch (error) {
+                        console.error('Error getting suggestions:', error);
+                    }
+                },
+                
+                async loadInsights() {
+                    this.loadingInsights = true;
+                    try {
+                        const userId = this.getUserId();
+                        const response = await fetch(`/api/sepioai/learning-insights/${userId}`, {
+                            headers: {
+                                'Authorization': `Bearer ${this.getAuthToken()}`
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            this.insights = await response.json();
+                        }
+                    } catch (error) {
+                        console.error('Error loading insights:', error);
+                    } finally {
+                        this.loadingInsights = false;
+                    }
+                },
+                
+                async trainModel() {
+                    this.isTraining = true;
+                    try {
+                        // Get last few messages for context
+                        const recentMessages = this.messages.slice(-6);
+                        if (recentMessages.length >= 2) {
+                            const lastUserMessage = recentMessages.find(m => m.role === 'user');
+                            const lastAiMessage = recentMessages.find(m => m.role === 'assistant');
+                            
+                            if (lastUserMessage && lastAiMessage) {
+                                const response = await fetch('/api/sepioai/train-model', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${this.getAuthToken()}`
+                                    },
+                                    body: JSON.stringify({
+                                        query: lastUserMessage.content,
+                                        response: lastAiMessage.content,
+                                        feedback: 'positive_training'
+                                    })
+                                });
+                                
+                                if (response.ok) {
+                                    this.showNotification('Model training completed successfully!', 'success');
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error training model:', error);
+                        this.showNotification('Training failed. Please try again.', 'error');
+                    } finally {
+                        this.isTraining = false;
+                    }
+                },
+                
+                clearChat() {
+                    if (confirm('Are you sure you want to clear this conversation?')) {
+                        this.messages = [];
+                        this.smartSuggestions = [];
+                        this.sessionId = this.generateSessionId();
+                    }
+                },
+                
+                recordVoice() {
+                    if (!this.settings.voiceInput) {
+                        this.showNotification('Voice input is disabled in settings', 'warning');
+                        return;
+                    }
+                    
+                    this.isRecording = !this.isRecording;
+                    
+                    if (this.isRecording) {
+                        // Start voice recording (simplified)
+                        setTimeout(() => {
+                            this.isRecording = false;
+                            this.currentMessage = 'Voice input simulated - this would use Web Speech API';
+                        }, 2000);
+                    }
+                },
+                
+                scrollToBottom() {
+                    this.$nextTick(() => {
+                        const container = this.$refs.messagesContainer;
+                        if (container) {
+                            container.scrollTop = container.scrollHeight;
+                        }
+                    });
+                },
+                
+                formatTime(timestamp) {
+                    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                },
+                
+                formatDate(timestamp) {
+                    return new Date(timestamp).toLocaleDateString();
+                },
+                
+                generateSessionId() {
+                    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+                },
+                
+                getAuthToken() {
+                    // This would get the actual JWT token from storage
+                    return localStorage.getItem('authToken') || 'demo-token';
+                },
+                
+                getUserId() {
+                    // This would get the actual user ID from JWT claims
+                    return 'demo-user-id';
+                },
+                
+                getUserContext() {
+                    return `role:pharmacist,tenant:demo,style:${this.settings.responseStyle}`;
+                },
+                
+                loadSettings() {
+                    const saved = localStorage.getItem('sepioAI-settings');
+                    if (saved) {
+                        this.settings = { ...this.settings, ...JSON.parse(saved) };
+                    }
+                },
+                
+                saveSettings() {
+                    localStorage.setItem('sepioAI-settings', JSON.stringify(this.settings));
+                },
+                
+                loadChat(chatId) {
+                    // Load a specific chat from recent chats
+                    const chat = this.recentChats.find(c => c.id === chatId);
+                    if (chat) {
+                        // Clear current messages and load the selected chat
+                        this.messages = [];
+                        this.sessionId = this.generateSessionId();
+                        // In a real app, this would load the actual chat history from the backend
+                        this.showNotification(`Loading chat: ${chat.title}`, 'info');
+                    }
+                },
+                
+                determineSearchType(message) {
+                    const lowerMessage = message.toLowerCase();
+                    if (lowerMessage.includes('drug') || lowerMessage.includes('medication')) return 'drugs';
+                    if (lowerMessage.includes('guideline') || lowerMessage.includes('protocol')) return 'guidelines';
+                    if (lowerMessage.includes('interaction')) return 'interactions';
+                    if (lowerMessage.includes('research') || lowerMessage.includes('study')) return 'research';
+                    return 'general';
+                },
+                
+                updateRecentChats(message) {
+                    // Add to recent chats if it's the first message in a new session
+                    if (this.messages.length === 2) { // User + AI message
+                        const title = message.length > 50 ? message.substring(0, 47) + '...' : message;
+                        const newChat = {
+                            id: Date.now(),
+                            title: title,
+                            timestamp: 'Just now'
+                        };
+                        
+                        // Add to beginning of recent chats
+                        this.recentChats.unshift(newChat);
+                        
+                        // Keep only last 10 chats
+                        if (this.recentChats.length > 10) {
+                            this.recentChats = this.recentChats.slice(0, 10);
+                        }
+                        
+                        // Save to localStorage
+                        localStorage.setItem('sepioRecentChats', JSON.stringify(this.recentChats));
+                    }
+                },
+                
+                showNotification(message, type = 'info') {
+                    // Simple notification system
+                    console.log(`${type}: ${message}`);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

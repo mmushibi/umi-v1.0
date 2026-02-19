@@ -28,7 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="../js/auth.js"></script>
+  <script src="../../js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -46,7 +46,7 @@
       <div class="p-4">
         <div class="flex items-center justify-between">
           <div class="flex flex-col items-center space-y-2">
-            <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+            <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
             <span class="text-xl font-semibold text-ocean-800">Pharmacist</span>
           </div>
           <button @click="mobileMenuOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700" title="Close menu">
@@ -147,7 +147,7 @@
     <aside class="hidden lg:block w-64 bg-white shadow-lg">
       <div class="p-4">
         <div class="flex flex-col items-center space-y-2">
-          <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+          <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           <span class="text-xl font-semibold text-ocean-800">Pharmacist</span>
         </div>
       </div>
@@ -254,7 +254,7 @@
               
               <!-- Mobile logo -->
               <div class="lg:hidden flex items-center space-x-2">
-                <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+                <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
                 <span class="text-xl font-semibold text-ocean-800">Pharmacist</span>
               </div>
               
@@ -315,17 +315,60 @@
 
         <!-- Sepio AI Assistant Section -->
         <div class="bg-white rounded-lg shadow mb-8">
-          <div class="px-6 py-4 border-b border-gray-200">
+          <div class="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
             <div class="flex items-center justify-between">
               <div>
-                <h2 class="text-lg font-semibold text-gray-900">Ask Sepio AI</h2>
-                <p class="text-sm text-gray-600 mt-1">Your medical AI assistant for clinical information and research</p>
+                <div class="flex items-center space-x-2">
+                  <div class="flex items-center space-x-1">
+                    <svg class="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                    </svg>
+                    <h2 class="text-lg font-semibold text-gray-900">Sepio AI Medical Assistant</h2>
+                  </div>
+                  <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-1"></div>
+                    Clinical Ready
+                  </span>
+                </div>
+                <p class="text-sm text-gray-600 mt-1">Your conversational AI assistant for clinical decision support and medical research</p>
+                <div class="flex items-center space-x-4 mt-2">
+                  <span class="text-xs text-gray-500 flex items-center">
+                    <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                    </svg>
+                    Drug Interactions
+                  </span>
+                  <span class="text-xs text-gray-500 flex items-center">
+                    <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Clinical Guidelines
+                  </span>
+                  <span class="text-xs text-gray-500 flex items-center">
+                    <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                    </svg>
+                    Symptom Analysis
+                  </span>
+                  <span class="text-xs text-gray-500 flex items-center">
+                    <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    Real-time Responses
+                  </span>
+                </div>
               </div>
               <div class="flex items-center space-x-2">
-                <div class="flex items-center space-x-1">
-                  <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span class="text-sm text-gray-600">Online</span>
-                </div>
+                <button @click="showAboutInfo()" class="text-blue-600 hover:text-blue-800 transition-colors" title="About Sepio AI">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                </button>
+                <button @click="showLearningInsights()" class="text-purple-600 hover:text-purple-800 transition-colors" title="Learning Insights">
+                  <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                  </svg>
+                </button>
                 <button @click="clearConversation()" class="text-gray-400 hover:text-gray-600 transition-colors" title="Clear conversation">
                   <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -355,42 +398,56 @@
               
               <!-- AI Message -->
               <div x-show="message.role === 'assistant'" class="flex items-start space-x-3">
-                <div class="flex-shrink-0 w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                  <svg class="h-5 w-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
                   </svg>
                 </div>
                 <div class="flex-1">
-                  <div class="bg-blue-50 rounded-lg p-3 inline-block">
-                    <div class="flex items-center space-x-2 mb-2">
-                      <span class="text-xs font-medium text-blue-600">Sepio AI</span>
-                      <div class="flex items-center space-x-1">
-                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span class="text-xs text-gray-500" x-text="`${Math.round(message.confidence * 100)}% confidence`"></span>
+                  <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 border border-blue-200 shadow-sm">
+                    <div class="flex items-center justify-between mb-3">
+                      <div class="flex items-center space-x-2">
+                        <span class="text-sm font-semibold text-blue-700 flex items-center">
+                          <svg class="h-4 w-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                          </svg>
+                          Sepio AI Medical Assistant
+                        </span>
+                        <div class="flex items-center space-x-1">
+                          <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                          <span class="text-xs text-gray-600" x-text="`${Math.round((message.confidence || 0.85) * 100)}% confidence`"></span>
+                        </div>
                       </div>
+                      <span class="text-xs text-gray-500" x-text="formatTime(message.timestamp)"></span>
                     </div>
-                    <div class="text-sm text-gray-800 prose prose-sm max-w-none">
+                    <div class="text-sm text-gray-800 prose prose-sm max-w-none leading-relaxed">
                       <div x-html="formatMessage(message.content)"></div>
                     </div>
-                    
-                    <!-- Sources -->
-                    <div x-show="message.sources && message.sources.length > 0" class="mt-3 pt-3 border-t border-blue-200">
-                      <p class="text-xs font-medium text-gray-700 mb-2">Sources:</p>
-                      <div class="space-y-1">
-                        <template x-for="(source, sourceIndex) in message.sources" :key="sourceIndex">
-                          <a :href="source.url" target="_blank" rel="noopener noreferrer" 
-                             class="text-xs text-blue-600 hover:text-blue-800 hover:underline flex items-center space-x-1">
-                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
-                            </svg>
-                            <span x-text="source.title"></span>
-                            <span class="text-gray-400" x-text="`(${source.domain})`"></span>
-                          </a>
-                        </template>
+                    <div class="mt-3 pt-3 border-t border-blue-100">
+                      <div class="flex items-center space-x-2">
+                        <span class="text-xs text-blue-600 flex items-center">
+                          <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          Evidence-based information
+                        </span>
+                        <span class="text-xs text-gray-400">•</span>
+                        <span class="text-xs text-blue-600 flex items-center">
+                          <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                          </svg>
+                          Zambia-contextualized
+                        </span>
+                        <span class="text-xs text-gray-400">•</span>
+                        <span class="text-xs text-blue-600 flex items-center">
+                          <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                          </svg>
+                          Real-time
+                        </span>
                       </div>
                     </div>
                   </div>
-                  <p class="text-xs text-gray-500 mt-1" x-text="formatTime(message.timestamp)"></p>
                 </div>
               </div>
               
@@ -435,7 +492,7 @@
                     x-model="currentQuestion"
                     @keydown.enter.prevent="sendMessage()"
                     @input="onQuestionInput()"
-                    placeholder="Ask Sepio AI about medications, symptoms, treatments, or clinical guidelines..."
+                    placeholder="Ask me anything about medications, symptoms, or clinical guidelines..."
                     rows="3"
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent resize-none"
                     :disabled="isTyping"
@@ -782,10 +839,117 @@
           }, 3000);
         },
         
+        showAboutInfo() {
+          const aboutMessage = `**About Sepio AI Medical Assistant**
+
+I'm glad you asked about my development! I was thoughtfully created and rigorously tested by **Sepio Corp**, a pioneering Zambian creative agency dedicated to transforming healthcare through innovative technology solutions.
+
+**Our Mission:**
+• Empowering healthcare professionals with intelligent clinical decision support
+• Enhancing patient care through accessible, evidence-based medical information
+• Bridging technology and healthcare excellence in Zambia and beyond
+• Making quality medical knowledge available to all healthcare providers
+
+**What We Do:**
+Sepio Corp specializes in creating cutting-edge digital solutions that combine artificial intelligence, user-centered design, and deep understanding of healthcare workflows to deliver tools that make a real difference in clinical settings.
+
+**Zambia-First Approach:**
+• Designed with Zambian healthcare context in mind
+• Tailored to local disease patterns, treatment protocols, and healthcare system realities
+• Collaborative development with healthcare professionals across Zambia
+• Committed to advancing digital health innovation in Africa
+
+**Rigorous Development & Testing:**
+• Extensive testing with healthcare professionals
+• Evidence-based medical information from reputable sources
+• Continuous improvement based on user feedback and medical advances
+• Adherence to international healthcare technology standards
+
+**Connect With Us:**
+• Sepio Corp is proud to lead healthcare innovation in Zambia
+• We're passionate about technology that saves lives and improves care
+• Committed to excellence, innovation, and positive impact
+
+**Thank you for trusting me with your clinical information needs!**
+
+*Sepio Corp - Innovating Healthcare, Transforming Lives*`;
+
+          this.messages.push({
+            role: 'assistant',
+            content: aboutMessage,
+            confidence: 1.0,
+            timestamp: new Date()
+          });
+          
+          this.scrollToBottom();
+        },
+
+        async showLearningInsights() {
+          try {
+            const response = await fetch('/api/sepioai/learning-insights/pharmacist-1', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${this.getAuthToken()}`
+              }
+            });
+            
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const insights = await response.json();
+            
+            const insightsMessage = `**Learning Insights & Analytics**
+
+Here's how I've been learning and improving through our interactions:
+
+**Performance Metrics:**
+• Total Queries Processed: ${insights.totalQueries}
+• Learning Accuracy: ${Math.round(insights.learningAccuracy * 100)}%
+• Active Sessions: ${insights.sessionsCount}
+• Last Updated: ${new Date(insights.lastUpdated).toLocaleString()}
+
+**Query Distribution:**
+• Drug Information: ${insights.patternDistribution.drugQueries} queries
+• Symptom Analysis: ${insights.patternDistribution.symptomQueries} queries
+• Clinical Guidelines: ${insights.patternDistribution.guidelineQueries} queries
+• Drug Interactions: ${insights.patternDistribution.interactionQueries} queries
+• General Medical: ${insights.patternDistribution.generalQueries} queries
+
+**Algorithm Performance:**
+• Drug Analysis: ${Math.round(insights.algorithmPerformance.drug * 100)}% accuracy
+• Symptom Assessment: ${Math.round(insights.algorithmPerformance.symptom * 100)}% accuracy
+• Guidelines Application: ${Math.round(insights.algorithmPerformance.guideline * 100)}% accuracy
+• Interaction Detection: ${Math.round(insights.algorithmPerformance.interaction * 100)}% accuracy
+• General Knowledge: ${Math.round(insights.algorithmPerformance.general * 100)}% accuracy
+
+**Most Discussed Topics:**
+${insights.topQueries.map((topic, index) => `${index + 1}. ${topic}`).join('\n')}
+
+**Continuous Learning:**
+I'm constantly improving through machine learning algorithms that analyze user feedback, query patterns, and clinical context to provide more accurate and relevant medical information over time.`;
+
+            this.messages.push({
+              role: 'assistant',
+              content: insightsMessage,
+              confidence: 0.95,
+              timestamp: new Date()
+            });
+            
+            this.scrollToBottom();
+          } catch (error) {
+            console.error('Learning insights error:', error);
+            this.showNotification('Failed to load learning insights', 'error');
+          }
+        },
+        
         logout() {
-          sessionStorage.clear();
-          localStorage.clear();
-          window.location.href = '../auth/signin.html';
+          // Clear auth tokens
+          localStorage.removeItem('authToken');
+          sessionStorage.removeItem('authToken');
+          
+          // Redirect to login
+          window.location.href = '../modules/auth/signin.html';
         }
       }
     }

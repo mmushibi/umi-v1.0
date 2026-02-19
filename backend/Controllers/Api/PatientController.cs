@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.Data;
+using UmiHealthPOS.DTOs;
 
 namespace UmiHealthPOS.Controllers.Api
 {
@@ -166,8 +167,8 @@ namespace UmiHealthPOS.Controllers.Api
                     IdNumber = request.IdNumber,
                     Gender = request.Gender,
                     DateOfBirth = request.DateOfBirth,
-                    MedicalHistory = request.MedicalHistory,
-                    Allergies = request.Allergies,
+                    MedicalHistory = request.MedicalConditions != null ? string.Join(", ", request.MedicalConditions) : null,
+                    Allergies = request.Allergies != null ? string.Join(", ", request.Allergies) : null,
                     TenantId = tenantId,
                     BranchId = request.BranchId,
                     IsActive = true,

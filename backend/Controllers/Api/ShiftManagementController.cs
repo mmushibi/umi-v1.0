@@ -239,16 +239,44 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPost("request-time-off")]
-        public async Task<IActionResult> RequestTimeOff([FromBody] TimeOffRequest request)
+        public async Task<IActionResult> RequestTimeOff([FromBody] TimeOffRequestDto request)
         {
             try
             {
                 var userId = GetCurrentUserId();
                 var tenantId = GetCurrentTenantId();
 
-                // This would create a time off request in a real implementation
-                // For now, return a success message
-                return Ok(new { message = "Time off request submitted successfully" });
+                // Validate request
+                if (request.StartDate >= request.EndDate)
+                {
+                    return BadRequest(new { error = "End date must be after start date" });
+                }
+
+                // Create time off request
+                var timeOffRequest = new Models.TimeOffRequest
+                {
+                    UserId = userId,
+                    TenantId = tenantId,
+                    EmployeeName = request.EmployeeName ?? "Employee",
+                    StartDate = request.StartDate,
+                    EndDate = request.EndDate,
+                    RequestType = request.RequestType ?? "Leave",
+                    Reason = request.Reason,
+                    Status = "Pending",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                await _context.TimeOffRequests.AddAsync(timeOffRequest);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Time off request submitted: {RequestId} for user {UserId}", 
+                    timeOffRequest.Id, userId);
+
+                return Ok(new { 
+                    message = "Time off request submitted successfully",
+                    requestId = timeOffRequest.Id
+                });
             }
             catch (Exception ex)
             {
@@ -317,11 +345,13 @@ namespace UmiHealthPOS.Controllers.Api
         public int ShiftId { get; set; }
     }
 
-    public class TimeOffRequest
+    public class TimeOffRequestDto
     {
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        public string Reason { get; set; }
+        public string? Reason { get; set; }
+        public string? EmployeeName { get; set; }
+        public string? RequestType { get; set; } // Leave, Sick, Personal
     }
 
     public class SwapShiftRequest

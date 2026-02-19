@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "UnF4ayALmpE=",
+  "dgSpecHash": "DbhQUjH56CE=",
   "success": true,
   "projectFilePath": "C:\\Users\\sepio\\Desktop\\Umi-Health-POS\\backend\\UmiHealthPOS.csproj",
   "expectedPackageFiles": [
@@ -57,5 +57,18 @@
     "C:\\Users\\sepio\\.nuget\\packages\\system.text.json\\8.0.0\\system.text.json.8.0.0.nupkg.sha512",
     "C:\\Users\\sepio\\.nuget\\packages\\system.threading.channels\\6.0.0\\system.threading.channels.6.0.0.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1903",
+      "level": "Warning",
+      "message": "Package 'Microsoft.Extensions.Caching.Memory' 8.0.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-qj66-m88j-hmgj",
+      "projectPath": "C:\\Users\\sepio\\Desktop\\Umi-Health-POS\\backend\\UmiHealthPOS.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\sepio\\Desktop\\Umi-Health-POS\\backend\\UmiHealthPOS.csproj",
+      "libraryId": "Microsoft.Extensions.Caching.Memory",
+      "targetGraphs": [
+        "net8.0"
+      ]
+    }
+  ]
 }

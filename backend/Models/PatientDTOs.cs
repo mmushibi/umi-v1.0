@@ -1,42 +1,8 @@
 using System.ComponentModel.DataAnnotations;
+using UmiHealthPOS.DTOs;
 
 namespace UmiHealthPOS.Models
 {
-    public class CreatePatientRequest
-    {
-        [Required]
-        [StringLength(200)]
-        public string Name { get; set; } = string.Empty;
-
-        [StringLength(100)]
-        public string? Email { get; set; }
-
-        [StringLength(20)]
-        public string? PhoneNumber { get; set; }
-
-        [StringLength(20)]
-        public string? Phone { get; set; }
-
-        [StringLength(20)]
-        public string? IdNumber { get; set; }
-
-        [StringLength(200)]
-        public string? Address { get; set; }
-
-        public DateTime? DateOfBirth { get; set; }
-
-        [StringLength(10)]
-        public string? Gender { get; set; }
-
-        [StringLength(500)]
-        public string? Allergies { get; set; }
-
-        [StringLength(1000)]
-        public string? MedicalHistory { get; set; }
-
-        public int? BranchId { get; set; }
-    }
-
     public class UpdatePatientRequest
     {
         [Required]

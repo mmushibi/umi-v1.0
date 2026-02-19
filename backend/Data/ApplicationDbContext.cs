@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 using Npgsql.EntityFrameworkCore.PostgreSQL;
 using UmiHealthPOS.Models;
+using UmiHealthPOS.Models.AI;
 
 namespace UmiHealthPOS.Data
 {
@@ -56,6 +57,17 @@ namespace UmiHealthPOS.Data
         public required DbSet<SalesCreditNoteItem> SalesCreditNoteItems { get; set; } = null!;
         public required DbSet<InsuranceClaim> InsuranceClaims { get; set; } = null!;
 
+        // AI Learning and Analytics DbSets
+        public required DbSet<AIConversationSession> AIConversationSessions { get; set; } = null!;
+        public required DbSet<AIMessage> AIMessages { get; set; } = null!;
+        public required DbSet<AILearningPattern> AILearningPatterns { get; set; } = null!;
+        public required DbSet<AIModelTraining> AIModelTraining { get; set; } = null!;
+        public required DbSet<AIUserFeedback> AIUserFeedback { get; set; } = null!;
+        public required DbSet<AIKnowledgeBase> AIKnowledgeBase { get; set; } = null!;
+        public required DbSet<AISemanticCache> AISemanticCache { get; set; } = null!;
+        public required DbSet<AIPerformanceMetrics> AIPerformanceMetrics { get; set; } = null!;
+        public required DbSet<AIVocabularyWeight> AIVocabularyWeights { get; set; } = null!;
+
         // RBAC Entities
         public required DbSet<Role> Roles { get; set; } = null!;
         public required DbSet<Permission> Permissions { get; set; } = null!;
@@ -68,6 +80,8 @@ namespace UmiHealthPOS.Data
         public required DbSet<SystemSetting> SystemSettings { get; set; } = null!;
         public required DbSet<SettingsAuditLog> SettingsAuditLogs { get; set; } = null!;
         public required DbSet<AppSetting> AppSettings { get; set; } = null!;
+        public required DbSet<UsageRecord> UsageRecords { get; set; } = null!;
+        public required DbSet<AdditionalUserPurchase> AdditionalUserPurchases { get; set; } = null!;
 
         // Application Feature Management
         public required DbSet<ApplicationFeature> ApplicationFeatures { get; set; } = null!;
@@ -82,11 +96,23 @@ namespace UmiHealthPOS.Data
         public required DbSet<SupplierContact> SupplierContacts { get; set; } = null!;
         public required DbSet<SupplierProduct> SupplierProducts { get; set; } = null!;
 
+        // Search History
+        public required DbSet<SearchHistory> SearchHistories { get; set; } = null!;
+
         // Pharmacist Account Management
         public required DbSet<PharmacistProfile> PharmacistProfiles { get; set; }
 
         // Clinical Management
         public required DbSet<ClinicalNote> ClinicalNotes { get; set; } = null!;
+
+        // Help & Training System
+        public required DbSet<HelpCategory> HelpCategories { get; set; } = null!;
+        public required DbSet<HelpArticle> HelpArticles { get; set; } = null!;
+        public required DbSet<HelpFeedback> HelpFeedbacks { get; set; } = null!;
+
+        // Admin Functions
+        public required DbSet<TimeOffRequest> TimeOffRequests { get; set; } = null!;
+        public required DbSet<BackupLog> BackupLogs { get; set; } = null!;
 
         // Enhanced Security Entities
         public required DbSet<EnhancedUserSession> EnhancedUserSessions { get; set; } = null!;
@@ -303,11 +329,16 @@ namespace UmiHealthPOS.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.ReportType).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Frequency).IsRequired().HasMaxLength(20);
-                entity.Property(e => e.DateRange).IsRequired().HasMaxLength(20);
-                entity.Property(e => e.Format).IsRequired().HasMaxLength(10);
-                entity.Property(e => e.RecipientEmail).IsRequired().HasMaxLength(200);
-                entity.Property(e => e.CreatedBy).IsRequired().HasMaxLength(450);
+                entity.Property(e => e.TenantId).IsRequired().HasMaxLength(6);
+                entity.Property(e => e.UserId).HasMaxLength(450);
+                entity.Property(e => e.RecipientEmail).HasMaxLength(100);
+                entity.Property(e => e.Parameters).HasMaxLength(1000);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(e => e.Tenant)
+                      .WithMany()
+                      .HasForeignKey(e => e.TenantId)
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasOne(e => e.Branch)
                       .WithMany()
@@ -315,8 +346,9 @@ namespace UmiHealthPOS.Data
                       .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(e => e.ReportType);
-                entity.HasIndex(e => e.NextRunAt);
-                entity.HasIndex(e => e.CreatedBy);
+                entity.HasIndex(e => e.TenantId);
+                entity.HasIndex(e => e.NextRunDate);
+                entity.HasIndex(e => e.IsActive);
             });
 
             // UserAccount configuration
@@ -979,6 +1011,277 @@ namespace UmiHealthPOS.Data
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.RoleId);
                 entity.HasIndex(e => e.IsActive);
+            });
+
+            // AdditionalUserPurchase configuration
+            modelBuilder.Entity<AdditionalUserPurchase>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TenantId).IsRequired().HasMaxLength(6);
+                entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("active");
+                entity.Property(e => e.Notes).HasMaxLength(500);
+                entity.Property(e => e.PricePerUser).HasPrecision(10, 2);
+                entity.Property(e => e.TotalAmount).HasPrecision(10, 2);
+                entity.Property(e => e.PurchaseDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.StartDate).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(e => e.Tenant)
+                      .WithMany()
+                      .HasForeignKey(e => e.TenantId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.TenantId);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.IsActive);
+                entity.HasIndex(e => e.PurchaseDate);
+            });
+
+            // AI Conversation Session configuration
+            modelBuilder.Entity<AIConversationSession>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.SessionId).IsRequired().HasMaxLength(64);
+                entity.Property(e => e.UserId).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.TenantId).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.UserRole).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Metadata).HasColumnType("jsonb");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.TenantId);
+                entity.HasIndex(e => e.LastActivityAt);
+                entity.HasIndex(e => e.IsActive);
+            });
+
+            // AI Message configuration
+            modelBuilder.Entity<AIMessage>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.SessionId).IsRequired().HasMaxLength(64);
+                entity.Property(e => e.MessageId).IsRequired().HasMaxLength(64);
+                entity.Property(e => e.Role).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.QueryType).HasMaxLength(50);
+                entity.Property(e => e.Confidence).HasColumnType("decimal(3,2)");
+                entity.Property(e => e.Sources).HasColumnType("jsonb");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(e => e.Session)
+                      .WithMany(s => s.Messages)
+                      .HasForeignKey(e => e.SessionId)
+                      .HasConstraintName("FK_AI_Message_AI_ConversationSession")
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.SessionId);
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => e.Role);
+                entity.HasIndex(e => e.QueryType);
+            });
+
+            // AI Learning Pattern configuration
+            modelBuilder.Entity<AILearningPattern>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.PatternType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.PatternKey).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.SuccessRate).HasColumnType("decimal(3,2)");
+                entity.Property(e => e.AverageConfidence).HasColumnType("decimal(3,2)");
+                entity.Property(e => e.ContextData).HasColumnType("jsonb");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.PatternType);
+                entity.HasIndex(e => e.Frequency);
+                entity.HasIndex(e => e.LastSeen);
+            });
+
+            // AI Model Training configuration
+            modelBuilder.Entity<AIModelTraining>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TrainingSessionId).IsRequired().HasMaxLength(64);
+                entity.Property(e => e.ModelVersion).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.TrainingType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.TrainingData).IsRequired().HasColumnType("jsonb");
+                entity.Property(e => e.FeedbackData).HasColumnType("jsonb");
+                entity.Property(e => e.PerformanceMetrics).HasColumnType("jsonb");
+                entity.Property(e => e.TrainingStatus).HasMaxLength(50).HasDefaultValue("pending");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.TrainingStatus);
+                entity.HasIndex(e => e.StartedAt);
+            });
+
+            // AI User Feedback configuration
+            modelBuilder.Entity<AIUserFeedback>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.SessionId).IsRequired().HasMaxLength(64);
+                entity.Property(e => e.MessageId).IsRequired().HasMaxLength(64);
+                entity.Property(e => e.UserId).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.FeedbackType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.CreatedAt);
+                entity.HasIndex(e => e.Rating);
+            });
+
+            // AI Knowledge Base configuration
+            modelBuilder.Entity<AIKnowledgeBase>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Category).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Term).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.Context).HasColumnType("jsonb");
+                entity.Property(e => e.ReliabilityScore).HasColumnType("decimal(3,2)");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.Category);
+                entity.HasIndex(e => e.Term);
+                entity.HasIndex(e => e.IsActive);
+            });
+
+            // AI Semantic Cache configuration
+            modelBuilder.Entity<AISemanticCache>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.QueryHash).IsRequired().HasMaxLength(128);
+                entity.Property(e => e.SimilarQueries).HasColumnType("jsonb");
+                entity.Property(e => e.CachedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.ExpiresAt);
+                entity.HasIndex(e => e.QueryHash);
+            });
+
+            // AI Performance Metrics configuration
+            modelBuilder.Entity<AIPerformanceMetrics>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.TotalQueries).HasDefaultValue(0);
+                entity.Property(e => e.AverageResponseTime).HasColumnType("decimal(8,2)").HasDefaultValue(0.0m);
+                entity.Property(e => e.AverageConfidence).HasColumnType("decimal(3,2)").HasDefaultValue(0.0m);
+                entity.Property(e => e.SuccessRate).HasColumnType("decimal(3,2)").HasDefaultValue(0.0m);
+                entity.Property(e => e.TopQueryTypes).HasColumnType("jsonb");
+                entity.Property(e => e.UserSatisfaction).HasColumnType("decimal(3,2)").HasDefaultValue(0.0m);
+                entity.Property(e => e.ModelVersion).HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.MetricDate);
+            });
+
+            // AI Vocabulary Weight configuration
+            modelBuilder.Entity<AIVocabularyWeight>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Term).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.Weight).HasColumnType("decimal(8,4)").HasDefaultValue(1.0m);
+                entity.Property(e => e.Category).HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.Term);
+                entity.HasIndex(e => e.Frequency);
+            });
+
+            // Help Category configuration
+            modelBuilder.Entity<HelpCategory>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CategoryId).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.Icon).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Active");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.CategoryId).IsUnique();
+                entity.HasIndex(e => e.Order);
+                entity.HasIndex(e => e.Status);
+            });
+
+            // Help Article configuration
+            modelBuilder.Entity<HelpArticle>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ArticleId).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Description).HasMaxLength(1000);
+                entity.Property(e => e.Content).IsRequired();
+                entity.Property(e => e.CategoryId).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.ReadingTime).HasMaxLength(50).HasDefaultValue("5 min read");
+                entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Published");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.LastUpdated).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.ArticleId).IsUnique();
+                entity.HasIndex(e => e.CategoryId);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.Order);
+                entity.HasIndex(e => e.ViewCount);
+
+                entity.HasOne(e => e.Category)
+                    .WithMany(c => c.Articles)
+                    .HasForeignKey(e => e.CategoryId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Help Feedback configuration
+            modelBuilder.Entity<HelpFeedback>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.ArticleId).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.UserId).HasMaxLength(450);
+                entity.Property(e => e.TenantId).HasMaxLength(6);
+                entity.Property(e => e.Comment).HasMaxLength(1000);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.ArticleId);
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.TenantId);
+                entity.HasIndex(e => e.Rating);
+
+                entity.HasOne(e => e.Article)
+                    .WithMany(a => a.Feedback)
+                    .HasForeignKey(e => e.ArticleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Time Off Request configuration
+            modelBuilder.Entity<TimeOffRequest>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.EmployeeName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.RequestType).HasMaxLength(20).HasDefaultValue("Leave");
+                entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Pending");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.TenantId);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.StartDate);
+                entity.HasIndex(e => e.EndDate);
+            });
+
+            // Backup Log configuration
+            modelBuilder.Entity<BackupLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.BackupId).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.BackupType).HasMaxLength(20).HasDefaultValue("Full");
+                entity.Property(e => e.Status).HasMaxLength(20).HasDefaultValue("Completed");
+                entity.Property(e => e.StartedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.BackupId).IsUnique();
+                entity.HasIndex(e => e.TenantId);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.StartedAt);
             });
         }
     }

@@ -8,7 +8,10 @@ using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.DTOs;
+using UmiHealthPOS.Services;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace UmiHealthPOS.Controllers.Api
 {
@@ -19,13 +22,16 @@ namespace UmiHealthPOS.Controllers.Api
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<SettingsController> _logger;
+        private readonly IRealSettingsService _settingsService;
 
         public SettingsController(
             ApplicationDbContext context,
-            ILogger<SettingsController> logger)
+            ILogger<SettingsController> logger,
+            IRealSettingsService settingsService)
         {
             _context = context;
             _logger = logger;
+            _settingsService = settingsService;
         }
 
         [HttpGet]
@@ -593,6 +599,585 @@ namespace UmiHealthPOS.Controllers.Api
             }
 
             return csv.ToString();
+        }
+
+        // Frontend Integration Endpoints
+        [HttpGet("frontend")]
+        public async Task<ActionResult<Dictionary<string, object>>> GetFrontendSettings()
+        {
+            try
+            {
+                var settings = await _settingsService.GetAllSettingsAsync();
+                return Ok(settings);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving frontend settings");
+                return StatusCode(500, new { message = "Error retrieving settings" });
+            }
+        }
+
+        [HttpPost("frontend/{category}")]
+        public async Task<ActionResult> SaveFrontendSettings(string category, [FromBody] Dictionary<string, object> settings)
+        {
+            try
+            {
+                await _settingsService.SaveSettingsAsync(category, settings);
+                return Ok(new { message = $"{category} settings saved successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error saving {Category} frontend settings", category);
+                return StatusCode(500, new { message = $"Error saving {category} settings" });
+            }
+        }
+
+        [HttpPost("frontend/email/test")]
+        public async Task<ActionResult> SendTestEmail()
+        {
+            try
+            {
+                var result = await _settingsService.SendTestEmailAsync();
+                if (result)
+                {
+                    return Ok(new { message = "Test email sent successfully" });
+                }
+                else
+                {
+                    return BadRequest(new { message = "Failed to send test email. Please check your email configuration." });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending test email");
+                return StatusCode(500, new { message = "Error sending test email" });
+            }
+        }
+
+        [HttpPost("frontend/backup/create")]
+        public async Task<ActionResult> CreateBackup()
+        {
+            try
+            {
+                var backupId = await _settingsService.CreateBackupAsync();
+                return Ok(new { message = "Backup created successfully", backupId });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating backup");
+                return StatusCode(500, new { message = "Error creating backup" });
+            }
+        }
+
+        [HttpGet("frontend/backup/download/latest")]
+        public async Task<ActionResult> DownloadLatestBackup()
+        {
+            try
+            {
+                var backupData = await _settingsService.DownloadLatestBackupAsync();
+                return File(backupData, "application/zip", $"umihealth-backup-{DateTime.UtcNow:yyyy-MM-dd}.zip");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading backup");
+                return StatusCode(500, new { message = "Error downloading backup" });
+            }
+        }
+
+        [HttpPost("frontend/system/updates/check")]
+        public async Task<ActionResult> CheckForUpdates()
+        {
+            try
+            {
+                var updateInfo = await _settingsService.CheckForUpdatesAsync();
+                return Ok(updateInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking for updates");
+                return StatusCode(500, new { message = "Error checking for updates" });
+            }
+        }
+
+        [HttpGet("frontend/system/logs/download")]
+        public async Task<ActionResult> DownloadSystemLogs()
+        {
+            try
+            {
+                var logData = await _settingsService.DownloadSystemLogsAsync();
+                return File(logData, "application/zip", $"umihealth-logs-{DateTime.UtcNow:yyyy-MM-dd}.zip");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error downloading system logs");
+                return StatusCode(500, new { message = "Error downloading system logs" });
+            }
+        }
+
+        // Advanced Settings Management Endpoints
+
+        [HttpGet("categories")]
+        public async Task<ActionResult<List<SettingsCategoryDto>>> GetSettingsCategories()
+        {
+            try
+            {
+                var categories = await _context.AppSettings
+                    .GroupBy(s => s.Category)
+                    .Select(g => new SettingsCategoryDto
+                    {
+                        Name = g.Key,
+                        DisplayName = GetCategoryDisplayName(g.Key),
+                        Description = GetCategoryDescription(g.Key),
+                        Icon = GetCategoryIcon(g.Key),
+                        SettingCount = g.Count(),
+                        Order = GetCategoryOrder(g.Key)
+                    })
+                    .OrderBy(c => c.Order)
+                    .ToListAsync();
+
+                return Ok(categories);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving settings categories");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("export")]
+        public async Task<ActionResult> ExportSettings([FromQuery] string? category = null)
+        {
+            try
+            {
+                var query = _context.AppSettings.AsQueryable();
+                
+                if (!string.IsNullOrEmpty(category))
+                {
+                    query = query.Where(s => s.Category == category);
+                }
+
+                var settings = await query
+                    .OrderBy(s => s.Category)
+                    .ThenBy(s => s.Key)
+                    .ToListAsync();
+
+                var exportData = new
+                {
+                    ExportDate = DateTime.UtcNow,
+                    Category = category ?? "All",
+                    TotalSettings = settings.Count,
+                    Settings = settings.Select(s => new
+                    {
+                        s.Category,
+                        s.Key,
+                        s.Value,
+                        s.Description,
+                        s.DataType,
+                        s.Environment,
+                        s.IsEncrypted,
+                        s.CreatedAt,
+                        s.UpdatedAt
+                    })
+                };
+
+                var json = JsonSerializer.Serialize(exportData, new JsonSerializerOptions { WriteIndented = true });
+                var fileName = $"umihealth-settings-{(category ?? "all")}-{DateTime.UtcNow:yyyy-MM-dd}.json";
+
+                return File(System.Text.Encoding.UTF8.GetBytes(json), "application/json", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting settings");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("import")]
+        public async Task<ActionResult<ImportResultDto>> ImportSettings([FromForm] IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { error = "No file provided" });
+                }
+
+                using var stream = file.OpenReadStream();
+                using var reader = new StreamReader(stream);
+                var json = await reader.ReadToEndAsync();
+
+                var importData = JsonSerializer.Deserialize<SettingsImportData>(json);
+                if (importData?.Settings == null)
+                {
+                    return BadRequest(new { error = "Invalid import file format" });
+                }
+
+                var result = new ImportResultDto
+                {
+                    TotalRecords = importData.Settings.Count,
+                    SuccessCount = 0,
+                    FailedCount = 0,
+                    Errors = new List<string>()
+                };
+
+                foreach (var settingData in importData.Settings)
+                {
+                    try
+                    {
+                        var existingSetting = await _context.AppSettings
+                            .FirstOrDefaultAsync(s => s.Category == settingData.Category && s.Key == settingData.Key);
+
+                        if (existingSetting != null)
+                        {
+                            existingSetting.Value = settingData.Value;
+                            existingSetting.Description = settingData.Description;
+                            existingSetting.DataType = settingData.DataType;
+                            existingSetting.UpdatedAt = DateTime.UtcNow;
+                            existingSetting.UpdatedBy = GetCurrentUserId();
+                        }
+                        else
+                        {
+                            var newSetting = new AppSetting
+                            {
+                                Category = settingData.Category,
+                                Key = settingData.Key,
+                                Value = settingData.Value,
+                                Description = settingData.Description,
+                                DataType = settingData.DataType,
+                                Environment = settingData.Environment ?? "Production",
+                                IsEncrypted = settingData.IsEncrypted,
+                                CreatedAt = DateTime.UtcNow,
+                                CreatedBy = GetCurrentUserId()
+                            };
+
+                            await _context.AppSettings.AddAsync(newSetting);
+                        }
+
+                        result.SuccessCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        result.FailedCount++;
+                        result.Errors.Add($"Failed to import setting {settingData.Category}.{settingData.Key}: {ex.Message}");
+                        _logger.LogError(ex, "Error importing setting {Category}.{Key}", settingData.Category, settingData.Key);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error importing settings");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("validate")]
+        public async Task<ActionResult<ValidationResultDto>> ValidateSettings([FromBody] List<SettingValidationRequest> requests)
+        {
+            try
+            {
+                var result = new ValidationResultDto
+                {
+                    IsValid = true,
+                    Warnings = new List<string>(),
+                    Errors = new List<string>()
+                };
+
+                foreach (var request in requests)
+                {
+                    var validation = await ValidateSettingAsync(request);
+                    
+                    if (!validation.IsValid)
+                    {
+                        result.IsValid = false;
+                        result.Errors.AddRange(validation.Errors);
+                    }
+                    
+                    result.Warnings.AddRange(validation.Warnings);
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating settings");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("reset")]
+        public async Task<ActionResult> ResetSettingsToDefault([FromBody] ResetSettingsRequest request)
+        {
+            try
+            {
+                var query = _context.AppSettings.AsQueryable();
+                
+                if (!string.IsNullOrEmpty(request.Category))
+                {
+                    query = query.Where(s => s.Category == request.Category);
+                }
+
+                if (request.Keys?.Any() == true)
+                {
+                    query = query.Where(s => request.Keys.Contains(s.Key));
+                }
+
+                var settingsToReset = await query.ToListAsync();
+                
+                foreach (var setting in settingsToReset)
+                {
+                    var defaultValue = GetDefaultValue(setting.Category, setting.Key);
+                    if (defaultValue != null)
+                    {
+                        setting.Value = defaultValue;
+                        setting.UpdatedAt = DateTime.UtcNow;
+                        setting.UpdatedBy = GetCurrentUserId();
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { 
+                    message = "Settings reset to default values successfully", 
+                    resetCount = settingsToReset.Count 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting settings");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("audit")]
+        public async Task<ActionResult<PagedResult<SettingsAuditLogDto>>> GetSettingsAuditLogs([FromQuery] SettingsAuditFilterDto filter)
+        {
+            try
+            {
+                var query = _context.SettingsAuditLogs.AsQueryable();
+
+                if (!string.IsNullOrEmpty(filter.Category))
+                {
+                    query = query.Where(l => l.Category == filter.Category);
+                }
+
+                if (!string.IsNullOrEmpty(filter.Key))
+                {
+                    query = query.Where(l => l.Key.Contains(filter.Key));
+                }
+
+                if (!string.IsNullOrEmpty(filter.Action))
+                {
+                    query = query.Where(l => l.Action == filter.Action);
+                }
+
+                if (filter.StartDate.HasValue)
+                {
+                    query = query.Where(l => l.Timestamp >= filter.StartDate.Value);
+                }
+
+                if (filter.EndDate.HasValue)
+                {
+                    query = query.Where(l => l.Timestamp <= filter.EndDate.Value);
+                }
+
+                var totalCount = await query.CountAsync();
+                var auditLogs = await query
+                    .OrderByDescending(l => l.Timestamp)
+                    .Skip((filter.Page - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
+                    .Select(l => new SettingsAuditLogDto
+                    {
+                        Id = l.Id,
+                        Category = l.Category,
+                        Key = l.Key,
+                        Action = l.Action,
+                        OldValue = l.OldValue,
+                        NewValue = l.NewValue,
+                        UserId = l.UserId,
+                        Description = l.Description,
+                        IpAddress = l.IpAddress,
+                        UserAgent = l.UserAgent,
+                        Timestamp = l.Timestamp
+                    })
+                    .ToListAsync();
+
+                return Ok(new PagedResult<SettingsAuditLogDto>
+                {
+                    Data = auditLogs,
+                    TotalCount = totalCount,
+                    Page = filter.Page,
+                    PageSize = filter.PageSize,
+                    TotalPages = (int)Math.Ceiling((double)totalCount / filter.PageSize)
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving settings audit logs");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        // Helper methods
+        private string GetCurrentUserId()
+        {
+            return User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value ?? "unknown";
+        }
+
+        private string GetCategoryDisplayName(string category)
+        {
+            return category switch
+            {
+                "system" => "System Settings",
+                "email" => "Email Configuration",
+                "security" => "Security Settings",
+                "backup" => "Backup Settings",
+                "notification" => "Notification Settings",
+                "integration" => "Integration Settings",
+                "ui" => "User Interface",
+                _ => category
+            };
+        }
+
+        private string GetCategoryDescription(string category)
+        {
+            return category switch
+            {
+                "system" => "Core system configuration and settings",
+                "email" => "SMTP server and email delivery settings",
+                "security" => "Authentication, authorization, and security policies",
+                "backup" => "Automated backup and recovery settings",
+                "notification" => "Real-time notification and alert preferences",
+                "integration" => "Third-party service integrations and APIs",
+                "ui" => "User interface customization and preferences",
+                _ => "Configuration settings"
+            };
+        }
+
+        private string GetCategoryIcon(string category)
+        {
+            return category switch
+            {
+                "system" => "fas fa-cog",
+                "email" => "fas fa-envelope",
+                "security" => "fas fa-shield-alt",
+                "backup" => "fas fa-database",
+                "notification" => "fas fa-bell",
+                "integration" => "fas fa-plug",
+                "ui" => "fas fa-palette",
+                _ => "fas fa-cog"
+            };
+        }
+
+        private int GetCategoryOrder(string category)
+        {
+            return category switch
+            {
+                "system" => 1,
+                "security" => 2,
+                "email" => 3,
+                "notification" => 4,
+                "backup" => 5,
+                "integration" => 6,
+                "ui" => 7,
+                _ => 999
+            };
+        }
+
+        private async Task<SettingValidationResult> ValidateSettingAsync(SettingValidationRequest request)
+        {
+            var result = new SettingValidationResult
+            {
+                IsValid = true,
+                Errors = new List<string>(),
+                Warnings = new List<string>()
+            };
+
+            // Validate based on data type
+            switch (request.DataType?.ToLower())
+            {
+                case "email":
+                    if (!IsValidEmail(request.Value))
+                    {
+                        result.IsValid = false;
+                        result.Errors.Add($"Invalid email format: {request.Value}");
+                    }
+                    break;
+                case "url":
+                    if (!IsValidUrl(request.Value))
+                    {
+                        result.IsValid = false;
+                        result.Errors.Add($"Invalid URL format: {request.Value}");
+                    }
+                    break;
+                case "number":
+                    if (!double.TryParse(request.Value, out _))
+                    {
+                        result.IsValid = false;
+                        result.Errors.Add($"Invalid number format: {request.Value}");
+                    }
+                    break;
+                case "boolean":
+                    if (!bool.TryParse(request.Value, out _) && 
+                        !request.Value.Equals("true", StringComparison.OrdinalIgnoreCase) && 
+                        !request.Value.Equals("false", StringComparison.OrdinalIgnoreCase))
+                    {
+                        result.IsValid = false;
+                        result.Errors.Add($"Invalid boolean format: {request.Value}");
+                    }
+                    break;
+            }
+
+            // Validate specific settings
+            if (request.Category == "email" && request.Key == "SmtpPort")
+            {
+                if (int.TryParse(request.Value, out var port) && (port < 1 || port > 65535))
+                {
+                    result.IsValid = false;
+                    result.Errors.Add("SMTP port must be between 1 and 65535");
+                }
+            }
+
+            return result;
+        }
+
+        private bool IsValidEmail(string email)
+        {
+            try
+            {
+                var addr = new System.Net.Mail.MailAddress(email);
+                return addr.Address == email;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool IsValidUrl(string url)
+        {
+            return Uri.TryCreate(url, UriKind.Absolute, out var result) && 
+                   (result.Scheme == Uri.UriSchemeHttp || result.Scheme == Uri.UriSchemeHttps);
+        }
+
+        private string? GetDefaultValue(string category, string key)
+        {
+            return (category, key) switch
+            {
+                ("system", "MaintenanceMode") => "false",
+                ("system", "TimeZone") => "Africa/Lusaka",
+                ("email", "SmtpPort") => "587",
+                ("email", "EnableSsl") => "true",
+                ("security", "SessionTimeoutMinutes") => "30",
+                ("security", "MaxLoginAttempts") => "5",
+                ("notification", "EnableRealTime") => "true",
+                ("backup", "AutoBackupEnabled") => "true",
+                ("backup", "BackupRetentionDays") => "30",
+                _ => null
+            };
         }
     }
 }

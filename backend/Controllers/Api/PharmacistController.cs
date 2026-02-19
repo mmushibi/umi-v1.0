@@ -6,9 +6,11 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using UmiHealthPOS.Services;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.Data;
+using UmiHealthPOS.DTOs;
 
 namespace UmiHealthPOS.Controllers.Api
 {
@@ -148,7 +150,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPost("prescriptions")]
-        public async Task<ActionResult<Prescription>> CreatePrescription([FromBody] UmiHealthPOS.Services.CreatePrescriptionRequest request)
+        public async Task<ActionResult<Prescription>> CreatePrescription([FromBody] CreatePrescriptionRequest request)
         {
             try
             {
@@ -227,7 +229,7 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 // Update prescription status to "ready"
-                var updateRequest = new UmiHealthPOS.Services.UpdatePrescriptionRequest
+                var updateRequest = new UpdatePrescriptionRequest
                 {
                     PatientName = prescription.PatientName,
                     DoctorName = prescription.DoctorName,
@@ -285,7 +287,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPost("prescriptions/{prescriptionId}/reject")]
-        public async Task<ActionResult> RejectPrescription(int prescriptionId)
+        public async Task<ActionResult> RejectPrescription(int prescriptionId, [FromBody] RejectPrescriptionRequest request)
         {
             try
             {
@@ -297,29 +299,12 @@ namespace UmiHealthPOS.Controllers.Api
                     return Unauthorized(new { error = "User not authenticated" });
                 }
 
-                var prescription = await _prescriptionService.GetPrescriptionAsync(prescriptionId);
-                if (prescription == null)
+                var result = await _prescriptionService.RejectPrescriptionAsync(prescriptionId, request.Reason);
+                
+                if (!result)
                 {
-                    return NotFound(new { error = "Prescription not found" });
+                    return BadRequest(new { error = "Prescription not found or cannot be rejected" });
                 }
-
-                // Update prescription status to "cancelled"
-                var updateRequest = new UmiHealthPOS.Services.UpdatePrescriptionRequest
-                {
-                    PatientName = prescription.PatientName,
-                    DoctorName = prescription.DoctorName,
-                    Medication = prescription.Medication,
-                    Dosage = prescription.Dosage,
-                    Instructions = prescription.Instructions,
-                    TotalCost = prescription.TotalCost ?? 0m,
-                    Notes = prescription.Notes + " - Rejected by pharmacist",
-                    IsUrgent = prescription.IsUrgent
-                };
-
-                await _prescriptionService.UpdatePrescriptionAsync(prescriptionId, updateRequest);
-
-                // Note: In a real implementation, we'd add a proper reject method to the service
-                // For now, we'll use the update method and handle the status change in the frontend
 
                 _logger.LogInformation("Prescription {PrescriptionId} rejected by user {UserId}", prescriptionId, userId);
 
@@ -400,7 +385,7 @@ namespace UmiHealthPOS.Controllers.Api
                     {
                         Id = s.Id,
                         ReceiptNumber = s.ReceiptNumber,
-                        DateTime = s.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                        DateTime = s.CreatedAt,
                         CustomerName = s.Customer != null ? s.Customer.Name : "Walk-in",
                         CustomerId = s.CustomerId.HasValue ? s.CustomerId.Value.ToString() : null,
                         ItemCount = s.SaleItems.Count,
@@ -448,7 +433,7 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     Id = sale.Id,
                     ReceiptNumber = sale.ReceiptNumber,
-                    DateTime = sale.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                    DateTime = sale.CreatedAt,
                     CustomerName = sale.Customer != null ? sale.Customer.Name : "Walk-in",
                     CustomerId = sale.CustomerId.HasValue ? sale.CustomerId.Value.ToString() : null,
                     Subtotal = sale.Subtotal,
@@ -460,7 +445,7 @@ namespace UmiHealthPOS.Controllers.Api
                     Change = sale.Change,
                     Status = sale.Status,
                     RefundReason = sale.RefundReason,
-                    RefundedAt = sale.RefundedAt.HasValue ? sale.RefundedAt.Value.ToString("yyyy-MM-dd HH:mm:ss") : null,
+                    RefundedAt = sale.RefundedAt,
                     Items = sale.SaleItems.Select(si => new SaleItemDto
                     {
                         ProductName = si.Product.Name,
@@ -545,7 +530,7 @@ namespace UmiHealthPOS.Controllers.Api
                     {
                         Id = s.Id,
                         ReceiptNumber = s.ReceiptNumber,
-                        DateTime = s.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                        DateTime = s.CreatedAt,
                         CustomerName = s.Customer != null ? s.Customer.Name : "Walk-in",
                         CustomerId = s.CustomerId.HasValue ? s.CustomerId.Value.ToString() : null,
                         ItemCount = s.SaleItems.Count,
@@ -577,14 +562,43 @@ namespace UmiHealthPOS.Controllers.Api
 
         private string GetCurrentUserId()
         {
-            // In a real implementation, this would extract from JWT claims
-            return User.FindFirst("sub") != null ? User.FindFirst("sub").Value : (User.FindFirst("userId") != null ? User.FindFirst("userId").Value : null);
+            try
+            {
+                var user = HttpContext.User;
+                if (user?.Identity?.IsAuthenticated != true)
+                    throw new UnauthorizedAccessException("User not authenticated");
+
+                return user.FindFirst("sub")?.Value ?? 
+                       user.FindFirst("userId")?.Value ?? 
+                       user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? 
+                       throw new UnauthorizedAccessException("User ID not found in token");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current user ID");
+                throw new UnauthorizedAccessException("User not authenticated");
+            }
         }
 
         private string GetCurrentTenantId()
         {
-            // In a real implementation, this would extract from JWT claims
-            return User.FindFirst("tenantId") != null ? User.FindFirst("tenantId").Value : null;
+            try
+            {
+                var user = HttpContext.User;
+                if (user?.Identity?.IsAuthenticated != true)
+                    throw new UnauthorizedAccessException("User not authenticated");
+
+                var tenantId = user.FindFirst("tenantId")?.Value;
+                if (string.IsNullOrEmpty(tenantId))
+                    throw new UnauthorizedAccessException("Tenant ID not found in token");
+
+                return tenantId;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting current tenant ID");
+                throw new UnauthorizedAccessException("User not authenticated");
+            }
         }
     }
 

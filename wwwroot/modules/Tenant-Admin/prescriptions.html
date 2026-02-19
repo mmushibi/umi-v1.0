@@ -28,7 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="../js/auth.js"></script>
+  <script src="../../js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -46,7 +46,7 @@
       <div class="p-4">
         <div class="flex items-center justify-between">
           <div class="flex flex-col items-center space-y-2">
-            <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+            <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           </div>
           <button @click="mobileMenuOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700" title="Close menu">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +153,7 @@
     <aside class="hidden lg:block w-64 bg-white shadow-lg">
       <div class="p-4">
         <div class="flex flex-col items-center space-y-2">
-          <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+          <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           <span class="text-xl font-semibold text-ocean-800">Pharmacy Admin</span>
         </div>
       </div>
@@ -258,14 +258,14 @@
         <div class="px-6 py-4">
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
-              <button @click="mobileMenuOpen = true" class="lg:hidden text-gray-500 hover:text-gray-700" title="Open menu">
+              <button @click="mobileMenuOpen = true" class="lg:hidden text-gray-500 hover:text-gray-700" title="Open menu" aria-label="Open mobile menu">
               <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
               </svg>
               </button>
               
               <div class="lg:hidden flex items-center space-x-2">
-                <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+                <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
                 <span class="text-xl font-semibold text-ocean-800">Pharmacy Admin</span>
               </div>
               
@@ -355,7 +355,7 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select x-model="selectedStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+              <select x-model="selectedStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" aria-label="Filter by prescription status" title="Filter by prescription status">
                 <option value="">All Status</option>
                 <option value="pending">Pending</option>
                 <option value="filled">Filled</option>
@@ -370,6 +370,9 @@
                 type="date" 
                 x-model="dateFrom"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                aria-label="Start date"
+                title="Start date"
+                placeholder="From date"
               >
             </div>
             
@@ -379,6 +382,9 @@
                 type="date" 
                 x-model="dateTo"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                aria-label="End date"
+                title="End date"
+                placeholder="To date"
               >
             </div>
           </div>
@@ -483,7 +489,7 @@
               </div>
               <div>
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" aria-label="Previous page" title="Previous page">
                     <i class="fas fa-chevron-left"></i>
                   </button>
                   <template x-for="page in totalPages" :key="page">
@@ -494,7 +500,7 @@
                       x-text="page"
                     ></button>
                   </template>
-                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" aria-label="Next page" title="Next page">
                     <i class="fas fa-chevron-right"></i>
                   </button>
                 </nav>
@@ -543,14 +549,22 @@
             <input type="text" 
                    x-model="newPrescription.patientName"
                    required
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   aria-label="Patient name"
+                   title="Enter patient name"
+                   placeholder="Enter patient name"
+              >
           </div>
           
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-2">Patient ID Number</label>
             <input type="text" 
                    x-model="newPrescription.patientIdNumber"
-                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent"
+                   aria-label="Patient ID number"
+                   title="Enter patient ID number"
+                   placeholder="Enter patient ID number"
+              >
           </div>
 
           <!-- Doctor Information -->

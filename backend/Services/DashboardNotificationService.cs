@@ -57,11 +57,11 @@ namespace UmiHealthPOS.Services
                     .SendAsync("DashboardActivityUpdate", new
                     {
                         type = "activity",
-                        payload = activity,
-                        timestamp = DateTime.UtcNow
+                        payloMessage = activity.Description,
+                        Timestamp = activity.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")
                     });
 
-                _logger.LogInformation($"Activity update sent to tenant {tenantId}: {activity.Message}");
+                _logger.LogInformation($"Activity update sent to tenant {tenantId}: {activity.Description}");
             }
             catch (Exception ex)
             {
@@ -77,9 +77,8 @@ namespace UmiHealthPOS.Services
                 {
                     Id = DateTime.UtcNow.GetHashCode(),
                     Type = "inventory",
-                    Message = $"Low stock alert: {productName} ({currentStock} remaining, reorder at {reorderLevel})",
-                    Timestamp = "Just now",
-                    CreatedAt = DateTime.UtcNow
+                    Description = $"Low stock alert: {productName} ({currentStock} remaining, reorder at {reorderLevel})",
+                    Timestamp = DateTime.UtcNow
                 };
 
                 await NotifyActivityUpdate(tenantId, activity);
@@ -100,9 +99,8 @@ namespace UmiHealthPOS.Services
                 {
                     Id = DateTime.UtcNow.GetHashCode(),
                     Type = "sale",
-                    Message = $"New sale completed: {amount:C} (ID: {saleId})",
-                    Timestamp = "Just now",
-                    CreatedAt = DateTime.UtcNow
+                    Description = $"New sale completed: {amount:C} (ID: {saleId})",
+                    Timestamp = DateTime.UtcNow
                 };
 
                 await NotifyActivityUpdate(tenantId, activity);
@@ -123,9 +121,8 @@ namespace UmiHealthPOS.Services
                 {
                     Id = DateTime.UtcNow.GetHashCode(),
                     Type = "prescription",
-                    Message = $"New prescription for {patientName} (ID: {prescriptionId})",
-                    Timestamp = "Just now",
-                    CreatedAt = DateTime.UtcNow
+                    Description = $"New prescription for {patientName} (ID: {prescriptionId})",
+                    Timestamp = DateTime.UtcNow
                 };
 
                 await NotifyActivityUpdate(tenantId, activity);

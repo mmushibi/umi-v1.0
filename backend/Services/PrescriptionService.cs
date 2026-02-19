@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.Data;
+using UmiHealthPOS.DTOs;
 using Microsoft.AspNetCore.Http;
 using System.Text;
 using System.IO;
@@ -20,6 +21,7 @@ namespace UmiHealthPOS.Services
         Task<Prescription> UpdatePrescriptionAsync(int id, UpdatePrescriptionRequest request);
         Task<bool> DeletePrescriptionAsync(int id);
         Task<bool> FillPrescriptionAsync(int id);
+        Task<bool> RejectPrescriptionAsync(int id, string reason);
         Task<List<Patient>> GetPatientsAsync();
         Task<Patient> GetPatientAsync(int id);
         Task<Patient> CreatePatientAsync(CreatePatientRequest request);
@@ -85,8 +87,8 @@ namespace UmiHealthPOS.Services
                 {
                     RxNumber = await GenerateRxNumberAsync(),
                     PatientId = request.PatientId,
-                    PatientName = request.PatientName,
-                    PatientIdNumber = request.PatientIdNumber,
+                    PatientName = $"Patient-{request.PatientId}", // Generate placeholder name
+                    PatientIdNumber = $"ID-{request.PatientId}", // Generate placeholder ID
                     DoctorName = request.DoctorName,
                     DoctorRegistrationNumber = request.DoctorRegistrationNumber,
                     Medication = request.Medication,
@@ -97,7 +99,7 @@ namespace UmiHealthPOS.Services
                     PrescriptionDate = request.PrescriptionDate,
                     ExpiryDate = request.ExpiryDate,
                     Notes = request.Notes,
-                    IsUrgent = request.IsUrgent
+                    IsUrgent = request.IsUrgent ?? false
                 };
 
                 _context.Prescriptions.Add(prescription);
@@ -149,7 +151,7 @@ namespace UmiHealthPOS.Services
                 prescription.Instructions = request.Instructions;
                 prescription.TotalCost = request.TotalCost;
                 prescription.Notes = request.Notes;
-                prescription.IsUrgent = request.IsUrgent;
+                prescription.IsUrgent = request.IsUrgent ?? false;
                 prescription.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
@@ -206,6 +208,44 @@ namespace UmiHealthPOS.Services
             }
         }
 
+        public async Task<bool> RejectPrescriptionAsync(int id, string reason)
+        {
+            try
+            {
+                var prescription = await _context.Prescriptions
+                    .Include(p => p.PrescriptionItems)
+                    .FirstOrDefaultAsync(p => p.Id == id);
+
+                if (prescription == null)
+                {
+                    _logger.LogWarning("Prescription not found: {Id}", id);
+                    return false;
+                }
+
+                if (prescription.Status != "pending")
+                {
+                    _logger.LogWarning("Prescription {Id} is not in pending status. Current status: {Status}", id, prescription.Status);
+                    return false;
+                }
+
+                prescription.Status = "rejected";
+                prescription.Notes = string.IsNullOrEmpty(prescription.Notes) 
+                    ? $"Rejected: {reason}"
+                    : $"{prescription.Notes}\nRejected: {reason}";
+                prescription.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Rejected prescription with ID: {Id}, Reason: {Reason}", id, reason);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting prescription with ID: {Id}", id);
+                throw;
+            }
+        }
+
         public async Task<List<Patient>> GetPatientsAsync()
         {
             try
@@ -248,8 +288,8 @@ namespace UmiHealthPOS.Services
                     DateOfBirth = request.DateOfBirth,
                     Gender = request.Gender,
                     Address = request.Address,
-                    Allergies = request.Allergies,
-                    MedicalHistory = request.MedicalHistory,
+                    Allergies = request.Allergies != null ? string.Join(", ", request.Allergies) : null,
+                    MedicalHistory = request.MedicalConditions != null ? string.Join(", ", request.MedicalConditions) : null,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -284,8 +324,8 @@ namespace UmiHealthPOS.Services
                 patient.DateOfBirth = request.DateOfBirth;
                 patient.Gender = request.Gender;
                 patient.Address = request.Address;
-                patient.Allergies = request.Allergies;
-                patient.MedicalHistory = request.MedicalHistory;
+                patient.Allergies = request.Allergies != null ? string.Join(", ", request.Allergies) : null;
+                patient.MedicalHistory = request.MedicalConditions != null ? string.Join(", ", request.MedicalConditions) : null;
                 patient.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
@@ -359,14 +399,15 @@ namespace UmiHealthPOS.Services
                     {
                         var patientRequest = new CreatePatientRequest
                         {
-                            Name = values[0].Trim('"'),
+                            FirstName = values[0].Trim('"').Split(' ').FirstOrDefault() ?? "",
+                            LastName = values[0].Trim('"').Split(' ').Skip(1).FirstOrDefault() ?? "",
                             IdNumber = values[1].Trim('"'),
                             PhoneNumber = values[2].Trim('"'),
                             Email = values[3].Trim('"'),
                             Gender = values[4].Trim('"'),
                             Address = values[5].Trim('"'),
-                            Allergies = values[6].Trim('"'),
-                            MedicalHistory = values[7].Trim('"')
+                            Allergies = string.IsNullOrWhiteSpace(values[6].Trim('"')) ? new List<string>() : values[6].Trim('"').Split(',').Select(a => a.Trim()).ToList(),
+                            MedicalConditions = string.IsNullOrWhiteSpace(values[7].Trim('"')) ? new List<string>() : values[7].Trim('"').Split(',').Select(m => m.Trim()).ToList()
                         };
 
                         if (DateTime.TryParse(values[8].Trim('"'), out var dateOfBirth))
@@ -375,7 +416,7 @@ namespace UmiHealthPOS.Services
                         }
 
                         await CreatePatientAsync(patientRequest);
-                        result.ImportedCount++;
+                        result.SuccessCount++;
                     }
                     catch (Exception ex)
                     {
@@ -492,47 +533,5 @@ namespace UmiHealthPOS.Services
                 throw;
             }
         }
-    }
-
-    // Request/Response Models
-    public class CreatePrescriptionRequest
-    {
-        public int PatientId { get; set; }
-        public string? PatientName { get; set; }
-        public string? PatientIdNumber { get; set; }
-        public string? DoctorName { get; set; }
-        public string? DoctorRegistrationNumber { get; set; }
-        public string? Medication { get; set; }
-        public string? Dosage { get; set; }
-        public string? Instructions { get; set; }
-        public decimal TotalCost { get; set; }
-        public DateTime PrescriptionDate { get; set; }
-        public DateTime? ExpiryDate { get; set; }
-        public string? Notes { get; set; }
-        public bool IsUrgent { get; set; }
-        public List<CreatePrescriptionItemRequest>? PrescriptionItems { get; set; }
-    }
-
-    public class UpdatePrescriptionRequest
-    {
-        public string? PatientName { get; set; }
-        public string? DoctorName { get; set; }
-        public string? Medication { get; set; }
-        public string? Dosage { get; set; }
-        public string? Instructions { get; set; }
-        public decimal TotalCost { get; set; }
-        public string? Notes { get; set; }
-        public bool IsUrgent { get; set; }
-    }
-
-    public class CreatePrescriptionItemRequest
-    {
-        public int InventoryItemId { get; set; }
-        public string? MedicationName { get; set; }
-        public string? Dosage { get; set; }
-        public int Quantity { get; set; }
-        public string? Instructions { get; set; }
-        public decimal UnitPrice { get; set; }
-        public decimal TotalPrice { get; set; }
     }
 }

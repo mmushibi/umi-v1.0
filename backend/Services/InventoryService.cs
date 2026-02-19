@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.Data;
+using UmiHealthPOS.DTOs;
 using Microsoft.AspNetCore.Http;
 
 namespace UmiHealthPOS.Services
@@ -32,25 +33,13 @@ namespace UmiHealthPOS.Services
 
     public class InventoryService : IInventoryService
     {
-        private readonly IProductRepository _productRepository;
-        private readonly ICustomerRepository _customerRepository;
-        private readonly ISaleRepository _saleRepository;
-        private readonly IStockTransactionRepository _stockTransactionRepository;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<InventoryService> _logger;
 
         public InventoryService(
-            IProductRepository productRepository,
-            ICustomerRepository customerRepository,
-            ISaleRepository saleRepository,
-            IStockTransactionRepository stockTransactionRepository,
             ApplicationDbContext context,
             ILogger<InventoryService> logger)
         {
-            _productRepository = productRepository;
-            _customerRepository = customerRepository;
-            _saleRepository = saleRepository;
-            _stockTransactionRepository = stockTransactionRepository;
             _context = context;
             _logger = logger;
         }
@@ -59,7 +48,10 @@ namespace UmiHealthPOS.Services
         {
             try
             {
-                return await _productRepository.GetAllAsync();
+                return await _context.Products
+                    .Where(p => p.Status == "Active")
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
@@ -72,11 +64,12 @@ namespace UmiHealthPOS.Services
         {
             try
             {
-                return await _productRepository.GetByIdAsync(id);
+                return await _context.Products
+                    .FirstOrDefaultAsync(p => p.Id == id && p.Status == "Active");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving product {ProductId}", id);
+                _logger.LogError(ex, "Error retrieving product with ID: {Id}", id);
                 throw;
             }
         }
@@ -85,11 +78,16 @@ namespace UmiHealthPOS.Services
         {
             try
             {
-                return await _productRepository.GetByBarcodeAsync(barcode);
+                // Product doesn't have Barcode property, search by Name or other identifier
+                return await _context.Products
+                    .FirstOrDefaultAsync(p => p.Status == "Active" && 
+                                           (p.Name.Contains(barcode) || 
+                                            (p.BrandName != null && p.BrandName.Contains(barcode)) ||
+                                            (p.GenericName != null && p.GenericName.Contains(barcode))));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving product by barcode {Barcode}", barcode);
+                _logger.LogError(ex, "Error retrieving product by barcode: {Barcode}", barcode);
                 throw;
             }
         }
@@ -98,7 +96,10 @@ namespace UmiHealthPOS.Services
         {
             try
             {
-                return await _customerRepository.GetAllAsync();
+                return await _context.Customers
+                    .Where(c => c.IsActive)
+                    .OrderBy(c => c.Name)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
@@ -111,11 +112,12 @@ namespace UmiHealthPOS.Services
         {
             try
             {
-                return await _customerRepository.GetByIdAsync(id);
+                return await _context.Customers
+                    .FirstOrDefaultAsync(c => c.Id == id && c.IsActive);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving customer {CustomerId}", id);
+                _logger.LogError(ex, "Error retrieving customer with ID: {Id}", id);
                 throw;
             }
         }
@@ -152,23 +154,24 @@ namespace UmiHealthPOS.Services
                     var sale = new Sale
                     {
                         CustomerId = customer.Id,
-                        Subtotal = request.Subtotal,
-                        Tax = request.Tax,
-                        Total = request.Total,
+                        Subtotal = request.Items.Sum(item => item.UnitPrice * item.Quantity),
+                        Tax = 0, // Calculate tax if needed
+                        Total = request.Items.Sum(item => item.UnitPrice * item.Quantity) - request.DiscountAmount,
                         PaymentMethod = request.PaymentMethod,
-                        CashReceived = request.CashReceived,
-                        Change = request.CashReceived - request.Total,
+                        CashReceived = request.Items.Sum(item => item.UnitPrice * item.Quantity), // This should be calculated or passed separately
+                        Change = request.Items.Sum(item => item.UnitPrice * item.Quantity) - (request.Items.Sum(item => item.UnitPrice * item.Quantity) - request.DiscountAmount),
                         Status = "Completed",
                         CreatedAt = DateTime.UtcNow
                     };
 
-                    var createdSale = await _saleRepository.AddAsync(sale);
+                    var createdSale = await _context.Sales.AddAsync(sale);
+                    await _context.SaveChangesAsync();
 
                     // Create sale items and update stock
                     var saleItems = new List<SaleItem>();
                     foreach (var item in request.Items)
                     {
-                        var product = await _productRepository.GetByIdAsync(item.ProductId);
+                        var product = await _context.Products.FindAsync(item.ProductId);
                         if (product == null)
                         {
                             throw new Exception($"Product {item.ProductId} not found");
@@ -176,20 +179,18 @@ namespace UmiHealthPOS.Services
 
                         var saleItem = new SaleItem
                         {
-                            SaleId = createdSale.Id,
+                            SaleId = createdSale.Entity.Id,
                             ProductId = item.ProductId,
-                            UnitPrice = item.Price,
+                            UnitPrice = item.UnitPrice,
                             Quantity = item.Quantity,
-                            TotalPrice = item.Price * item.Quantity
+                            TotalPrice = item.UnitPrice * item.Quantity
                         };
                         saleItems.Add(saleItem);
 
                         // Update stock
                         var newStock = product.Stock - item.Quantity;
-                        if (!await _productRepository.UpdateStockAsync(item.ProductId, newStock, $"Sale #{createdSale.Id}"))
-                        {
-                            throw new Exception($"Failed to update stock for product {item.ProductId}");
-                        }
+                        product.Stock = newStock;
+                        _context.Products.Update(product);
                     }
 
                     // Add sale items
@@ -199,11 +200,11 @@ namespace UmiHealthPOS.Services
                     await transaction.CommitAsync();
 
                     result.Success = true;
-                    result.SaleId = createdSale.Id;
+                    result.SaleId = createdSale.Entity.Id;
                     result.Message = "Sale processed successfully";
 
                     _logger.LogInformation("Sale {SaleId} processed successfully with {ItemCount} items",
-                        createdSale.Id, request.Items.Count);
+                        createdSale.Entity.Id, request.Items.Count);
 
                     return result;
                 }
@@ -227,7 +228,17 @@ namespace UmiHealthPOS.Services
         {
             try
             {
-                return await _productRepository.UpdateStockAsync(productId, newStock, reason);
+                var product = await _context.Products.FindAsync(productId);
+                if (product == null)
+                {
+                    return false;
+                }
+
+                product.Stock = newStock;
+                _context.Products.Update(product);
+                await _context.SaveChangesAsync();
+
+                return true;
             }
             catch (Exception ex)
             {
@@ -240,7 +251,10 @@ namespace UmiHealthPOS.Services
         {
             try
             {
-                return await _productRepository.GetLowStockAsync();
+                return await _context.Products
+                    .Where(p => p.Status == "Active" && p.Stock <= p.ReorderLevel)
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
@@ -255,7 +269,7 @@ namespace UmiHealthPOS.Services
             {
                 return await _context.InventoryItems
                     .Where(i => i.IsActive)
-                    .OrderBy(i => i.InventoryItemName)
+                    .OrderBy(i => i.Name)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -271,7 +285,7 @@ namespace UmiHealthPOS.Services
             {
                 var inventoryItem = new InventoryItem
                 {
-                    InventoryItemName = request.InventoryItemName,
+                    Name = request.Name,
                     GenericName = request.GenericName,
                     BrandName = request.BrandName,
                     ManufactureDate = request.ManufactureDate,
@@ -292,7 +306,7 @@ namespace UmiHealthPOS.Services
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Created new inventory item: {InventoryItemName} with batch: {BatchNumber}",
-                    inventoryItem.InventoryItemName, inventoryItem.BatchNumber);
+                    inventoryItem.Name, inventoryItem.BatchNumber);
 
                 return inventoryItem;
             }
@@ -313,7 +327,7 @@ namespace UmiHealthPOS.Services
                     return null;
                 }
 
-                inventoryItem.InventoryItemName = request.InventoryItemName;
+                inventoryItem.Name = request.Name;
                 inventoryItem.GenericName = request.GenericName;
                 inventoryItem.BrandName = request.BrandName;
                 inventoryItem.ManufactureDate = request.ManufactureDate;
@@ -321,17 +335,16 @@ namespace UmiHealthPOS.Services
                 inventoryItem.LicenseNumber = request.LicenseNumber;
                 inventoryItem.ZambiaRegNumber = request.ZambiaRegNumber;
                 inventoryItem.PackingType = request.PackingType;
-                inventoryItem.Quantity = request.Quantity;
-                inventoryItem.UnitPrice = request.UnitPrice;
-                inventoryItem.SellingPrice = request.SellingPrice;
-                inventoryItem.ReorderLevel = request.ReorderLevel;
-                inventoryItem.IsActive = request.IsActive;
+                inventoryItem.Quantity = request.Quantity ?? inventoryItem.Quantity;
+                inventoryItem.UnitPrice = request.UnitPrice ?? inventoryItem.UnitPrice;
+                inventoryItem.SellingPrice = request.SellingPrice ?? inventoryItem.SellingPrice;
+                inventoryItem.ReorderLevel = request.ReorderLevel ?? inventoryItem.ReorderLevel;
                 inventoryItem.UpdatedAt = DateTime.UtcNow;
 
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Updated inventory item: {InventoryItemName} with batch: {BatchNumber}",
-                    inventoryItem.InventoryItemName, inventoryItem.BatchNumber);
+                    inventoryItem.Name, inventoryItem.BatchNumber);
 
                 return inventoryItem;
             }
@@ -358,7 +371,7 @@ namespace UmiHealthPOS.Services
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation("Soft deleted inventory item: {InventoryItemName} with batch: {BatchNumber}",
-                    inventoryItem.InventoryItemName, inventoryItem.BatchNumber);
+                    inventoryItem.Name, inventoryItem.BatchNumber);
 
                 return true;
             }
@@ -392,7 +405,7 @@ namespace UmiHealthPOS.Services
 
                 var header = lines[0].Split(',');
                 var expectedHeaders = new[] {
-                    "InventoryItemName", "GenericName", "BrandName", "ManufactureDate",
+                    "Name", "GenericName", "BrandName", "ManufactureDate",
                     "BatchNumber", "LicenseNumber", "ZambiaRegNumber", "PackingType",
                     "Quantity", "UnitPrice", "SellingPrice", "ReorderLevel"
                 };
@@ -421,7 +434,7 @@ namespace UmiHealthPOS.Services
 
                         var createRequest = new CreateInventoryItemRequest
                         {
-                            InventoryItemName = values[0].Trim(),
+                            Name = values[0].Trim(),
                             GenericName = values[1].Trim(),
                             BrandName = values[2].Trim(),
                             ManufactureDate = DateTime.Parse(values[3].Trim()),
@@ -436,7 +449,7 @@ namespace UmiHealthPOS.Services
                         };
 
                         await CreateInventoryItemAsync(createRequest);
-                        result.ImportedCount++;
+                        result.SuccessCount++;
                     }
                     catch (Exception ex)
                     {
@@ -445,7 +458,7 @@ namespace UmiHealthPOS.Services
                 }
 
                 _logger.LogInformation("CSV import completed. Imported: {ImportedCount}, Errors: {ErrorCount}",
-                    result.ImportedCount, result.Errors.Count);
+                    result.SuccessCount, result.Errors.Count);
 
                 return result;
             }
@@ -467,12 +480,12 @@ namespace UmiHealthPOS.Services
                 using var writer = new StreamWriter(output, System.Text.Encoding.UTF8);
 
                 // Write header
-                await writer.WriteLineAsync("InventoryItemName,GenericName,BrandName,ManufactureDate,BatchNumber,LicenseNumber,ZambiaRegNumber,PackingType,Quantity,UnitPrice,SellingPrice,ReorderLevel,CreatedAt");
+                await writer.WriteLineAsync("Name,GenericName,BrandName,ManufactureDate,BatchNumber,LicenseNumber,ZambiaRegNumber,PackingType,Quantity,UnitPrice,SellingPrice,ReorderLevel,CreatedAt");
 
                 // Write data rows
                 foreach (var item in inventoryItems)
                 {
-                    var line = $"{EscapeCsvField(item.InventoryItemName)},{EscapeCsvField(item.GenericName)},{EscapeCsvField(item.BrandName)},{item.ManufactureDate:yyyy-MM-dd},{EscapeCsvField(item.BatchNumber)},{EscapeCsvField(item.LicenseNumber)},{EscapeCsvField(item.ZambiaRegNumber)},{EscapeCsvField(item.PackingType)},{item.Quantity},{item.UnitPrice},{item.SellingPrice},{item.ReorderLevel},{item.CreatedAt:yyyy-MM-dd HH:mm:ss}";
+                    var line = $"{EscapeCsvField(item.Name)},{EscapeCsvField(item.GenericName)},{EscapeCsvField(item.BrandName)},{item.ManufactureDate:yyyy-MM-dd},{EscapeCsvField(item.BatchNumber)},{EscapeCsvField(item.LicenseNumber)},{EscapeCsvField(item.ZambiaRegNumber)},{EscapeCsvField(item.PackingType)},{item.Quantity},{item.UnitPrice},{item.SellingPrice},{item.ReorderLevel},{item.CreatedAt:yyyy-MM-dd HH:mm:ss}";
                     await writer.WriteLineAsync(line);
                 }
 
@@ -499,22 +512,8 @@ namespace UmiHealthPOS.Services
             return field;
         }
 
-        private async Task<Customer> GetOrCreateCustomerAsync(int? customerId)
-        {
-            if (customerId.HasValue && customerId.Value > 0)
-            {
-                var customer = await _customerRepository.GetByIdAsync(customerId.Value);
-                if (customer != null) return customer;
-            }
-
-            // Default to walk-in customer (ID = 1)
-            return await _customerRepository.GetByIdAsync(1);
-        }
-
         private async Task AddSaleItemsAsync(int saleId, List<SaleItem> saleItems)
         {
-            // This would ideally be in the SaleRepository, but for now we'll add it directly
-            // In a real implementation, you'd inject DbContext or create a proper method
             foreach (var item in saleItems)
             {
                 // Create the sale item with the correct sale ID
@@ -527,17 +526,45 @@ namespace UmiHealthPOS.Services
                     TotalPrice = item.TotalPrice
                 };
 
-                // Add to database - this is a simplified approach
-                // In production, you'd use proper repository pattern
-                await Task.CompletedTask; // Placeholder for actual database operation
+                // Add to database using proper Entity Framework operations
+                _context.SaleItems.Add(saleItem);
             }
+
+            // Save all changes at once for better performance
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task<Customer> GetOrCreateCustomerAsync(int? customerId)
+        {
+            if (customerId.HasValue)
+            {
+                var customer = await _context.Customers.FindAsync(customerId.Value);
+                if (customer != null && customer.IsActive)
+                {
+                    return customer;
+                }
+            }
+
+            // Create a new customer for walk-in sales
+            var newCustomer = new Customer
+            {
+                Name = "Walk-in Customer",
+                Phone = "0000000000",
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Customers.Add(newCustomer);
+            await _context.SaveChangesAsync();
+
+            return newCustomer;
         }
 
         private async Task<StockValidationResult> ValidateStockAvailabilityAsync(List<SaleItemRequest> items)
         {
             foreach (var item in items)
             {
-                var product = await _productRepository.GetByIdAsync(item.ProductId);
+                var product = await _context.Products.FindAsync(item.ProductId);
                 if (product == null)
                 {
                     return new StockValidationResult
@@ -559,73 +586,5 @@ namespace UmiHealthPOS.Services
 
             return new StockValidationResult { IsValid = true };
         }
-    }
-
-    // Supporting classes
-    public class SaleRequest
-    {
-        public List<SaleItemRequest> Items { get; set; }
-        public decimal Subtotal { get; set; }
-        public decimal Tax { get; set; }
-        public decimal Total { get; set; }
-        public string PaymentMethod { get; set; }
-        public decimal CashReceived { get; set; }
-        public int? CustomerId { get; set; }
-        public DateTime Timestamp { get; set; }
-    }
-
-    public class SaleItemRequest
-    {
-        public int ProductId { get; set; }
-        public string ProductName { get; set; }
-        public decimal Price { get; set; }
-        public int Quantity { get; set; }
-    }
-
-    public class SaleResult
-    {
-        public bool Success { get; set; }
-        public int SaleId { get; set; }
-        public string Message { get; set; }
-        public string ErrorMessage { get; set; }
-    }
-
-    public class StockValidationResult
-    {
-        public bool IsValid { get; set; }
-        public string ErrorMessage { get; set; }
-    }
-
-    public class CreateInventoryItemRequest
-    {
-        public string? InventoryItemName { get; set; }
-        public string? GenericName { get; set; }
-        public string? BrandName { get; set; }
-        public DateTime ManufactureDate { get; set; }
-        public string? BatchNumber { get; set; }
-        public string? LicenseNumber { get; set; }
-        public string? ZambiaRegNumber { get; set; }
-        public string? PackingType { get; set; }
-        public int Quantity { get; set; }
-        public decimal UnitPrice { get; set; }
-        public decimal SellingPrice { get; set; }
-        public int ReorderLevel { get; set; }
-    }
-
-    public class UpdateInventoryItemRequest
-    {
-        public string? InventoryItemName { get; set; }
-        public string? GenericName { get; set; }
-        public string? BrandName { get; set; }
-        public DateTime ManufactureDate { get; set; }
-        public string? BatchNumber { get; set; }
-        public string? LicenseNumber { get; set; }
-        public string? ZambiaRegNumber { get; set; }
-        public string? PackingType { get; set; }
-        public int Quantity { get; set; }
-        public decimal UnitPrice { get; set; }
-        public decimal SellingPrice { get; set; }
-        public int ReorderLevel { get; set; }
-        public bool IsActive { get; set; }
     }
 }

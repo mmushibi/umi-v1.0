@@ -3,30 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign in to Umi Health</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            ocean: {
-              50: '#eff9ff',
-              100: '#d6f0ff',
-              200: '#b5e0ff',
-              300: '#86c8ff',
-              400: '#55a7f5',
-              500: '#2f88db',
-              600: '#1c6db8',
-              700: '#165697',
-              800: '#183f6f',
-              900: '#142f55'
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' http: https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; img-src 'self' data: https: http:; font-src 'self' https://cdnjs.cloudflare.com;">
+  <title>Sign In - Umi Health</title>
+  <link rel="stylesheet" href="../../css/output.css">
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="min-h-screen bg-gradient-to-b from-white via-ocean-50 to-white text-slate-800">
@@ -40,9 +19,9 @@
     <div class="w-full rounded-3xl bg-white/90 p-8 shadow-[0_35px_80px_-45px_rgba(28,109,184,0.6)] backdrop-blur md:p-12">
       <div class="grid gap-10 md:grid-cols-2">
         <div class="space-y-6">
-          <div class="inline-flex items-center gap-2 rounded-full bg-ocean-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-ocean-500">Umi Health POS</div>
-          <h1 class="text-3xl font-bold text-slate-900">Welcome back</h1>
-          <p class="text-sm text-slate-600">Sign in to manage inventory, prescriptions, reports, and wellness journeys across every branch. Need help? Contact <a href="mailto:support@umihealth.com" class="font-semibold text-ocean-600">support@umihealth.com</a>.</p>
+          <div class="inline-flex items-center gap-2 rounded-full bg-ocean-50 px-4 py-1 text-xs font-semibold uppercase tracking-[0.3em] text-ocean-500">Pharmacy Management</div>
+          <h1 class="text-3xl font-bold text-slate-900">Welcome Back</h1>
+          <p class="text-sm text-slate-600">Sign in to manage your pharmacy, track medicines, help customers, and grow your business. Need help? Contact <a href="mailto:help@umihealth.com" class="font-semibold text-ocean-600">help@umihealth.com</a>.</p>
           <ul class="space-y-3 text-sm text-slate-600">
             <li class="flex items-start gap-3">
               <span class="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-ocean-100 text-ocean-500">
@@ -50,7 +29,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                 </svg>
               </span>
-              <span>Offline-ready POS, synced once you reconnect.</span>
+              <span>Works even without internet connection.</span>
             </li>
             <li class="flex items-start gap-3">
               <span class="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-ocean-100 text-ocean-500">
@@ -58,7 +37,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                 </svg>
               </span>
-              <span>Role-based access control and multi-tenant support.</span>
+              <span>Different access levels for your staff members.</span>
             </li>
             <li class="flex items-start gap-3">
               <span class="mt-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-ocean-100 text-ocean-500">
@@ -66,7 +45,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                 </svg>
               </span>
-              <span>Analytics and subscription management all in one dashboard.</span>
+              <span>See reports and insights about your pharmacy.</span>
             </li>
           </ul>
           <p class="text-xs text-slate-400">By signing in you accept Umi Health's
@@ -105,7 +84,7 @@
               </span>
             </button>
           </form>
-          <p class="mt-6 text-center text-sm text-slate-600">New to Umi Health? <a href="./signup.html" class="font-semibold text-ocean-600">Create an account</a></p>
+          <p class="mt-6 text-center text-sm text-slate-600">New to Umi Health? <a href="signup.html" class="font-semibold text-ocean-600">Create an account</a></p>
         </div>
       </div>
     </div>
@@ -154,7 +133,7 @@
     </div>
   </div>
 
-  <script src="../js/auth.js"></script>
+  <script src="../../js/auth.js"></script>
   <script>
     function signinFlow() {
       return {

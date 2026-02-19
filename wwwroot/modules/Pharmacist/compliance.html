@@ -28,7 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="../js/auth.js"></script>
+  <script src="../../js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -46,10 +46,10 @@
       <div class="p-4">
         <div class="flex items-center justify-between">
           <div class="flex flex-col items-center space-y-2">
-            <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+            <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
             <span class="text-xl font-semibold text-ocean-800">Pharmacist</span>
           </div>
-          <button @click="mobileMenuOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700" title="Close menu">
+          <button @click="mobileMenuOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700" title="Close menu" aria-label="Close mobile menu">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
             </svg>
@@ -132,7 +132,7 @@
         
         <div class="mt-8 px-4">
           <div class="border-t pt-4">
-            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full" title="Logout">
+            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full" title="Logout" aria-label="Logout from pharmacist portal">
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
               </svg>
@@ -147,7 +147,7 @@
     <aside class="hidden lg:block w-64 bg-white shadow-lg">
       <div class="p-4">
         <div class="flex flex-col items-center space-y-2">
-          <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+          <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           <span class="text-xl font-semibold text-ocean-800">Pharmacist</span>
         </div>
       </div>
@@ -227,7 +227,7 @@
         
         <div class="mt-8 px-4">
           <div class="border-t pt-4">
-            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full" title="Logout">
+            <button @click="logout()" class="flex items-center space-x-3 text-gray-600 hover:bg-gray-50 rounded-lg px-3 py-2 text-sm font-medium w-full" title="Logout" aria-label="Logout from pharmacist portal">
               <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
               </svg>
@@ -246,7 +246,7 @@
           <div class="flex items-center justify-between">
             <div class="flex items-center space-x-4">
               <!-- Mobile menu button -->
-              <button @click="mobileMenuOpen = true" class="lg:hidden text-gray-500 hover:text-gray-700" title="Open menu">
+              <button @click="mobileMenuOpen = true" class="lg:hidden text-gray-500 hover:text-gray-700" title="Open menu" aria-label="Open mobile menu">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                 </svg>
@@ -254,7 +254,7 @@
               
               <!-- Mobile logo -->
               <div class="lg:hidden flex items-center space-x-2">
-                <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+                <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
                 <span class="text-xl font-semibold text-ocean-800">Pharmacist</span>
               </div>
               
@@ -262,7 +262,7 @@
               <h1 class="hidden lg:block text-2xl font-semibold text-gray-900">Compliance & Safety</h1>
             </div>
             <div class="flex items-center space-x-4">
-              <button class="text-gray-500 hover:text-gray-700" title="Notifications">
+              <button class="text-gray-500 hover:text-gray-700" title="Notifications" aria-label="View notifications">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                 </svg>
@@ -374,7 +374,7 @@
                       <span x-text="area.sources.join(', '"></span>
                     </div>
                     <button @click="viewDetails(area.id)" 
-                            class="text-ocean-600 hover:text-ocean-700 font-medium text-sm flex items-center" title="View compliance details">
+                            class="text-ocean-600 hover:text-ocean-700 font-medium text-sm flex items-center" title="View compliance details" aria-label="View compliance details for " + x-text="area.title">
                       View Details 
                       <svg class="ml-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
@@ -414,7 +414,7 @@
             <div class="flex items-center justify-between">
               <h3 class="text-lg font-semibold" x-text="areaDetails?.title || 'Compliance Details'"></h3>
               <button @click="closeDetailsModal()" 
-                      class="text-ocean-200 hover:text-white transition-colors" title="Close modal">
+                      class="text-ocean-200 hover:text-white transition-colors" title="Close modal" aria-label="Close compliance details modal">
                 <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -486,11 +486,11 @@
           <!-- Modal Footer -->
           <div class="bg-gray-50 px-6 py-3 rounded-b-lg flex justify-end space-x-3">
             <button @click="closeDetailsModal()" 
-                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors" title="Close modal">
+                    class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors" title="Close modal" aria-label="Close compliance details modal">
               Close
             </button>
             <button @click="generateReport()" 
-                    class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors" title="Generate compliance report">
+                    class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700 transition-colors" title="Generate compliance report" aria-label="Generate compliance report">
               Generate Report
             </button>
           </div>

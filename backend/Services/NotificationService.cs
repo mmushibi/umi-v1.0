@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.DTOs;
 using UmiHealthPOS.Models;
+using UmiHealthPOS.Hubs;
 
 namespace UmiHealthPOS.Services
 {
@@ -22,17 +24,28 @@ namespace UmiHealthPOS.Services
         Task<bool> MarkAllAsReadAsync(string? userId = null);
         Task<int> BatchUpdateNotificationsAsync(NotificationBatchRequest request, string? userId = null);
         Task CleanupExpiredNotificationsAsync();
+        
+        // Subscription notification methods
+        Task SendSubscriptionExpiredNotification(Subscription subscription);
+        Task SendGracePeriodNotification(Subscription subscription);
+        Task SendExpirationWarning(Subscription subscription, int days);
+        
+        // Usage tracking notification methods
+        Task SendLimitExceededNotification(string tenantId, string limitType, double currentUsage, double limit);
+        Task SendLimitApproachingNotification(string tenantId, string limitType, double currentUsage, double limit);
     }
 
     public class NotificationService : INotificationService
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<NotificationService> _logger;
+        private readonly IHubContext<NotificationHub> _hubContext;
 
-        public NotificationService(ApplicationDbContext context, ILogger<NotificationService> logger)
+        public NotificationService(ApplicationDbContext context, ILogger<NotificationService> logger, IHubContext<NotificationHub> hubContext)
         {
             _context = context;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         public async Task<List<NotificationDto>> GetNotificationsAsync(NotificationFilterDto filter, string? userId = null)
@@ -209,6 +222,9 @@ namespace UmiHealthPOS.Services
                     ActionText = notification.ActionText,
                     Metadata = notification.Metadata
                 };
+
+                // Send real-time notification
+                await SendRealTimeNotificationAsync(notificationDto);
 
                 _logger.LogInformation("Created notification: {Title} for user {UserId}", notification.Title, notification.UserId);
                 return notificationDto;
@@ -387,7 +403,7 @@ namespace UmiHealthPOS.Services
                     .Where(n => !n.ExpiresAt.HasValue || n.ExpiresAt.Value > DateTime.UtcNow)
                     .ToListAsync();
 
-                if (!notifications.Any())
+                if (notifications.Count == 0)
                 {
                     return false;
                 }
@@ -419,7 +435,7 @@ namespace UmiHealthPOS.Services
                     .Where(n => n.IsGlobal || n.UserId == userId)
                     .ToListAsync();
 
-                if (!notifications.Any())
+                if (notifications.Count == 0)
                 {
                     return 0;
                 }
@@ -467,7 +483,7 @@ namespace UmiHealthPOS.Services
                     .Where(n => n.ExpiresAt.HasValue && n.ExpiresAt.Value <= DateTime.UtcNow)
                     .ToListAsync();
 
-                if (expiredNotifications.Any())
+                if (expiredNotifications.Count > 0)
                 {
                     _context.Notifications.RemoveRange(expiredNotifications);
                     await _context.SaveChangesAsync();
@@ -478,6 +494,309 @@ namespace UmiHealthPOS.Services
             {
                 _logger.LogError(ex, "Error cleaning up expired notifications");
             }
+        }
+
+        // Subscription notification implementations
+        private async Task<string?> GetTenantAdminUserIdAsync(string tenantId)
+        {
+            try
+            {
+                // Look for admin user for this tenant
+                var adminUser = await _context.UserAccounts
+                    .Where(u => u.TenantId == tenantId && 
+                               (u.Role == "Admin" || u.Role == "SuperAdmin" || u.Email.Contains("admin")))
+                    .FirstOrDefaultAsync();
+                
+                return adminUser?.Id.ToString();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error finding admin user for tenant {TenantId}", tenantId);
+                return null;
+            }
+        }
+
+        public async Task SendSubscriptionExpiredNotification(Subscription subscription)
+        {
+            try
+            {
+                var adminUserId = await GetTenantAdminUserIdAsync(subscription.TenantId);
+                
+                var notification = new CreateNotificationRequest
+                {
+                    Title = "Subscription Expired",
+                    Message = $"Subscription for {subscription.Tenant?.Name} has expired. Please renew to continue service.",
+                    Type = "subscription",
+                    Category = "expiration",
+                    IsGlobal = false,
+                    UserId = adminUserId,
+                    ExpiresAt = DateTime.UtcNow.AddDays(30)
+                };
+
+                await CreateNotificationAsync(notification);
+                _logger.LogInformation("Sent subscription expired notification for tenant {TenantId}", subscription.TenantId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending subscription expired notification");
+            }
+        }
+
+        public async Task SendGracePeriodNotification(Subscription subscription)
+        {
+            try
+            {
+                var adminUserId = await GetTenantAdminUserIdAsync(subscription.TenantId);
+                
+                var notification = new CreateNotificationRequest
+                {
+                    Title = "Grace Period Active",
+                    Message = $"Subscription for {subscription.Tenant?.Name} is in grace period. You have limited time to renew.",
+                    Type = "subscription",
+                    Category = "grace_period",
+                    IsGlobal = false,
+                    UserId = adminUserId,
+                    ExpiresAt = DateTime.UtcNow.AddDays(7)
+                };
+
+                await CreateNotificationAsync(notification);
+                _logger.LogInformation("Sent grace period notification for tenant {TenantId}", subscription.TenantId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending grace period notification");
+            }
+        }
+
+        public async Task SendExpirationWarning(Subscription subscription, int days)
+        {
+            try
+            {
+                var adminUserId = await GetTenantAdminUserIdAsync(subscription.TenantId);
+                
+                var notification = new CreateNotificationRequest
+                {
+                    Title = $"Subscription Expires in {days} Days",
+                    Message = $"Subscription for {subscription.Tenant?.Name} will expire in {days} days. Please renew to avoid interruption.",
+                    Type = "subscription",
+                    Category = "warning",
+                    IsGlobal = false,
+                    UserId = adminUserId,
+                    ExpiresAt = DateTime.UtcNow.AddDays(days + 1)
+                };
+
+                await CreateNotificationAsync(notification);
+                _logger.LogInformation("Sent {Days}-day expiration warning for tenant {TenantId}", days, subscription.TenantId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending expiration warning");
+            }
+        }
+
+        // Usage tracking notification implementations
+        public async Task SendLimitExceededNotification(string tenantId, string limitType, double currentUsage, double limit)
+        {
+            try
+            {
+                var adminUserId = await GetTenantAdminUserIdAsync(tenantId);
+                
+                var notification = new CreateNotificationRequest
+                {
+                    Title = $"{limitType} Limit Exceeded",
+                    Message = $"Your {limitType.ToLower()} usage ({currentUsage}) has exceeded the limit ({limit}). Please upgrade your plan.",
+                    Type = "usage",
+                    Category = "limit_exceeded",
+                    IsGlobal = false,
+                    UserId = adminUserId,
+                    ExpiresAt = DateTime.UtcNow.AddDays(7)
+                };
+
+                await CreateNotificationAsync(notification);
+                _logger.LogInformation("Sent limit exceeded notification for tenant {TenantId}, type {LimitType}", tenantId, limitType);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending limit exceeded notification");
+            }
+        }
+
+        public async Task SendLimitApproachingNotification(string tenantId, string limitType, double currentUsage, double limit)
+        {
+            try
+            {
+                var adminUserId = await GetTenantAdminUserIdAsync(tenantId);
+                var percentageUsed = (currentUsage / limit) * 100;
+                
+                var notification = new CreateNotificationRequest
+                {
+                    Title = $"{limitType} Limit Warning",
+                    Message = $"Your {limitType.ToLower()} usage is at {percentageUsed:F1}% ({currentUsage}/{limit}). Consider upgrading soon.",
+                    Type = "usage",
+                    Category = "limit_warning",
+                    IsGlobal = false,
+                    UserId = adminUserId,
+                    ExpiresAt = DateTime.UtcNow.AddDays(3)
+                };
+
+                await CreateNotificationAsync(notification);
+                _logger.LogInformation("Sent limit approaching notification for tenant {TenantId}, type {LimitType}", tenantId, limitType);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending limit approaching notification");
+            }
+        }
+
+        // Real-time notification methods
+        private async Task SendRealTimeNotificationAsync(NotificationDto notification)
+        {
+            try
+            {
+                if (notification.IsGlobal)
+                {
+                    // Send to all connected users
+                    await _hubContext.Clients.All.SendAsync("ReceiveNotification", notification);
+                }
+                else if (!string.IsNullOrEmpty(notification.UserId))
+                {
+                    // Send to specific user
+                    await _hubContext.Clients.Group($"user_{notification.UserId}").SendAsync("ReceiveNotification", notification);
+                }
+
+                if (!string.IsNullOrEmpty(notification.TenantId))
+                {
+                    // Send to all users in the tenant
+                    await _hubContext.Clients.Group($"tenant_{notification.TenantId}").SendAsync("ReceiveNotification", notification);
+                }
+
+                _logger.LogDebug("Sent real-time notification: {Title}", notification.Title);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending real-time notification");
+            }
+        }
+
+        // Notification template methods
+        public async Task SendLowStockAlertAsync(string productId, string productName, int currentStock, int reorderLevel, string tenantId)
+        {
+            var notification = new CreateNotificationRequest
+            {
+                Title = "Low Stock Alert",
+                Message = $"{productName} is running low on stock. Current: {currentStock}, Reorder at: {reorderLevel}",
+                Type = "inventory",
+                Category = "low_stock",
+                TenantId = tenantId,
+                IsGlobal = false,
+                ActionUrl = $"/inventory/product/{productId}",
+                ActionText = "View Product",
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                Metadata = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    ["productId"] = productId,
+                    ["productName"] = productName,
+                    ["currentStock"] = currentStock,
+                    ["reorderLevel"] = reorderLevel
+                })
+            };
+
+            await CreateNotificationAsync(notification);
+        }
+
+        public async Task SendPrescriptionReadyNotificationAsync(string prescriptionId, string patientName, string userId)
+        {
+            var notification = new CreateNotificationRequest
+            {
+                Title = "Prescription Ready",
+                Message = $"Prescription for {patientName} is ready for pickup",
+                Type = "prescription",
+                Category = "ready",
+                UserId = userId,
+                IsGlobal = false,
+                ActionUrl = $"/prescriptions/{prescriptionId}",
+                ActionText = "View Prescription",
+                ExpiresAt = DateTime.UtcNow.AddDays(3),
+                Metadata = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    ["prescriptionId"] = prescriptionId,
+                    ["patientName"] = patientName
+                })
+            };
+
+            await CreateNotificationAsync(notification);
+        }
+
+        public async Task SendSystemMaintenanceNotificationAsync(DateTime startTime, DateTime endTime, string description)
+        {
+            var notification = new CreateNotificationRequest
+            {
+                Title = "System Maintenance",
+                Message = $"System will be under maintenance from {startTime:yyyy-MM-dd HH:mm} to {endTime:yyyy-MM-dd HH:mm}. {description}",
+                Type = "system",
+                Category = "maintenance",
+                IsGlobal = true,
+                ActionUrl = "/status",
+                ActionText = "Check Status",
+                ExpiresAt = endTime,
+                Metadata = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    ["startTime"] = startTime,
+                    ["endTime"] = endTime,
+                    ["description"] = description
+                })
+            };
+
+            await CreateNotificationAsync(notification);
+        }
+
+        public async Task SendWelcomeNotificationAsync(string userId, string userName, string tenantId)
+        {
+            var notification = new CreateNotificationRequest
+            {
+                Title = "Welcome to UMI Health POS!",
+                Message = $"Welcome {userName}! Get started with our quick guide or explore the features.",
+                Type = "system",
+                Category = "welcome",
+                UserId = userId,
+                TenantId = tenantId,
+                IsGlobal = false,
+                ActionUrl = "/help/quick-start",
+                ActionText = "Get Started",
+                ExpiresAt = DateTime.UtcNow.AddDays(14),
+                Metadata = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    ["userName"] = userName
+                })
+            };
+
+            await CreateNotificationAsync(notification);
+        }
+
+        public async Task SendBackupCompletedNotificationAsync(string tenantId, bool success, string backupPath, long fileSize)
+        {
+            var notification = new CreateNotificationRequest
+            {
+                Title = success ? "Backup Completed Successfully" : "Backup Failed",
+                Message = success 
+                    ? $"System backup completed successfully. File size: {fileSize / 1024 / 1024:F1} MB"
+                    : "System backup failed. Please check the system logs.",
+                Type = "system",
+                Category = "backup",
+                TenantId = tenantId,
+                IsGlobal = false,
+                ActionUrl = "/settings/backup",
+                ActionText = "View Backups",
+                ExpiresAt = DateTime.UtcNow.AddDays(7),
+                Metadata = System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
+                {
+                    ["success"] = success,
+                    ["backupPath"] = backupPath,
+                    ["fileSize"] = fileSize
+                })
+            };
+
+            await CreateNotificationAsync(notification);
         }
     }
 }

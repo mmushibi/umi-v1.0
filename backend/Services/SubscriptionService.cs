@@ -386,13 +386,215 @@ namespace UmiHealthPOS.Services
         {
             try
             {
-                // For now, return empty list as payment system is not implemented
-                // In a real implementation, this would query a Payment table
-                return new List<Payment>();
+                // Query actual payment records from database
+                var payments = await _context.Payments
+                    .Where(p => p.SubscriptionId == subscriptionId)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .ToListAsync();
+
+                return payments;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving payments for subscription {SubscriptionId}", subscriptionId);
+                throw;
+            }
+        }
+
+        public async Task<Payment> ProcessPaymentAsync(ProcessPaymentRequest request)
+        {
+            try
+            {
+                var subscription = await _context.Subscriptions
+                    .Include(s => s.Plan)
+                    .FirstOrDefaultAsync(s => s.Id == request.SubscriptionId);
+
+                if (subscription == null)
+                    throw new ArgumentException("Subscription not found");
+
+                // Create payment record
+                var payment = new Payment
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    SubscriptionId = request.SubscriptionId,
+                    Amount = request.Amount,
+                    Currency = request.Currency ?? "ZMW",
+                    PaymentMethod = request.PaymentMethod,
+                    Status = "pending",
+                    TransactionId = request.TransactionId,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = request.UserId,
+                    Description = request.Description ?? $"Payment for subscription {subscription.Plan.Name}",
+                    Metadata = request.Metadata ?? new Dictionary<string, object>()
+                };
+
+                await _context.Payments.AddAsync(payment);
+                await _context.SaveChangesAsync();
+
+                // Process payment based on method
+                var paymentResult = await ProcessPaymentMethodAsync(payment, request);
+                
+                // Update payment status
+                payment.Status = paymentResult.Success ? "completed" : "failed";
+                payment.ProcessedAt = DateTime.UtcNow;
+                payment.GatewayResponse = paymentResult.Response;
+                payment.FailureReason = paymentResult.FailureReason;
+                
+                if (paymentResult.Success)
+                {
+                    // Update subscription if payment is successful
+                    await UpdateSubscriptionAfterPaymentAsync(subscription, payment);
+                    
+                    // Log activity
+                    await LogPaymentActivityAsync(payment, "completed");
+                }
+                else
+                {
+                    // Log failed payment
+                    await LogPaymentActivityAsync(payment, "failed");
+                }
+
+                await _context.SaveChangesAsync();
+                return payment;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing payment for subscription {SubscriptionId}", request.SubscriptionId);
+                throw;
+            }
+        }
+
+        public async Task<PaymentRefund> RefundPaymentAsync(string paymentId, decimal amount, string reason, string userId)
+        {
+            try
+            {
+                var payment = await _context.Payments
+                    .Include(p => p.Subscription)
+                    .FirstOrDefaultAsync(p => p.Id == paymentId);
+
+                if (payment == null)
+                    throw new ArgumentException("Payment not found");
+
+                if (payment.Status != "completed")
+                    throw new InvalidOperationException("Only completed payments can be refunded");
+
+                if (amount > payment.Amount)
+                    throw new ArgumentException("Refund amount cannot exceed payment amount");
+
+                // Create refund record
+                var refund = new PaymentRefund
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    PaymentId = paymentId,
+                    Amount = amount,
+                    Reason = reason,
+                    Status = "pending",
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedBy = userId,
+                    Currency = payment.Currency
+                };
+
+                await _context.PaymentRefunds.AddAsync(refund);
+                await _context.SaveChangesAsync();
+
+                // Process refund through payment gateway
+                var refundResult = await ProcessRefundAsync(payment, refund);
+                
+                refund.Status = refundResult.Success ? "completed" : "failed";
+                refund.ProcessedAt = DateTime.UtcNow;
+                refund.GatewayResponse = refundResult.Response;
+                refund.FailureReason = refundResult.FailureReason;
+
+                if (refundResult.Success)
+                {
+                    // Update payment status
+                    payment.RefundedAmount += amount;
+                    if (payment.RefundedAmount >= payment.Amount)
+                    {
+                        payment.Status = "refunded";
+                    }
+                    
+                    // Log refund activity
+                    await LogRefundActivityAsync(refund, "completed");
+                }
+                else
+                {
+                    await LogRefundActivityAsync(refund, "failed");
+                }
+
+                await _context.SaveChangesAsync();
+                return refund;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error refunding payment {PaymentId}", paymentId);
+                throw;
+            }
+        }
+
+        public async Task<List<PaymentDto>> GetPaymentHistoryAsync(string subscriptionId, PaymentHistoryFilterDto filter)
+        {
+            try
+            {
+                var query = _context.Payments
+                    .Include(p => p.Refunds)
+                    .Where(p => p.SubscriptionId == subscriptionId);
+
+                if (filter.Status?.Any() == true)
+                {
+                    query = query.Where(p => filter.Status.Contains(p.Status));
+                }
+
+                if (filter.PaymentMethod?.Any() == true)
+                {
+                    query = query.Where(p => filter.PaymentMethod.Contains(p.PaymentMethod));
+                }
+
+                if (filter.StartDate.HasValue)
+                {
+                    query = query.Where(p => p.CreatedAt >= filter.StartDate.Value);
+                }
+
+                if (filter.EndDate.HasValue)
+                {
+                    query = query.Where(p => p.CreatedAt <= filter.EndDate.Value);
+                }
+
+                var payments = await query
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Skip((filter.Page - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
+                    .Select(p => new PaymentDto
+                    {
+                        Id = p.Id,
+                        SubscriptionId = p.SubscriptionId,
+                        Amount = p.Amount,
+                        Currency = p.Currency,
+                        PaymentMethod = p.PaymentMethod,
+                        Status = p.Status,
+                        TransactionId = p.TransactionId,
+                        Description = p.Description,
+                        CreatedAt = p.CreatedAt,
+                        ProcessedAt = p.ProcessedAt,
+                        RefundedAmount = p.RefundedAmount,
+                        Refunds = p.Refunds.Select(r => new PaymentRefundDto
+                        {
+                            Id = r.Id,
+                            PaymentId = r.PaymentId,
+                            Amount = r.Amount,
+                            Reason = r.Reason,
+                            Status = r.Status,
+                            CreatedAt = r.CreatedAt,
+                            ProcessedAt = r.ProcessedAt
+                        }).ToList()
+                    })
+                    .ToListAsync();
+
+                return payments;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving payment history for subscription {SubscriptionId}", subscriptionId);
                 throw;
             }
         }
@@ -471,6 +673,261 @@ namespace UmiHealthPOS.Services
                 "annually" => basePrice * 12,
                 _ => basePrice
             };
+        }
+
+        // Payment system helper methods
+        private async Task<PaymentResult> ProcessPaymentMethodAsync(Payment payment, ProcessPaymentRequest request)
+        {
+            try
+            {
+                // Simulate payment processing based on method
+                // In production, this would integrate with actual payment gateways
+                await Task.Delay(1000); // Simulate processing time
+
+                var result = new PaymentResult();
+                
+                switch (request.PaymentMethod.ToLower())
+                {
+                    case "mobile_money":
+                        result = await ProcessMobileMoneyPaymentAsync(payment, request);
+                        break;
+                    case "bank_transfer":
+                        result = await ProcessBankTransferPaymentAsync(payment, request);
+                        break;
+                    case "credit_card":
+                        result = await ProcessCreditCardPaymentAsync(payment, request);
+                        break;
+                    case "cash":
+                        result = await ProcessCashPaymentAsync(payment, request);
+                        break;
+                    default:
+                        result = new PaymentResult
+                        {
+                            Success = false,
+                            FailureReason = "Unsupported payment method"
+                        };
+                        break;
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing payment method {PaymentMethod}", request.PaymentMethod);
+                return new PaymentResult
+                {
+                    Success = false,
+                    FailureReason = "Payment processing failed"
+                };
+            }
+        }
+
+        private async Task<PaymentResult> ProcessMobileMoneyPaymentAsync(Payment payment, ProcessPaymentRequest request)
+        {
+            // Simulate mobile money processing (MTN, Airtel, Zamtel)
+            // In production, integrate with Zambia mobile money APIs
+            var phoneNumber = request.Metadata?.GetValueOrDefault("phoneNumber")?.ToString();
+            
+            if (string.IsNullOrEmpty(phoneNumber) || !IsValidZambianPhoneNumber(phoneNumber))
+            {
+                return new PaymentResult
+                {
+                    Success = false,
+                    FailureReason = "Invalid Zambian phone number"
+                };
+            }
+
+            // Simulate API call to mobile money provider
+            await Task.Delay(500);
+            
+            return new PaymentResult
+            {
+                Success = true,
+                Response = $"Mobile money payment processed successfully for {phoneNumber}",
+                TransactionId = $"MM{DateTime.UtcNow:yyyyMMddHHmmss}"
+            };
+        }
+
+        private async Task<PaymentResult> ProcessBankTransferPaymentAsync(Payment payment, ProcessPaymentRequest request)
+        {
+            // Simulate bank transfer processing
+            // In production, integrate with Zambian banking APIs
+            var bankAccount = request.Metadata?.GetValueOrDefault("bankAccount")?.ToString();
+            var bankName = request.Metadata?.GetValueOrDefault("bankName")?.ToString();
+            
+            if (string.IsNullOrEmpty(bankAccount))
+            {
+                return new PaymentResult
+                {
+                    Success = false,
+                    FailureReason = "Bank account number required"
+                };
+            }
+
+            await Task.Delay(800);
+            
+            return new PaymentResult
+            {
+                Success = true,
+                Response = $"Bank transfer processed successfully for {bankName} account ****{bankAccount[^4..]}",
+                TransactionId = $"BT{DateTime.UtcNow:yyyyMMddHHmmss}"
+            };
+        }
+
+        private async Task<PaymentResult> ProcessCreditCardPaymentAsync(Payment payment, ProcessPaymentRequest request)
+        {
+            // Simulate credit card processing
+            // In production, integrate with payment gateways like Stripe, PayPal
+            var cardNumber = request.Metadata?.GetValueOrDefault("cardNumber")?.ToString();
+            var cvv = request.Metadata?.GetValueOrDefault("cvv")?.ToString();
+            var expiry = request.Metadata?.GetValueOrDefault("expiry")?.ToString();
+            
+            if (string.IsNullOrEmpty(cardNumber) || cardNumber.Length < 13)
+            {
+                return new PaymentResult
+                {
+                    Success = false,
+                    FailureReason = "Invalid credit card number"
+                };
+            }
+
+            await Task.Delay(600);
+            
+            return new PaymentResult
+            {
+                Success = true,
+                Response = $"Credit card payment processed successfully for card ****{cardNumber[^4..]}",
+                TransactionId = $"CC{DateTime.UtcNow:yyyyMMddHHmmss}"
+            };
+        }
+
+        private async Task<PaymentResult> ProcessCashPaymentAsync(Payment payment, ProcessPaymentRequest request)
+        {
+            // Cash payments are typically marked as completed immediately
+            await Task.Delay(100);
+            
+            return new PaymentResult
+            {
+                Success = true,
+                Response = "Cash payment recorded successfully",
+                TransactionId = $"CS{DateTime.UtcNow:yyyyMMddHHmmss}"
+            };
+        }
+
+        private async Task<RefundResult> ProcessRefundAsync(Payment payment, PaymentRefund refund)
+        {
+            try
+            {
+                // Simulate refund processing based on original payment method
+                await Task.Delay(500);
+                
+                // In production, this would call the appropriate refund API
+                // based on the original payment method
+                return new RefundResult
+                {
+                    Success = true,
+                    Response = $"Refund processed successfully for payment {payment.Id}",
+                    RefundId = $"RF{DateTime.UtcNow:yyyyMMddHHmmss}"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing refund for payment {PaymentId}", payment.Id);
+                return new RefundResult
+                {
+                    Success = false,
+                    FailureReason = "Refund processing failed"
+                };
+            }
+        }
+
+        private async Task UpdateSubscriptionAfterPaymentAsync(Subscription subscription, Payment payment)
+        {
+            try
+            {
+                // Extend subscription based on payment amount and plan
+                var monthsToAdd = (int)(payment.Amount / subscription.Plan.Price);
+                
+                if (subscription.EndDate < DateTime.UtcNow)
+                {
+                    // Subscription has expired, start from today
+                    subscription.StartDate = DateTime.UtcNow;
+                    subscription.EndDate = DateTime.UtcNow.AddMonths(monthsToAdd);
+                }
+                else
+                {
+                    // Extend existing subscription
+                    subscription.EndDate = subscription.EndDate.AddMonths(monthsToAdd);
+                }
+                
+                subscription.IsActive = true;
+                subscription.UpdatedAt = DateTime.UtcNow;
+                subscription.LastPaymentAt = DateTime.UtcNow;
+                subscription.NextBillingDate = subscription.EndDate.AddDays(-7); // 7 days before expiry
+                
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating subscription after payment");
+                throw;
+            }
+        }
+
+        private async Task LogPaymentActivityAsync(Payment payment, string status)
+        {
+            try
+            {
+                var activityLog = new ActivityLog
+                {
+                    UserId = payment.CreatedBy,
+                    Action = status == "completed" ? "Payment Completed" : "Payment Failed",
+                    Description = $"Payment {payment.Id} for subscription {payment.SubscriptionId} {status}",
+                    IpAddress = "127.0.0.1", // Would get from HttpContext in production
+                    UserAgent = "System",
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _context.ActivityLogs.AddAsync(activityLog);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error logging payment activity");
+            }
+        }
+
+        private async Task LogRefundActivityAsync(PaymentRefund refund, string status)
+        {
+            try
+            {
+                var activityLog = new ActivityLog
+                {
+                    UserId = refund.CreatedBy,
+                    Action = status == "completed" ? "Refund Completed" : "Refund Failed",
+                    Description = $"Refund {refund.Id} for payment {refund.PaymentId} {status}",
+                    IpAddress = "127.0.0.1", // Would get from HttpContext in production
+                    UserAgent = "System",
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _context.ActivityLogs.AddAsync(activityLog);
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error logging refund activity");
+            }
+        }
+
+        private bool IsValidZambianPhoneNumber(string phoneNumber)
+        {
+            // Basic validation for Zambian phone numbers
+            // Format: +26097XXXXXXX, +26096XXXXXXX, 097XXXXXXX, 096XXXXXXX
+            var cleanPhone = phoneNumber.Replace(" ", "").Replace("-", "");
+            
+            return cleanPhone.StartsWith("+260") && cleanPhone.Length == 12 ||
+                   cleanPhone.StartsWith("09") && cleanPhone.Length == 10;
         }
     }
 }

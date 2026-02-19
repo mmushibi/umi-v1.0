@@ -13,6 +13,7 @@ using System.IO;
 using UmiHealthPOS.Services;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.Data;
+using UmiHealthPOS.DTOs;
 
 namespace UmiHealthPOS.Controllers.Api
 {

@@ -25,7 +25,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="../js/auth.js"></script>
+  <script src="../../js/auth.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -318,7 +318,7 @@
                     <td class="px-6 py-4">
                       <div class="flex items-center cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors" 
                            @click="showTenantBillingHistory(invoice)">
-                        <img :src="invoice.tenantAvatar" :alt="invoice.tenant" class="w-8 h-8 rounded-full mr-3">
+                        <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
                         <div class="flex-1">
                           <div class="text-sm font-medium text-gray-900 hover:text-yellow-accent transition-colors" x-text="invoice.tenant"></div>
                           <div class="text-sm text-gray-500" x-text="invoice.plan"></div>

@@ -16,15 +16,24 @@ namespace UmiHealthPOS.Controllers.Api
         private readonly ApplicationDbContext _context;
         private readonly ILogger<UserManagementController> _logger;
         private readonly IRowLevelSecurityService _securityService;
+        private readonly ILimitService _limitService;
+        private readonly IPasswordService _passwordService;
+        private readonly IEmailService _emailService;
 
         public UserManagementController(
             ApplicationDbContext context,
             ILogger<UserManagementController> logger,
-            IRowLevelSecurityService securityService)
+            IRowLevelSecurityService securityService,
+            ILimitService limitService,
+            IPasswordService passwordService,
+            IEmailService emailService)
         {
             _context = context;
             _logger = logger;
             _securityService = securityService;
+            _limitService = limitService;
+            _passwordService = passwordService;
+            _emailService = emailService;
         }
 
         // GET: api/usermanagement/users
@@ -173,6 +182,35 @@ namespace UmiHealthPOS.Controllers.Api
                 if (!string.IsNullOrEmpty(request.TenantId) && !await _securityService.CanAccessTenantAsync(User, request.TenantId))
                 {
                     return Forbid("You cannot create users in this tenant");
+                }
+
+                // Check user limits - allow admin override for super admin and operations
+                var targetTenantId = request.TenantId ?? securityContext.TenantId;
+                var isSuperAdminOrOperations = securityContext.Role.Name == "SuperAdmin" || securityContext.Role.Name == "Operations";
+                
+                bool canCreateUser;
+                if (isSuperAdminOrOperations)
+                {
+                    // Allow admin override for super admin and operations
+                    canCreateUser = await _limitService.CanCreateUserWithAdminOverrideAsync(targetTenantId);
+                }
+                else
+                {
+                    // Regular limit checking for other roles
+                    canCreateUser = await _limitService.CanCreateUserAsync(targetTenantId);
+                }
+
+                if (!canCreateUser)
+                {
+                    var limitResult = await _limitService.CheckUserLimitAsync(targetTenantId);
+                    return BadRequest(new { 
+                        error = "USER_LIMIT_EXCEEDED", 
+                        message = limitResult.Reason,
+                        current = limitResult.Current,
+                        limit = limitResult.Limit,
+                        additionalUsers = limitResult.AdditionalUsers,
+                        suggestion = isSuperAdminOrOperations ? "Purchase additional user licenses to override this limit" : "Contact your administrator to upgrade your plan"
+                    });
                 }
 
                 // Check if user already exists
@@ -381,16 +419,30 @@ namespace UmiHealthPOS.Controllers.Api
                     return Forbid($"You cannot reset password for users with role {userRole.GetDisplayName()}");
                 }
 
-                // In a real implementation, this would generate a secure temporary password
-                // and send it via email or other secure channel
-                var tempPassword = GenerateTemporaryPassword();
+                // Generate secure temporary password and send via email
+                var tempPassword = GenerateSecureTemporaryPassword();
                 
-                // This would typically be handled by a password hashing service
-                // For now, we'll just log the action
-                _logger.LogInformation("Password reset for user {UserId} by {ResetterUserId}. Temp password: {TempPassword}", 
-                    user.UserId, securityContext.UserId, tempPassword);
+                // Hash the password and update user
+                var hashedPassword = _passwordService.HashPassword(tempPassword);
+                user.PasswordHash = hashedPassword;
+                user.PasswordResetRequired = true;
+                user.PasswordResetToken = GenerateResetToken();
+                user.PasswordResetExpires = DateTime.UtcNow.AddHours(24);
+                user.UpdatedAt = DateTime.UtcNow;
+                
+                await _context.SaveChangesAsync();
+                
+                // Send password reset email
+                await SendPasswordResetEmailAsync(user, tempPassword);
+                
+                _logger.LogInformation("Password reset for user {UserId} by {ResetterUserId}", 
+                    user.UserId, securityContext.UserId);
 
-                return Ok(new { Message = "Password reset successfully", TemporaryPassword = tempPassword });
+                return Ok(new { 
+                    Message = "Password reset successfully. Temporary password sent to user's email.", 
+                    RequiresPasswordChange = true,
+                    ResetExpires = user.PasswordResetExpires
+                });
             }
             catch (Exception ex)
             {

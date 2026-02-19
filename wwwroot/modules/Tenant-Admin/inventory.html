@@ -28,7 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="../js/auth.js"></script>
+  <script src="../../js/auth.js"></script>
   </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -46,7 +46,7 @@
       <div class="p-4">
         <div class="flex items-center justify-between">
           <div class="flex flex-col items-center space-y-2">
-            <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+            <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           </div>
           <button @click="mobileMenuOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700" title="Close menu">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +153,7 @@
     <aside class="hidden lg:block w-64 bg-white shadow-lg">
       <div class="p-4">
         <div class="flex flex-col items-center space-y-2">
-          <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+          <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           <span class="text-xl font-semibold text-ocean-800">Pharmacy Admin</span>
         </div>
       </div>
@@ -265,7 +265,7 @@
               </button>
               
               <div class="lg:hidden flex items-center space-x-2">
-                <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+                <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
                 <span class="text-xl font-semibold text-ocean-800">Pharmacy Admin</span>
               </div>
               
@@ -363,7 +363,7 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Category</label>
-              <select x-model="selectedCategory" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+              <select x-model="selectedCategory" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" aria-label="Filter by category" title="Filter by category">
                 <option value="">All Categories</option>
                 <option value="medications">Medications</option>
                 <option value="medical-supplies">Medical Supplies</option>
@@ -375,7 +375,7 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Stock Status</label>
-              <select x-model="stockStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+              <select x-model="stockStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" aria-label="Filter by stock status" title="Filter by stock status">
                 <option value="">All Status</option>
                 <option value="in-stock">In Stock</option>
                 <option value="low-stock">Low Stock</option>
@@ -469,10 +469,10 @@
           <!-- Pagination -->
           <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
             <div class="flex-1 flex justify-between sm:hidden">
-              <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+              <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" aria-label="Previous page" title="Previous page">
                 Previous
               </button>
-              <button @click="nextPage()" :disabled="currentPage === totalPages" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+              <button @click="nextPage()" :disabled="currentPage === totalPages" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" aria-label="Next page" title="Next page">
                 Next
               </button>
             </div>
@@ -490,7 +490,7 @@
               </div>
               <div>
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" aria-label="Previous page" title="Previous page">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
                     </svg>
@@ -503,7 +503,7 @@
                       x-text="page"
                     ></button>
                   </template>
-                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" aria-label="Next page" title="Next page">
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                     </svg>
@@ -551,49 +551,72 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Inventory Item Name *</label>
                     <input type="text" x-model="newItem.inventoryItemName" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500"
+                           aria-label="Inventory item name"
+                           title="Enter inventory item name"
+                           placeholder="Enter inventory item name">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Generic Name *</label>
                     <input type="text" x-model="newItem.genericName" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500"
+                           aria-label="Generic name"
+                           title="Enter generic name"
+                           placeholder="Enter generic name">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Brand Name *</label>
                     <input type="text" x-model="newItem.brandName" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500"
+                           aria-label="Brand name"
+                           title="Enter brand name"
+                           placeholder="Enter brand name">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Manufacture Date *</label>
                     <input type="date" x-model="newItem.manufactureDate" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500"
+                           aria-label="Manufacture date"
+                           title="Select manufacture date"
+                           placeholder="Select manufacture date">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Batch Number *</label>
                     <input type="text" x-model="newItem.batchNumber" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500"
+                           aria-label="Batch number"
+                           title="Enter batch number"
+                           placeholder="Enter batch number">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">License Number</label>
                     <input type="text" x-model="newItem.licenseNumber"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500"
+                           aria-label="License number"
+                           title="Enter license number"
+                           placeholder="Enter license number">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Zambia REG Number</label>
                     <input type="text" x-model="newItem.zambiaRegNumber"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500"
+                           aria-label="Zambia registration number"
+                           title="Enter Zambia registration number"
+                           placeholder="Enter Zambia registration number">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Packing Type *</label>
                     <select x-model="newItem.packingType" required
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500"
+                            aria-label="Select packing type"
+                            title="Select packing type">
                       <option value="">Select Packing Type</option>
                       <option value="Box">Box</option>
                       <option value="Bottle">Bottle</option>
@@ -608,19 +631,28 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Quantity *</label>
                     <input type="number" x-model="newItem.quantity" min="0" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500"
+                           aria-label="Quantity"
+                           title="Enter quantity"
+                           placeholder="Enter quantity">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Unit Price *</label>
                     <input type="number" x-model="newItem.unitPrice" min="0" step="0.01" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500"
+                           aria-label="Unit price"
+                           title="Enter unit price"
+                           placeholder="Enter unit price">
                   </div>
                   
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Selling Price *</label>
                     <input type="number" x-model="newItem.sellingPrice" min="0" step="0.01" required
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500">
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-ocean-500 focus:border-ocean-500"
+                           aria-label="Selling price"
+                           title="Enter selling price"
+                           placeholder="Enter selling price">
                   </div>
                   
                   <div>

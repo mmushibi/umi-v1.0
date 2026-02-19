@@ -28,7 +28,7 @@
     }
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <script src="../js/auth.js"></script>
+  <script src="../../js/auth.js"></script>
 </head>
 <body class="bg-gray-50 text-slate-800">
   <div class="flex h-screen">
@@ -46,7 +46,7 @@
       <div class="p-4">
         <div class="flex items-center justify-between">
           <div class="flex flex-col items-center space-y-2">
-            <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+            <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           </div>
           <button @click="mobileMenuOpen = false" class="lg:hidden text-gray-500 hover:text-gray-700" title="Close menu">
             <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -153,7 +153,7 @@
     <aside class="hidden lg:block w-64 bg-white shadow-lg">
       <div class="p-4">
         <div class="flex flex-col items-center space-y-2">
-          <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+          <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
           <span class="text-xl font-semibold text-ocean-800">Pharmacy Admin</span>
         </div>
       </div>
@@ -265,7 +265,7 @@
               </button>
               
               <div class="lg:hidden flex items-center space-x-2">
-                <img src="../logo.png" alt="Umi Health" class="h-8 w-auto">
+                <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
                 <span class="text-xl font-semibold text-ocean-800">Pharmacy Admin</span>
               </div>
               
@@ -318,7 +318,7 @@
               <p class="text-sm text-gray-500" x-text="notification.message"></p>
             </div>
             <div class="ml-4 flex-shrink-0">
-              <button @click="notification.show = false" class="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none">
+              <button @click="notification.show = false" class="inline-flex text-gray-400 hover:text-gray-600 focus:outline-none" title="Close notification" aria-label="Close notification">
                 <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                 </svg>
@@ -399,7 +399,7 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Role</label>
-              <select x-model="selectedRole" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+              <select x-model="selectedRole" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" title="Filter by role" aria-label="Filter by role">
                 <option value="">All Roles</option>
                 <option value="admin">Admin</option>
                 <option value="pharmacist">Pharmacist</option>
@@ -409,7 +409,7 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <select x-model="selectedStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+              <select x-model="selectedStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" title="Filter by status" aria-label="Filter by status">
                 <option value="">All Status</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
@@ -420,7 +420,7 @@
             
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Branch</label>
-              <select x-model="selectedBranch" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent">
+              <select x-model="selectedBranch" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-ocean-500 focus:border-transparent" title="Filter by branch" aria-label="Filter by branch">
                 <option value="">All Branches</option>
                 <template x-for="branch in branches" :key="branch.id">
                   <option :value="branch.id" x-text="branch.name"></option>
@@ -431,7 +431,7 @@
           
           <div class="mt-4 flex justify-between items-center">
             <div class="flex space-x-2">
-              <button @click="showAddUser = true" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700">
+              <button @click="showAddUser = true" class="px-4 py-2 bg-ocean-600 text-white rounded-lg hover:bg-ocean-700" title="Add new user" aria-label="Add new user">
                 <i class="fas fa-user-plus mr-2"></i>Add User
               </button>
               <button @click="showImportUsers = true" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
@@ -547,7 +547,7 @@
               </div>
               <div>
                 <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button @click="previousPage()" :disabled="currentPage === 1" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" title="Previous page" aria-label="Previous page">
                     <i class="fas fa-chevron-left"></i>
                   </button>
                   <template x-for="page in totalPages" :key="page">
@@ -558,7 +558,7 @@
                       x-text="page"
                     ></button>
                   </template>
-                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                  <button @click="nextPage()" :disabled="currentPage === totalPages" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50" title="Next page" aria-label="Next page">
                     <i class="fas fa-chevron-right"></i>
                   </button>
                 </nav>
@@ -609,22 +609,22 @@
                     <div>
                       <label class="block text-sm font-medium text-gray-700">Full Name</label>
                       <input type="text" x-model="newUser.name" required
-                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm">
+                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm" title="Enter full name" aria-label="Full Name">
                     </div>
                     <div>
                       <label class="block text-sm font-medium text-gray-700">Email Address</label>
                       <input type="email" x-model="newUser.email" required
-                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm">
+                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm" title="Enter email address" aria-label="Email Address">
                     </div>
                     <div>
                       <label class="block text-sm font-medium text-gray-700">Phone Number</label>
                       <input type="tel" x-model="newUser.phone" required
-                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm">
+                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm" title="Enter phone number" aria-label="Phone Number">
                     </div>
                     <div>
                       <label class="block text-sm font-medium text-gray-700">Role</label>
                       <select x-model="newUser.role" required
-                              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm">
+                              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm" title="Select user role" aria-label="Select user role">
                         <option value="">Select a role</option>
                         <option value="admin">Admin (Tenant Admin)</option>
                         <option value="pharmacist">Pharmacist</option>
@@ -634,7 +634,7 @@
                     <div>
                       <label class="block text-sm font-medium text-gray-700">Branch</label>
                       <select x-model="newUser.branch"
-                              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm">
+                              class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm" title="Select branch" aria-label="Select branch">
                         <option value="">All Branches</option>
                         <template x-for="branch in branches" :key="branch.id">
                           <option :value="branch.id" x-text="branch.name"></option>
@@ -645,9 +645,9 @@
                       <label class="block text-sm font-medium text-gray-700">Password</label>
                       <div class="mt-1 relative">
                         <input :type="showPassword ? 'text' : 'password'" x-model="newUser.password" required
-                               class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 pr-10 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm">
+                               class="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 pr-10 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm" title="Enter password" aria-label="Enter password" placeholder="Enter password">
                         <button type="button" @click="showPassword = !showPassword" 
-                                class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center" title="Toggle password visibility" aria-label="Toggle password visibility">
                           <svg :class="showPassword ? 'h-4 w-4 text-ocean-600' : 'h-4 w-4 text-gray-400'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path x-show="!showPassword" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                             <path x-show="!showPassword" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
@@ -659,7 +659,7 @@
                     <div>
                       <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
                       <input type="password" x-model="newUser.confirmPassword" required
-                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm">
+                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-ocean-500 focus:border-ocean-500 sm:text-sm" title="Confirm password" aria-label="Confirm Password">
                     </div>
                   </div>
                 </div>
@@ -724,7 +724,7 @@
                   <div>
                     <label class="block text-sm font-medium text-gray-700">Choose CSV file</label>
                     <input type="file" @change="importUsers($event)" accept=".csv"
-                           class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-ocean-50 file:text-ocean-700 hover:file:bg-ocean-100">
+                           class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-ocean-50 file:text-ocean-700 hover:file:bg-ocean-100" title="Choose CSV file to import" aria-label="Choose CSV file to import" placeholder="Select CSV file">
                   </div>
                 </div>
                 
@@ -818,13 +818,17 @@
               this.users = data;
             })
             .catch(error => {
-              // Fallback to localStorage for demo
-              this.loadUsersFromStorage();
+              console.error('Error loading users:', error);
+              // Show error message instead of fallback to demo data
+              this.showNotification('Error loading users. Please try again.', 'error');
+              this.users = [];
             });
         },
         
         loadUsersFromStorage() {
-          // Fallback method for demo purposes
+          // This method is deprecated - should not use demo/fallback data
+          // Keeping for backward compatibility but will be removed in production
+          console.warn('loadUsersFromStorage is deprecated - use API instead');
           const storedUsers = localStorage.getItem('umi_users_list');
           if (storedUsers) {
             this.users = JSON.parse(storedUsers);
@@ -1090,13 +1094,14 @@
             this.showNotification('User added successfully! They can now login with their credentials.', 'success');
           })
           .catch(error => {
-            // Fallback to localStorage for demo
-            this.addUserLocally();
+            console.error('Error adding user:', error);
+            // Show error message instead of fallback to demo data
+            this.showNotification('Error adding user. Please try again.', 'error');
           });
         },
         
         addUserLocally() {
-          // Fallback method for demo purposes
+          console.warn('addUserLocally is deprecated - use API instead');
           const user = {
             id: Date.now().toString(),
             name: this.newUser.name,
@@ -1113,11 +1118,7 @@
           this.storeUserCredentials(user.email, this.newUser.password, user.role);
           this.resetNewUser();
           this.showAddUser = false;
-          
-          // Save to localStorage
-          localStorage.setItem('umi_users_list', JSON.stringify(this.users));
-          
-          alert('User added successfully! They can now login with their credentials.');
+          this.showNotification('User added locally (demo mode). This will not persist in production.', 'warning');
         },
         
         resetNewUser() {
@@ -1134,7 +1135,8 @@
         
         storeUserCredentials(email, password, role) {
           // In production, this would be handled securely by the backend
-          // For demo purposes, we'll store in localStorage
+          // Storing in localStorage is not secure and should only be used for development
+          console.warn('storeUserCredentials should only be used in development - not secure for production');
           const users = JSON.parse(localStorage.getItem('umi_users') || '{}');
           users[email] = {
             password: password,

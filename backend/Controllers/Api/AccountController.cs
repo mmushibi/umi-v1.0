@@ -329,7 +329,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpDelete("sessions/{sessionId}/revoke")]
-        public async Task<IActionResult> RevokeSession(string sessionId)
+        public async Task<IActionResult> RevokeSession(int sessionId)
         {
             var userId = GetUserId();
             var session = await _context.UserSessions

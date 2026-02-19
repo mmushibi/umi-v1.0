@@ -40,6 +40,8 @@ namespace UmiHealthPOS.Data
                         Price = 1350m,
                         MaxUsers = 5,
                         MaxBranches = 1,
+                        MaxProducts = 500,
+                        MaxTransactions = 1000,
                         MaxStorageGB = 5,
                         Features = "Basic inventory management, sales tracking, reporting",
                         IsActive = true
@@ -50,6 +52,8 @@ namespace UmiHealthPOS.Data
                         Price = 4050m,
                         MaxUsers = 15,
                         MaxBranches = 3,
+                        MaxProducts = 2000,
+                        MaxTransactions = 5000,
                         MaxStorageGB = 10,
                         Features = "Advanced inventory, multi-branch, advanced reporting, API access",
                         IsActive = true
@@ -60,6 +64,8 @@ namespace UmiHealthPOS.Data
                         Price = 13500m,
                         MaxUsers = 50,
                         MaxBranches = 10,
+                        MaxProducts = 10000,
+                        MaxTransactions = 20000,
                         MaxStorageGB = 50,
                         Features = "Full feature set, priority support, custom integrations, unlimited storage",
                         IsActive = true

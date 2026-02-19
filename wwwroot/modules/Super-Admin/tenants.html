@@ -25,7 +25,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="../js/auth.js"></script>
+  <script src="../../js/auth.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -836,7 +836,7 @@
                       <tr class="hover:bg-gray-100">
                         <td class="px-4 py-3">
                           <div class="flex items-center space-x-3">
-                            <img :src="user.avatar" :alt="user.name" class="w-8 h-8 rounded-full">
+                            <img src="../../logo.png" alt="Umi Health" class="h-8 w-auto">
                             <div>
                               <p class="text-sm font-medium text-gray-900" x-text="user.name"></p>
                               <p class="text-xs text-gray-500" x-text="user.email"></p>

@@ -1,10 +1,7 @@
 using System.Collections.Generic;
+using UmiHealthPOS.DTOs;
 
 namespace UmiHealthPOS.Models
 {
-    public class CsvImportResult
-    {
-        public int ImportedCount { get; set; }
-        public List<string> Errors { get; set; } = new List<string>();
-    }
+    // This file now uses DTOs from the DTOs namespace to avoid duplication
 }

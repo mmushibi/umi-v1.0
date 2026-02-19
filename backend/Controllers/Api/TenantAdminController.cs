@@ -9,9 +9,11 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using System.IO;
+using System.Security.Claims;
 using UmiHealthPOS.Models.Dashboard;
 using UmiHealthPOS.Services;
 using UmiHealthPOS.Models;
+using UmiHealthPOS.DTOs;
 using UmiHealthPOS.Data;
 
 namespace UmiHealthPOS.Controllers.Api
@@ -46,7 +48,8 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                var stats = await _dashboardService.GetDashboardStatsAsync();
+                var tenantId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+                var stats = await _dashboardService.GetDashboardStatsAsync(tenantId);
                 return Ok(stats);
             }
             catch (Exception ex)
@@ -61,7 +64,8 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                var activities = await _dashboardService.GetRecentActivityAsync(limit);
+                var tenantId = User.FindFirst("TenantId")?.Value ?? "";
+                var activities = await _dashboardService.GetRecentActivityAsync(tenantId, limit);
                 return Ok(activities);
             }
             catch (Exception ex)
@@ -101,21 +105,114 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                // Return empty summary - no mock data
-                // When database is implemented, this will generate real reports
-                var summary = new ReportSummary
+                var userId = GetCurrentUserId();
+                var tenantId = GetCurrentTenantId();
+
+                if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(tenantId))
                 {
-                    Period = period,
-                    TotalRevenue = "ZMK 0",
-                    TotalSales = 0,
-                    TopProducts = new List<TopProduct>()
+                    return Unauthorized(new { error = "User not authenticated" });
+                }
+
+                // Calculate date range based on period
+                var today = DateTime.UtcNow.Date;
+                var startDate = period.ToLower() switch
+                {
+                    "daily" => today,
+                    "weekly" => today.AddDays(-7),
+                    "monthly" => new DateTime(today.Year, today.Month, 1),
+                    "quarterly" => new DateTime(today.Year, (today.Month / 3) * 3 + 1, 1),
+                    "yearly" => new DateTime(today.Year, 1, 1),
+                    _ => new DateTime(today.Year, today.Month, 1)
                 };
 
+                // Real database implementation for report aggregation
+                var summaryTask = Task.Run(async () =>
+                {
+                    // Get sales data
+                    var salesData = await _context.Sales
+                        .Where(s => s.TenantId == tenantId && s.CreatedAt >= startDate)
+                        .GroupBy(s => 1) // Group all sales for aggregation
+                        .Select(g => new
+                        {
+                            TotalRevenue = g.Sum(s => s.Total),
+                            TotalSales = g.Count(),
+                            AverageSale = g.Average(s => s.Total)
+                        })
+                        .FirstOrDefaultAsync();
+
+                    // Get top products
+                    var topProducts = await _context.SaleItems
+                        .Join(_context.Sales, si => si.SaleId, s => s.Id, (si, s) => new { si, s })
+                        .Where(x => x.s.TenantId == tenantId && x.s.CreatedAt >= startDate)
+                        .Join(_context.Products, x => x.si.ProductId, p => p.Id, (x, p) => new { x.si, x.s, p })
+                        .GroupBy(x => new { x.p.Id, x.p.Name })
+                        .Select(g => new
+                        {
+                            ProductId = g.Key.Id,
+                            ProductName = g.Key.Name,
+                            TotalQuantity = g.Sum(x => x.si.Quantity),
+                            TotalRevenue = g.Sum(x => x.si.TotalPrice)
+                        })
+                        .OrderByDescending(x => x.TotalRevenue)
+                        .Take(5)
+                        .ToListAsync();
+
+                    // Get customer metrics
+                    var customerMetrics = await _context.Sales
+                        .Where(s => s.TenantId == tenantId && s.CreatedAt >= startDate)
+                        .GroupBy(s => s.CustomerId)
+                        .Select(g => new
+                        {
+                            CustomerId = g.Key,
+                            TotalSpent = g.Sum(s => s.Total),
+                            TransactionCount = g.Count()
+                        })
+                        .OrderByDescending(x => x.TotalSpent)
+                        .Take(5)
+                        .ToListAsync();
+
+                    // Get payment method breakdown
+                    var paymentMethods = await _context.Sales
+                        .Where(s => s.TenantId == tenantId && s.CreatedAt >= startDate)
+                        .GroupBy(s => s.PaymentMethod)
+                        .Select(g => new
+                        {
+                            Method = g.Key,
+                            Count = g.Count(),
+                            Total = g.Sum(s => s.Total)
+                        })
+                        .ToListAsync();
+
+                    return new ReportSummary
+                    {
+                        Period = period,
+                        StartDate = startDate.ToString("yyyy-MM-dd"),
+                        EndDate = today.ToString("yyyy-MM-dd"),
+                        TotalRevenue = $"ZMK {salesData?.TotalRevenue ?? 0:N2}",
+                        TotalSales = salesData?.TotalSales ?? 0,
+                        AverageSale = salesData?.AverageSale ?? 0,
+                        TopProducts = topProducts.Select(p => new TopProduct
+                        {
+                            Name = p.ProductName,
+                            QuantitySold = p.TotalQuantity,
+                            Revenue = p.TotalRevenue
+                        }).ToList(),
+                        TopCustomers = customerMetrics.Select(c => new TopCustomer
+                        {
+                            CustomerId = c.CustomerId,
+                            TotalSpent = $"ZMK {c.TotalSpent:N2}",
+                            TransactionCount = c.TransactionCount
+                        }).ToList(),
+                        PaymentMethods = paymentMethods.ToDictionary(pm => pm.Method, pm => pm.Total)
+                    };
+                });
+
+                var summary = await summaryTask;
                 return Ok(summary);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating report summary");
+                _logger.LogError(ex, "Error generating report summary for period: {Period}", period);
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
@@ -136,7 +233,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPost("sales/process")]
-        public async Task<ActionResult> ProcessSale([FromBody] Services.SaleRequest request)
+        public async Task<ActionResult> ProcessSale([FromBody] SaleRequest request)
         {
             try
             {
@@ -381,7 +478,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPost("prescriptions")]
-        public async Task<ActionResult<Prescription>> CreatePrescription([FromBody] UmiHealthPOS.Services.CreatePrescriptionRequest request)
+        public async Task<ActionResult<Prescription>> CreatePrescription([FromBody] CreatePrescriptionRequest request)
         {
             try
             {
@@ -396,7 +493,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPut("prescriptions/{id}")]
-        public async Task<ActionResult<Prescription>> UpdatePrescription(int id, [FromBody] UmiHealthPOS.Services.UpdatePrescriptionRequest request)
+        public async Task<ActionResult<Prescription>> UpdatePrescription(int id, [FromBody] UpdatePrescriptionRequest request)
         {
             try
             {
@@ -506,7 +603,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPost("patients")]
-        public async Task<ActionResult<Patient>> CreatePatient([FromBody] UmiHealthPOS.Services.CreatePatientRequest request)
+        public async Task<ActionResult<Patient>> CreatePatient([FromBody] CreatePatientRequest request)
         {
             try
             {
@@ -521,7 +618,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpPut("patients/{id}")]
-        public async Task<ActionResult<Patient>> UpdatePatient(int id, [FromBody] UmiHealthPOS.Services.CreatePatientRequest request)
+        public async Task<ActionResult<Patient>> UpdatePatient(int id, [FromBody] CreatePatientRequest request)
         {
             try
             {
@@ -679,7 +776,7 @@ namespace UmiHealthPOS.Controllers.Api
                     {
                         Id = s.Id,
                         ReceiptNumber = s.ReceiptNumber,
-                        DateTime = s.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                        DateTime = s.CreatedAt,
                         CustomerName = s.Customer != null ? s.Customer.Name : "Walk-in",
                         CustomerId = s.CustomerId.HasValue ? s.CustomerId.Value.ToString() : null,
                         ItemCount = s.SaleItems.Count,
@@ -719,7 +816,7 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     Id = sale.Id,
                     ReceiptNumber = sale.ReceiptNumber,
-                    DateTime = sale.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                    DateTime = sale.CreatedAt,
                     CustomerName = sale.Customer != null ? sale.Customer.Name : "Walk-in",
                     CustomerId = sale.CustomerId.HasValue ? sale.CustomerId.Value.ToString() : null,
                     Subtotal = sale.Subtotal,
@@ -731,7 +828,7 @@ namespace UmiHealthPOS.Controllers.Api
                     Change = sale.Change,
                     Status = sale.Status,
                     RefundReason = sale.RefundReason,
-                    RefundedAt = sale.RefundedAt?.ToString("yyyy-MM-dd HH:mm:ss"),
+                    RefundedAt = sale.RefundedAt,
                     Items = sale.SaleItems.Select(si => new SaleItemDto
                     {
                         ProductName = si.Product.Name,
@@ -863,7 +960,7 @@ namespace UmiHealthPOS.Controllers.Api
                     {
                         Id = s.Id,
                         ReceiptNumber = s.ReceiptNumber,
-                        DateTime = s.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                        DateTime = s.CreatedAt,
                         CustomerName = s.Customer != null ? s.Customer.Name : "Walk-in",
                         CustomerId = s.CustomerId.HasValue ? s.CustomerId.Value.ToString() : null,
                         ItemCount = s.SaleItems.Count,
@@ -993,68 +1090,118 @@ namespace UmiHealthPOS.Controllers.Api
                     return NotFound(new { error = "Sale not found" });
                 }
 
-                // Generate PDF receipt
-                var pdfContent = GeneratePdfReceipt(sale);
-                var fileName = $"receipt_{sale.ReceiptNumber}.pdf";
+                // Generate printable receipt
+                var receiptContent = GeneratePrintableReceipt(sale);
+                var fileName = $"receipt_{sale.ReceiptNumber}.html";
 
                 Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
-                return File(pdfContent, "application/pdf", fileName);
+                return File(receiptContent, "text/html", fileName);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating receipt PDF");
+                _logger.LogError(ex, "Error generating receipt");
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
 
-        private byte[] GeneratePdfReceipt(Sale sale)
+        private byte[] GeneratePrintableReceipt(Sale sale)
         {
-            // Simple PDF generation using HTML to PDF approach
-            // For production, consider using a proper PDF library like iTextSharp or PdfSharp
-            var htmlContent = $@"
-<!DOCTYPE html>
+            // Generate HTML receipt with proper PDF formatting
+            var htmlContent = $@"<!DOCTYPE html>
 <html>
 <head>
     <meta charset='utf-8'>
     <title>Receipt {sale.ReceiptNumber}</title>
     <style>
-        body {{ font-family: Arial, sans-serif; margin: 20px; }}
-        .header {{ text-align: center; margin-bottom: 30px; }}
-        .header h1 {{ color: #1c6db8; }}
-        .info {{ margin-bottom: 20px; }}
-        .items {{ width: 100%; border-collapse: collapse; margin-bottom: 20px; }}
-        .items th, .items td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-        .items th {{ background-color: #f2f2f2; }}
-        .total {{ text-align: right; font-weight: bold; margin-top: 20px; }}
-        .footer {{ margin-top: 30px; text-align: center; color: #666; }}
+        @page {{
+            size: 80mm 200mm;
+            margin: 5mm;
+        }}
+        body {{ 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            padding: 10px;
+            font-size: 12px;
+            width: 280px;
+        }}
+        .header {{ 
+            text-align: center; 
+            margin-bottom: 20px; 
+            border-bottom: 2px dashed #000;
+            padding-bottom: 10px;
+        }}
+        .header h1 {{ 
+            color: #1c6db8; 
+            font-size: 16px;
+            margin: 5px 0;
+        }}
+        .info {{ 
+            margin-bottom: 15px; 
+            font-size: 11px;
+        }}
+        .items {{ 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 15px;
+            font-size: 10px;
+        }}
+        .items th, .items td {{ 
+            border: 1px solid #ddd; 
+            padding: 4px; 
+            text-align: left;
+        }}
+        .items th {{ 
+            background-color: #f2f2f2; 
+            font-weight: bold;
+        }}
+        .total {{ 
+            text-align: right; 
+            font-weight: bold; 
+            margin: 15px 0;
+            font-size: 11px;
+        }}
+        .footer {{ 
+            margin-top: 20px; 
+            text-align: center; 
+            color: #666;
+            border-top: 2px dashed #000;
+            padding-top: 10px;
+            font-size: 10px;
+        }}
+        .receipt-info {{
+            text-align: center;
+            margin-bottom: 15px;
+        }}
     </style>
 </head>
 <body>
     <div class='header'>
         <h1>UMI HEALTH PHARMACY</h1>
-        <p>Receipt #: {sale.ReceiptNumber}</p>
-        <p>Date: {sale.CreatedAt:yyyy-MM-dd HH:mm:ss}</p>
+        <p>Zambia</p>
+        <div class='receipt-info'>
+            <p><strong>RECEIPT #: {sale.ReceiptNumber}</strong></p>
+            <p>Date: {sale.CreatedAt:yyyy-MM-dd HH:mm:ss}</p>
+        </div>
     </div>
     
     <div class='info'>
-        <p><strong>Customer:</strong> {sale.Customer?.Name ?? "Walk-in"}</p>
-        <p><strong>Payment Method:</strong> {sale.PaymentMethod}</p>
-        <p><strong>Status:</strong> {sale.Status}</p>
+        <p><strong>Customer:</strong> {(sale.Customer?.Name ?? "Walk-in").ToUpper()}</p>
+        <p><strong>Payment:</strong> {sale.PaymentMethod.ToUpper()}</p>
+        <p><strong>Status:</strong> {sale.Status.ToUpper()}</p>
     </div>
     
     <table class='items'>
         <thead>
             <tr>
-                <th>Product</th>
-                <th>Qty</th>
-                <th>Unit Price</th>
-                <th>Total</th>
+                <th>PRODUCT</th>
+                <th>QTY</th>
+                <th>PRICE</th>
+                <th>TOTAL</th>
             </tr>
         </thead>
         <tbody>
-                    {string.Join("", sale.SaleItems.Select(item => $@"
-            <tr>
-                <td>{item.Product.Name}</td>
+                    {string.Join("", sale.SaleItems.Select(item => $@"<tr>
+                <td>{item.Product.Name.ToUpper()}</td>
                 <td>{item.Quantity}</td>
                 <td>ZMW {item.UnitPrice:F2}</td>
                 <td>ZMW {item.TotalPrice:F2}</td>
@@ -1063,25 +1210,23 @@ namespace UmiHealthPOS.Controllers.Api
     </table>
     
     <div class='total'>
-        <p>Subtotal: ZMW {sale.Subtotal:F2}</p>
-        <p>Tax: ZMW {sale.Tax:F2}</p>
-        <p><strong>Total: ZMW {sale.Total:F2}</strong></p>
-        {(sale.CashReceived > 0 ? $"<p>Cash Received: ZMW {sale.CashReceived:F2}</p><p>Change: ZMW {sale.Change:F2}</p>" : "")}
+        <p>SUBTOTAL: ZMW {sale.Subtotal:F2}</p>
+        <p>TAX: ZMW {sale.Tax:F2}</p>
+        <p><strong>TOTAL: ZMW {sale.Total:F2}</strong></p>
+        {(sale.CashReceived > 0 ? $"<p>CASH: ZMW {sale.CashReceived:F2}</p><p>CHANGE: ZMW {sale.Change:F2}</p>" : "")}
     </div>
     
     <div class='footer'>
-        <p>Thank you for your business!</p>
+        <p>THANK YOU FOR YOUR BUSINESS!</p>
         <p>UMI Health Pharmacy - Zambia</p>
+        <p>Tel: +260 XXX XXX XXX</p>
     </div>
 </body>
 </html>";
 
-            // Convert HTML to bytes (simplified approach)
-            // In production, use a proper HTML to PDF converter
+            // Convert HTML to bytes with proper encoding
             var bytes = Encoding.UTF8.GetBytes(htmlContent);
-
-            // For now, return as HTML file that can be printed as PDF
-            // TODO: Implement proper PDF generation
+            
             return bytes;
         }
 
@@ -1324,6 +1469,17 @@ namespace UmiHealthPOS.Controllers.Api
         {
             return $"SUP-{DateTime.UtcNow:yyyyMMdd}-{new Random().Next(1000, 9999)}";
         }
+
+        // Helper methods
+        private string GetCurrentUserId()
+        {
+            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+        }
+
+        private string GetCurrentTenantId()
+        {
+            return User.FindFirst("tenantId")?.Value ?? string.Empty;
+        }
     }
 
     // Request/Response Models
@@ -1362,16 +1518,21 @@ namespace UmiHealthPOS.Controllers.Api
     public class ReportSummary
     {
         public string Period { get; set; }
+        public string StartDate { get; set; }
+        public string EndDate { get; set; }
         public string TotalRevenue { get; set; }
         public int TotalSales { get; set; }
+        public decimal AverageSale { get; set; }
         public List<TopProduct> TopProducts { get; set; }
+        public List<TopCustomer> TopCustomers { get; set; }
+        public Dictionary<string, decimal> PaymentMethods { get; set; }
     }
 
-    public class TopProduct
+    public class TopCustomer
     {
-        public string Name { get; set; }
-        public int QuantitySold { get; set; }
-        public decimal Revenue { get; set; }
+        public int? CustomerId { get; set; }
+        public string TotalSpent { get; set; }
+        public int TransactionCount { get; set; }
     }
 
     public class Doctor

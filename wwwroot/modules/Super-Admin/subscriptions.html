@@ -25,7 +25,7 @@
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <script src="../js/auth.js"></script>
+  <script src="../../js/auth.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; }
     .custom-scrollbar::-webkit-scrollbar { width: 6px; }
@@ -441,6 +441,50 @@
     </div>
   </div>
 
+<!-- Edit Feature Modal -->
+  <div x-show="showEditFeatureModal" x-transition.opacity class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto p-6" @click.away="showEditFeatureModal = false">
+      <h3 class="text-lg font-semibold text-gray-900 mb-4">Edit Feature</h3>
+      <form @submit.prevent="updateFeature()">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Feature Name</label>
+            <input type="text" x-model="editingFeatureData.name" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" title="Feature name">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea x-model="editingFeatureData.description" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-accent" title="Feature description"></textarea>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Available in Plans</label>
+            <div class="space-y-2">
+              <label class="flex items-center">
+                <input type="checkbox" x-model="editingFeatureData.basic" class="rounded border-gray-300 text-yellow-accent focus:ring-yellow-accent mr-2">
+                <span class="text-sm text-gray-700">Basic Plan</span>
+              </label>
+              <label class="flex items-center">
+                <input type="checkbox" x-model="editingFeatureData.professional" class="rounded border-gray-300 text-yellow-accent focus:ring-yellow-accent mr-2">
+                <span class="text-sm text-gray-700">Professional Plan</span>
+              </label>
+              <label class="flex items-center">
+                <input type="checkbox" x-model="editingFeatureData.enterprise" class="rounded border-gray-300 text-yellow-accent focus:ring-yellow-accent mr-2">
+                <span class="text-sm text-gray-700">Enterprise Plan</span>
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="flex justify-end space-x-3 mt-6">
+          <button type="button" @click="showEditFeatureModal = false" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 bg-yellow-accent hover:bg-yellow-300 text-dark-bg rounded-lg">
+            Update Feature
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 <!-- Notification -->
   <div x-show="notification.show" x-transition.opacity
        class="fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg"
@@ -464,6 +508,7 @@
         showPlanModal: false,
         showAddPlanModal: false,
         showAddFeatureModal: false,
+        showEditFeatureModal: false,
         editingPlan: null,
         subscriptionPlans: [],
         planData: {
@@ -485,6 +530,14 @@
           features: ''
         },
         newFeatureData: {
+          name: '',
+          description: '',
+          basic: false,
+          professional: false,
+          enterprise: false
+        },
+        editingFeatureData: {
+          id: null,
           name: '',
           description: '',
           basic: false,
@@ -776,8 +829,49 @@
           }
         },
         editFeature(feature) {
-          console.log('Editing feature:', feature);
-          // TODO: Add feature editing functionality
+          // Copy feature data to editing object
+          this.editingFeatureData = {
+            id: feature.id,
+            name: feature.name,
+            description: feature.description || '',
+            basic: feature.basic,
+            professional: feature.professional,
+            enterprise: feature.enterprise
+          };
+          
+          // Show edit modal
+          this.showEditFeatureModal = true;
+        },
+        async updateFeature() {
+          try {
+            const token = localStorage.getItem('umihealthToken');
+            const response = await fetch(`/api/superadmin/application-features/${this.editingFeatureData.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                name: this.editingFeatureData.name,
+                description: this.editingFeatureData.description,
+                basic: this.editingFeatureData.basic,
+                professional: this.editingFeatureData.professional,
+                enterprise: this.editingFeatureData.enterprise
+              })
+            });
+            
+            if (response.ok) {
+              await this.loadApplicationFeatures();
+              this.showEditFeatureModal = false;
+              this.showNotification('Feature updated successfully', 'success');
+            } else {
+              const error = await response.json();
+              this.showNotification(error.error || 'Error updating feature', 'error');
+            }
+          } catch (error) {
+            console.error('Error updating feature:', error);
+            this.showNotification('Error updating feature', 'error');
+          }
         },
         async deleteFeature(feature) {
           if (!confirm(`Are you sure you want to delete the "${feature.name}" feature? This action cannot be undone.`)) {

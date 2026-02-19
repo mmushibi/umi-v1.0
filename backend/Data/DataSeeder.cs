@@ -15,9 +15,13 @@ namespace UmiHealthPOS.Data
         {
             using var scope = serviceProvider.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<SubscriptionDataSeeder>>();
+            var subscriptionLogger = scope.ServiceProvider.GetRequiredService<ILogger<SubscriptionDataSeeder>>();
+            var helpTrainingLogger = scope.ServiceProvider.GetRequiredService<ILogger<HelpTrainingDataSeeder>>();
+            var loggerFactory = scope.ServiceProvider.GetRequiredService<ILoggerFactory>();
+            var logger = loggerFactory.CreateLogger("DataSeeder");
 
-            await new SubscriptionDataSeeder(context, logger).SeedSubscriptionDataAsync();
+            await new SubscriptionDataSeeder(context, subscriptionLogger).SeedSubscriptionDataAsync();
+            await new HelpTrainingDataSeeder(context, helpTrainingLogger).SeedHelpTrainingDataAsync();
 
             try
             {

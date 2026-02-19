@@ -49,6 +49,9 @@ namespace UmiHealthPOS.Models.Dashboard
         public string DatabaseStatus { get; set; } = "Healthy";
         public DateTime LastBackup { get; set; }
         public bool IsHealthy { get; set; }
+        public Dictionary<string, string> ServicesHealth { get; set; } = new Dictionary<string, string>();
+        public TimeSpan Uptime { get; set; }
+        public double ResponseTime { get; set; } // in milliseconds
     }
 
     public class TopPerformer

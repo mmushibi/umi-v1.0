@@ -211,6 +211,15 @@ namespace UmiHealthPOS.Models
         [StringLength(100)]
         public string? Department { get; set; }
 
+        [StringLength(100)]
+        public string? LicenseNumber { get; set; }
+
+        [StringLength(256)]
+        public string? PasswordHash { get; set; }
+
+        [StringLength(256)]
+        public string? NormalizedEmail { get; set; }
+
         public bool TwoFactorEnabled { get; set; } = false;
 
         public DateTime? LastLogin { get; set; }
@@ -256,6 +265,14 @@ namespace UmiHealthPOS.Models
         public int ReorderLevel { get; set; } = 10;
 
         public int Stock { get; set; } = 0;
+
+        [StringLength(100)]
+        public string? Barcode { get; set; }
+
+        [StringLength(20)]
+        public string? Unit { get; set; } = "Each";
+
+        public bool RequiresPrescription { get; set; } = false;
 
         [StringLength(6)]
         public string TenantId { get; set; } = string.Empty;
@@ -354,7 +371,7 @@ namespace UmiHealthPOS.Models
 
         // Navigation properties
         public virtual Sale Sale { get; set; } = null!;
-        public virtual required Product Product { get; set; }
+        public virtual Product? Product { get; set; }
     }
 
     public class Customer
@@ -747,6 +764,8 @@ namespace UmiHealthPOS.Models
 
         public int MaxUsers { get; set; } = 5;
         public int MaxBranches { get; set; } = 3;
+        public int MaxProducts { get; set; } = 500;
+        public int MaxTransactions { get; set; } = 1000;
         public int MaxStorageGB { get; set; } = 10;
 
         [StringLength(1000)]
@@ -874,10 +893,24 @@ namespace UmiHealthPOS.Models
         [StringLength(500)]
         public string? Token { get; set; }
 
+        // Enhanced device tracking fields
+        [StringLength(100)]
+        public string? DeviceType { get; set; } // Mobile, Desktop, Tablet
+
+        [StringLength(200)]
+        public string? DeviceId { get; set; } // Unique device identifier
+
+        [StringLength(100)]
+        public string? Platform { get; set; } // Windows, iOS, Android, etc.
+
+        [StringLength(100)]
+        public string? Location { get; set; } // Geographic location (optional)
+
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? LastActivityAt { get; set; } = DateTime.UtcNow;
     }
 
     // Shift Management Entities
@@ -950,6 +983,10 @@ namespace UmiHealthPOS.Models
         public string PaymentStatus { get; set; } = "Unpaid";
 
         public DateTime DueDate { get; set; }
+        
+        [StringLength(1000)]
+        public string? Notes { get; set; }
+        
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
@@ -977,7 +1014,10 @@ namespace UmiHealthPOS.Models
 
         [StringLength(500)]
         public string? Reason { get; set; }
-
+        
+        [StringLength(1000)]
+        public string? Notes { get; set; }
+        
         [StringLength(20)]
         public string Status { get; set; } = "Active";
 
@@ -1005,8 +1045,9 @@ namespace UmiHealthPOS.Models
         [Column(TypeName = "decimal(12,2)")]
         public decimal Amount { get; set; }
 
+        [Required]
         [StringLength(20)]
-        public string PaymentMethod { get; set; }
+        public required string PaymentMethod { get; set; }
 
         [StringLength(500)]
         public string? PaymentDetails { get; set; }
@@ -1123,14 +1164,14 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(100)]
-        public string FirstName { get; set; }
+        public required string FirstName { get; set; }
 
         [StringLength(100)]
         public string? LastName { get; set; }
 
         [Required]
         [StringLength(100)]
-        public string Email { get; set; }
+        public required string Email { get; set; }
 
         [StringLength(20)]
         public string? Phone { get; set; }
@@ -1159,7 +1200,10 @@ namespace UmiHealthPOS.Models
 
         [StringLength(20)]
         public string Status { get; set; } = "Active";
-
+        
+        [StringLength(255)]
+        public string? PasswordHash { get; set; }
+        
         public DateTime HireDate { get; set; } = DateTime.UtcNow;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
@@ -1167,55 +1211,7 @@ namespace UmiHealthPOS.Models
         // Navigation properties
         public virtual Tenant? Tenant { get; set; }
         public virtual Branch? Branch { get; set; }
-        public virtual ICollection<ShiftAssignment> ShiftAssignments { get; set; }
-    }
-
-    // Additional Entities for System
-    public class ReportSchedule
-    {
-        public int Id { get; set; }
-
-        [Required]
-        [StringLength(100)]
-        public string ReportName { get; set; }
-
-        [StringLength(20)]
-        public string ReportType { get; set; }
-
-        [StringLength(20)]
-        public string ScheduleType { get; set; }
-
-        [StringLength(20)]
-        public required string Frequency { get; set; }
-
-        [StringLength(50)]
-        public required string DateRange { get; set; }
-
-        [StringLength(20)]
-        public required string Format { get; set; }
-
-        [StringLength(200)]
-        public string? RecipientEmail { get; set; }
-
-        public int? BranchId { get; set; }
-
-        [StringLength(6)]
-        public string TenantId { get; set; } = string.Empty;
-
-        [StringLength(450)]
-        public string? CreatedBy { get; set; }
-
-        [StringLength(20)]
-        public string Status { get; set; } = "Active";
-
-        public DateTime? NextRunAt { get; set; }
-
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-        // Navigation properties
-        public virtual Tenant? Tenant { get; set; }
-        public virtual Branch? Branch { get; set; }
+        public virtual ICollection<ShiftAssignment> ShiftAssignments { get; set; } = new List<ShiftAssignment>();
     }
 
     public class ShiftAssignment
@@ -1266,7 +1262,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(450)]
-        public string UserId { get; set; }
+        public required string UserId { get; set; }
 
         [Required]
         [StringLength(6)]
@@ -1321,9 +1317,9 @@ namespace UmiHealthPOS.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties
-        public virtual ICollection<RolePermission> RolePermissions { get; set; }
-        public virtual ICollection<UserRole> UserRoles { get; set; }
-        public virtual ICollection<TenantRole> TenantRoles { get; set; }
+        public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
+        public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+        public virtual ICollection<TenantRole> TenantRoles { get; set; } = new List<TenantRole>();
     }
 
     public class Permission
@@ -1332,15 +1328,15 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(100)]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [Required]
         [StringLength(100)]
-        public string DisplayName { get; set; }
+        public required string DisplayName { get; set; }
 
         [Required]
         [StringLength(50)]
-        public string Category { get; set; }
+        public required string Category { get; set; }
 
         [StringLength(500)]
         public string? Description { get; set; }
@@ -1357,7 +1353,7 @@ namespace UmiHealthPOS.Models
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties
-        public virtual ICollection<RolePermission> RolePermissions { get; set; }
+        public virtual ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
     }
 
     public class RolePermission
@@ -1369,8 +1365,8 @@ namespace UmiHealthPOS.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         // Navigation properties
-        public virtual Role Role { get; set; }
-        public virtual Permission Permission { get; set; }
+        public virtual required Role Role { get; set; }
+        public virtual required Permission Permission { get; set; }
     }
 
     public class UserRole
@@ -1394,8 +1390,8 @@ namespace UmiHealthPOS.Models
         public DateTime? LastUsedAt { get; set; }
 
         // Navigation properties
-        public virtual UserAccount User { get; set; }
-        public virtual Role Role { get; set; }
+        public virtual required UserAccount User { get; set; }
+        public virtual required Role Role { get; set; }
     }
 
     public class TenantRole
@@ -1404,7 +1400,7 @@ namespace UmiHealthPOS.Models
 
         [Required]
         [StringLength(6)]
-        public string TenantId { get; set; }
+        public required string TenantId { get; set; }
 
         public int RoleId { get; set; }
 
@@ -2186,5 +2182,352 @@ namespace UmiHealthPOS.Models
         // Navigation properties
         public virtual Tenant? Tenant { get; set; }
         public virtual Patient? Patient { get; set; }
+    }
+
+    // Usage Record Entity for tracking user activities and system usage
+    public class UsageRecord
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(6)]
+        public string TenantId { get; set; } = string.Empty;
+
+        [StringLength(450)]
+        public string? UserId { get; set; }
+
+        [Required]
+        [StringLength(100)]
+        public string ActivityType { get; set; } = string.Empty;
+
+        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+        [StringLength(1000)]
+        public string? Description { get; set; }
+
+        // JSON metadata for additional information
+        public string? MetadataJson { get; set; }
+
+        // System fields
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual Tenant? Tenant { get; set; }
+        public virtual UserAccount? User { get; set; }
+    }
+
+    // Additional User Purchase Entity
+    public class AdditionalUserPurchase
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(6)]
+        public string TenantId { get; set; } = string.Empty;
+
+        [Required]
+        public int NumberOfUsers { get; set; }
+
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal PricePerUser { get; set; }
+
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal TotalAmount { get; set; }
+
+        public DateTime PurchaseDate { get; set; } = DateTime.UtcNow;
+
+        public DateTime StartDate { get; set; } = DateTime.UtcNow;
+
+        public DateTime? EndDate { get; set; }
+
+        public string Status { get; set; } = "active"; // active, expired, cancelled
+
+        [StringLength(500)]
+        public string? Notes { get; set; }
+
+        // System fields
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual Tenant? Tenant { get; set; }
+    }
+
+    // Report Scheduling Entity
+    public class ReportSchedule
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string ReportType { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(20)]
+        public string Frequency { get; set; } = string.Empty; // Daily, Weekly, Monthly, etc.
+
+        [StringLength(6)]
+        public string TenantId { get; set; } = string.Empty;
+
+        public int? BranchId { get; set; }
+
+        [StringLength(450)]
+        public string? UserId { get; set; } // User who scheduled the report
+
+        [StringLength(100)]
+        public string? RecipientEmail { get; set; }
+
+        public bool IsActive { get; set; } = true;
+
+        public DateTime? NextRunDate { get; set; }
+
+        public DateTime? LastRunDate { get; set; }
+
+        [StringLength(1000)]
+        public string? Parameters { get; set; } // JSON string for report parameters
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual Tenant? Tenant { get; set; }
+        public virtual Branch? Branch { get; set; }
+    }
+
+    // Search History Entity
+    public class SearchHistory
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(6)]
+        public string TenantId { get; set; } = string.Empty;
+
+        [StringLength(450)]
+        public string? UserId { get; set; }
+
+        [Required]
+        [StringLength(500)]
+        public string Query { get; set; } = string.Empty;
+
+        [StringLength(50)]
+        public string SearchType { get; set; } = "general"; // general, medical, product, patient
+
+        [StringLength(20)]
+        public string? Source { get; set; } // web, mobile, api
+
+        public int? ResultCount { get; set; }
+
+        [StringLength(1000)]
+        public string? Filters { get; set; } // JSON string for search filters
+
+        public DateTime SearchedAt { get; set; } = DateTime.UtcNow;
+
+        [StringLength(50)]
+        public string? IPAddress { get; set; }
+
+        [StringLength(200)]
+        public string? UserAgent { get; set; }
+
+        // System fields
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual Tenant? Tenant { get; set; }
+        public virtual UserAccount? User { get; set; }
+    }
+
+    // Help & Training System Entities
+    public class HelpCategory
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string CategoryId { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(200)]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(1000)]
+        public string? Description { get; set; }
+
+        [Required]
+        [StringLength(100)]
+        public string Icon { get; set; } = string.Empty;
+
+        public int Order { get; set; }
+
+        [StringLength(20)]
+        public string Status { get; set; } = "Active";
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual ICollection<HelpArticle> Articles { get; set; } = new List<HelpArticle>();
+    }
+
+    public class HelpArticle
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string ArticleId { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(200)]
+        public string Title { get; set; } = string.Empty;
+
+        [StringLength(1000)]
+        public string? Description { get; set; }
+
+        [Required]
+        public string Content { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(50)]
+        public string CategoryId { get; set; } = string.Empty;
+
+        public int Order { get; set; }
+
+        [StringLength(50)]
+        public string ReadingTime { get; set; } = "5 min read";
+
+        [StringLength(20)]
+        public string Status { get; set; } = "Published";
+
+        public int ViewCount { get; set; } = 0;
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? LastUpdated { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual HelpCategory Category { get; set; } = null!;
+        public virtual ICollection<HelpFeedback> Feedback { get; set; } = new List<HelpFeedback>();
+    }
+
+    public class HelpFeedback
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string ArticleId { get; set; } = string.Empty;
+
+        [StringLength(450)]
+        public string? UserId { get; set; }
+
+        [StringLength(6)]
+        public string? TenantId { get; set; }
+
+        [Range(1, 5)]
+        public int Rating { get; set; }
+
+        public bool Helpful { get; set; }
+
+        [StringLength(1000)]
+        public string? Comment { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual HelpArticle Article { get; set; } = null!;
+        public virtual UserAccount? User { get; set; }
+        public virtual Tenant? Tenant { get; set; }
+    }
+
+    // Admin Function Entities
+    public class TimeOffRequest
+    {
+        public int Id { get; set; }
+
+        [StringLength(450)]
+        public string? UserId { get; set; }
+
+        [StringLength(6)]
+        public string? TenantId { get; set; }
+
+        [Required]
+        [StringLength(100)]
+        public string EmployeeName { get; set; } = string.Empty;
+
+        [Required]
+        public DateTime StartDate { get; set; }
+
+        [Required]
+        public DateTime EndDate { get; set; }
+
+        [Required]
+        [StringLength(20)]
+        public string RequestType { get; set; } = "Leave"; // Leave, Sick, Personal
+
+        [StringLength(1000)]
+        public string? Reason { get; set; }
+
+        [StringLength(20)]
+        public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected
+
+        [StringLength(450)]
+        public string? ApprovedBy { get; set; }
+
+        public DateTime? ApprovedAt { get; set; }
+
+        [StringLength(1000)]
+        public string? ApprovalNotes { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual UserAccount? User { get; set; }
+        public virtual UserAccount? Approver { get; set; }
+        public virtual Tenant? Tenant { get; set; }
+    }
+
+    public class BackupLog
+    {
+        public int Id { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string BackupId { get; set; } = string.Empty;
+
+        [StringLength(6)]
+        public string? TenantId { get; set; }
+
+        [Required]
+        [StringLength(20)]
+        public string BackupType { get; set; } = "Full"; // Full, Incremental, Differential
+
+        [Required]
+        public long BackupSize { get; set; }
+
+        [StringLength(20)]
+        public string Status { get; set; } = "Completed"; // InProgress, Completed, Failed
+
+        [StringLength(1000)]
+        public string? FilePath { get; set; }
+
+        [StringLength(2000)]
+        public string? Description { get; set; }
+
+        public DateTime StartedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? CompletedAt { get; set; }
+
+        [StringLength(1000)]
+        public string? ErrorMessage { get; set; }
+
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        // Navigation properties
+        public virtual Tenant? Tenant { get; set; }
     }
 }

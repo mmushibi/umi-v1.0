@@ -88,10 +88,8 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     TenantId = request.TenantId,
                     Amount = request.Amount,
-                    DueDate = request.DueDate
-                    // // Plan = request.Plan // Property does not exist // Property does not exist
-                    // // IssueDate = request.IssueDate // Property does not exist // Property does not exist
-                    // // // Notes = request.Notes // Property does not exist // Property does not exist // Property does not exist
+                    DueDate = request.DueDate,
+                    Notes = request.Notes
                 };
 
                 var createdInvoice = await _billingService.CreateInvoiceAsync(invoice);
@@ -117,10 +115,9 @@ namespace UmiHealthPOS.Controllers.Api
                 if (existingInvoice == null)
                     return NotFound();
 
-                // // existingInvoice.SubscriptionPlan = await _context.SubscriptionPlans.FindAsync(request.PlanId); // Property does not exist // Property does not exist
                 existingInvoice.Amount = request.Amount;
                 existingInvoice.DueDate = request.DueDate;
-                // existingInvoice.// // Notes = request.Notes // Property does not exist // Property does not exist ?? ""; // Property does not exist
+                existingInvoice.Notes = request.Notes;
                 existingInvoice.Status = request.Status.ToString();
 
                 var updatedInvoice = await _billingService.UpdateInvoiceAsync(existingInvoice);
@@ -163,12 +160,17 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
+                var existingInvoice = await _billingService.GetInvoiceByIdAsync(id);
+                if (existingInvoice == null)
+                    return NotFound();
+
                 var creditNote = new CreditNote
                 {
+                    TenantId = existingInvoice.TenantId,
                     InvoiceId = id,
                     Amount = request.Amount,
-                    Reason = request.Reason
-                    // // // Notes = request.Notes // Property does not exist // Property does not exist // Property does not exist
+                    Reason = request.Reason,
+                    Notes = request.Notes
                 };
 
                 var createdCreditNote = await _billingService.CreateCreditNoteAsync(creditNote);

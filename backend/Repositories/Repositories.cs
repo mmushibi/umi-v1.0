@@ -22,7 +22,7 @@ namespace UmiHealthPOS.Repositories
         public async Task<List<Product>> GetAllAsync()
         {
             return await _context.Products
-                .Where(p => p.IsActive)
+                .Where(p => p.Status == "Active")
                 .OrderBy(p => p.Name)
                 .ToListAsync();
         }
@@ -30,13 +30,13 @@ namespace UmiHealthPOS.Repositories
         public async Task<Product> GetByIdAsync(int id)
         {
             return await _context.Products
-                .FirstOrDefaultAsync(p => p.Id == id && p.IsActive);
+                .FirstOrDefaultAsync(p => p.Id == id && p.Status == "Active");
         }
 
         public async Task<Product> GetByBarcodeAsync(string barcode)
         {
             return await _context.Products
-                .FirstOrDefaultAsync(p => p.Barcode == barcode && p.IsActive);
+                .FirstOrDefaultAsync(p => p.Name.Contains(barcode) && p.Status == "Active");
         }
 
         public async Task<Product> AddAsync(Product product)
@@ -59,7 +59,7 @@ namespace UmiHealthPOS.Repositories
             var product = await GetByIdAsync(id);
             if (product == null) return false;
 
-            product.IsActive = false;
+            product.Status = "Inactive";
             product.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return true;
@@ -77,11 +77,12 @@ namespace UmiHealthPOS.Repositories
             // Create stock transaction
             var transaction = new StockTransaction
             {
+                TransactionNumber = $"ST{DateTime.UtcNow:yyyyMMddHHmmss}",
                 ProductId = productId,
-                TransactionType = "Sale",
-                QuantityChange = newStock - oldStock,
-                PreviousStock = oldStock,
-                NewStock = newStock,
+                TransactionType = "Stock Update",
+                Quantity = newStock - oldStock,
+                UnitCost = 0,
+                TotalCost = 0,
                 Reason = reason,
                 CreatedAt = DateTime.UtcNow
             };
@@ -105,8 +106,8 @@ namespace UmiHealthPOS.Repositories
         public async Task<List<Product>> GetLowStockAsync()
         {
             return await _context.Products
-                .Where(p => p.IsActive && p.Stock <= p.MinStock)
-                .OrderBy(p => p.Stock)
+                .Where(p => p.Status == "Active" && p.Stock <= p.ReorderLevel)
+                .OrderBy(p => p.Name)
                 .ToListAsync();
         }
     }
@@ -123,7 +124,7 @@ namespace UmiHealthPOS.Repositories
         public async Task<List<Customer>> GetAllAsync()
         {
             return await _context.Customers
-                .Where(c => c.IsActive)
+                .Where(c => c.Status == "Active")
                 .OrderBy(c => c.Name)
                 .ToListAsync();
         }
@@ -131,7 +132,7 @@ namespace UmiHealthPOS.Repositories
         public async Task<Customer> GetByIdAsync(int id)
         {
             return await _context.Customers
-                .FirstOrDefaultAsync(c => c.Id == id && c.IsActive);
+                .FirstOrDefaultAsync(c => c.Id == id && c.Status == "Active");
         }
 
         public async Task<Customer> AddAsync(Customer customer)
@@ -154,7 +155,7 @@ namespace UmiHealthPOS.Repositories
             var customer = await GetByIdAsync(id);
             if (customer == null) return false;
 
-            customer.IsActive = false;
+            customer.Status = "Inactive";
             customer.UpdatedAt = DateTime.UtcNow;
             await _context.SaveChangesAsync();
             return true;
