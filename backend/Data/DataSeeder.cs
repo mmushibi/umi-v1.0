@@ -6,11 +6,28 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using UmiHealthPOS.Models;
+using Microsoft.AspNetCore.Identity;
 
 namespace UmiHealthPOS.Data
 {
     public static class DataSeeder
     {
+        private static string HashPassword(string password)
+        {
+            // Use proper password hashing for security
+            var hasher = new PasswordHasher<UserAccount>();
+            var dummyUser = new UserAccount { Email = "dummy@example.com" };
+            return hasher.HashPassword(dummyUser, password);
+        }
+
+        private static bool VerifyPassword(string password, string hashedPassword)
+        {
+            var hasher = new PasswordHasher<UserAccount>();
+            var dummyUser = new UserAccount { Email = "dummy@example.com" };
+            var result = hasher.VerifyHashedPassword(dummyUser, hashedPassword, password);
+            return result == PasswordVerificationResult.Success;
+        }
+
         public static async Task SeedDataAsync(IServiceProvider serviceProvider)
         {
             using var scope = serviceProvider.CreateScope();
@@ -27,6 +44,35 @@ namespace UmiHealthPOS.Data
             {
                 // Ensure database is created
                 await context.Database.EnsureCreatedAsync();
+
+                // Seed Tenants first
+                if (!await context.Tenants.AnyAsync())
+                {
+                    var tenants = new[]
+                    {
+                        new Tenant
+                        {
+                            TenantId = "UMI001",
+                            Name = "Umi Health Pharmacy",
+                            Description = "Demo pharmacy for Umi Health POS system",
+                            Status = "Active",
+                            PharmacyName = "Umi Health Pharmacy",
+                            AdminName = "Dr. Sarah Mwansa",
+                            PhoneNumber = "+260211234567",
+                            Email = "admin@umihealth.com",
+                            Address = "123 Cairo Road, Lusaka, Zambia",
+                            LicenseNumber = "ZMP-LIC-UMI001",
+                            ZambiaRegNumber = "ZMR-REG-UMI001",
+                            SubscriptionPlan = 1,
+                            CreatedAt = DateTime.UtcNow,
+                            UpdatedAt = DateTime.UtcNow
+                        }
+                    };
+
+                    await context.Tenants.AddRangeAsync(tenants);
+                    await context.SaveChangesAsync();
+                    logger.LogInformation("Seeded {Count} tenants", tenants.Length);
+                }
 
                 // Seed Roles and Permissions first
                 if (!await context.Roles.AnyAsync())
@@ -58,11 +104,12 @@ namespace UmiHealthPOS.Data
                 // Seed Branches
                 if (!await context.Branches.AnyAsync())
                 {
+                    var tenant = await context.Tenants.FirstOrDefaultAsync();
                     var branches = new[]
                     {
                         new Branch
                         {
-                            Name = "Umi Health Main Branch",
+                            Name = "Umi Health Pharmacy - Lusaka",
                             Address = "123 Cairo Road, Lusaka",
                             Region = "Lusaka Province",
                             Phone = "+260211234567",
@@ -70,16 +117,17 @@ namespace UmiHealthPOS.Data
                             ManagerName = "Dr. Sarah Mwansa",
                             ManagerPhone = "+260976543210",
                             OperatingHours = "08:00-18:00",
-                            Status = "active",
+                            Status = "Active",
                             MonthlyRevenue = 150000.00m,
                             StaffCount = 15,
                             IsActive = true,
+                            TenantId = tenant?.TenantId ?? "UMI001",
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
                         },
                         new Branch
                         {
-                            Name = "Umi Health Kitwe Branch",
+                            Name = "Umi Health Pharmacy - Kitwe",
                             Address = "456 Obote Avenue, Kitwe",
                             Region = "Copperbelt Province",
                             Phone = "+260212345678",
@@ -87,10 +135,11 @@ namespace UmiHealthPOS.Data
                             ManagerName = "Dr. James Banda",
                             ManagerPhone = "+260976543211",
                             OperatingHours = "08:00-18:00",
-                            Status = "active",
+                            Status = "Active",
                             MonthlyRevenue = 120000.00m,
                             StaffCount = 12,
                             IsActive = true,
+                            TenantId = tenant?.TenantId ?? "UMI001",
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
                         }
@@ -105,6 +154,7 @@ namespace UmiHealthPOS.Data
                 if (!await context.Users.AnyAsync())
                 {
                     var branches = await context.Branches.ToListAsync();
+                    var tenant = await context.Tenants.FirstOrDefaultAsync();
                     var users = new[]
                     {
                         new UserAccount
@@ -114,9 +164,11 @@ namespace UmiHealthPOS.Data
                             LastName = "User",
                             Email = "admin@umihealth.com",
                             PhoneNumber = "+260976543212",
-                            Role = "TenantAdmin",
+                            Role = UserRoleEnum.TenantAdmin.ToString(),
                             Department = "Management",
                             BranchId = branches[0].Id,
+                            TenantId = tenant?.TenantId ?? "UMI001",
+                            PasswordHash = HashPassword("Admin123!"),
                             IsActive = true,
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
@@ -128,9 +180,12 @@ namespace UmiHealthPOS.Data
                             LastName = "Chilufya",
                             Email = "grace@umihealth.com",
                             PhoneNumber = "+260976543213",
-                            Role = "Pharmacist",
+                            Role = UserRoleEnum.Pharmacist.ToString(),
                             Department = "Pharmacy",
                             BranchId = branches[0].Id,
+                            TenantId = tenant?.TenantId ?? "UMI001",
+                            LicenseNumber = "ZMP-PHARM-001",
+                            PasswordHash = HashPassword("Pharmacist123!"),
                             IsActive = true,
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
@@ -142,9 +197,11 @@ namespace UmiHealthPOS.Data
                             LastName = "Banda",
                             Email = "john@umihealth.com",
                             PhoneNumber = "+260976543214",
-                            Role = "Cashier",
+                            Role = UserRoleEnum.Cashier.ToString(),
                             Department = "Sales",
                             BranchId = branches[0].Id,
+                            TenantId = tenant?.TenantId ?? "UMI001",
+                            PasswordHash = HashPassword("Cashier123!"),
                             IsActive = true,
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
@@ -170,7 +227,7 @@ namespace UmiHealthPOS.Data
                         {
                             UserId = users[0].UserId, // Admin user
                             BranchId = branches[0].Id, // Main branch
-                            UserRole = roles.First(r => r.Name == "TenantAdmin").Name,
+                            UserRole = UserRoleEnum.TenantAdmin.ToString(),
                             Permission = permissions.First(p => p.Name == "admin").Name,
                             User = users[0],
                             Branch = branches[0],
@@ -181,7 +238,7 @@ namespace UmiHealthPOS.Data
                         {
                             UserId = users[0].UserId, // Admin user
                             BranchId = branches[1].Id, // Kitwe branch
-                            UserRole = roles.First(r => r.Name == "TenantAdmin").Name,
+                            UserRole = UserRoleEnum.TenantAdmin.ToString(),
                             Permission = permissions.First(p => p.Name == "admin").Name,
                             User = users[0],
                             Branch = branches[1],
@@ -192,7 +249,7 @@ namespace UmiHealthPOS.Data
                         {
                             UserId = users[1].UserId, // Pharmacist user
                             BranchId = branches[0].Id, // Main branch
-                            UserRole = roles.First(r => r.Name == "Pharmacist").Name,
+                            UserRole = UserRoleEnum.Pharmacist.ToString(),
                             Permission = permissions.First(p => p.Name == "write").Name,
                             User = users[1],
                             Branch = branches[0],
@@ -203,7 +260,7 @@ namespace UmiHealthPOS.Data
                         {
                             UserId = users[2].UserId, // Cashier user
                             BranchId = branches[0].Id, // Main branch
-                            UserRole = roles.First(r => r.Name == "Cashier").Name,
+                            UserRole = UserRoleEnum.Cashier.ToString(),
                             Permission = permissions.First(p => p.Name == "read").Name,
                             User = users[2],
                             Branch = branches[0],
@@ -221,6 +278,7 @@ namespace UmiHealthPOS.Data
                 if (!await context.InventoryItems.AnyAsync())
                 {
                     var branches = await context.Branches.ToListAsync();
+                    var tenant = await context.Tenants.FirstOrDefaultAsync();
                     var inventoryItems = new[]
                     {
                         new InventoryItem
@@ -239,6 +297,7 @@ namespace UmiHealthPOS.Data
                             SellingPrice = 5.00m,
                             ReorderLevel = 20,
                             BranchId = branches[0].Id,
+                            TenantId = tenant?.TenantId ?? "UMI001",
                             IsActive = true,
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
@@ -259,6 +318,7 @@ namespace UmiHealthPOS.Data
                             SellingPrice = 25.00m,
                             ReorderLevel = 15,
                             BranchId = branches[0].Id,
+                            TenantId = tenant?.TenantId ?? "UMI001",
                             IsActive = true,
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
@@ -279,6 +339,7 @@ namespace UmiHealthPOS.Data
                             SellingPrice = 2.50m,
                             ReorderLevel = 50,
                             BranchId = branches[1].Id,
+                            TenantId = tenant?.TenantId ?? "UMI001",
                             IsActive = true,
                             CreatedAt = DateTime.UtcNow,
                             UpdatedAt = DateTime.UtcNow
