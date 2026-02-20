@@ -23,7 +23,7 @@ permissions:
   actions: read
 
 env:
-  DOTNET_VERSION: '8.0.x'
+  DOTNET_VERSION: '8.0.403'
   NODE_VERSION: '18'
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
