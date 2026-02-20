@@ -59,7 +59,7 @@ jobs:
       run: dotnet restore backend/UmiHealthPOS.csproj
     
     - name: Check .NET formatting
-      run: echo "Skipping .NET formatting check temporarily"
+      run: dotnet format backend/UmiHealthPOS.csproj --verify-no-changes
 
   security-scan:
     runs-on: ubuntu-latest
