@@ -44,10 +44,11 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
     
     - name: Install dependencies and build
       run: |
-        npm install
+        npm ci --prefer-offline --no-audit
         npm run build-css-prod
     
     - name: Setup .NET
@@ -145,9 +146,10 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
     
     - name: Install dependencies
-      run: npm install
+      run: npm ci --prefer-offline --no-audit
     
     - name: Build CSS
       run: npm run build-css-prod
