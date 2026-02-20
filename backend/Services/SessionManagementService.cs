@@ -81,7 +81,7 @@ namespace UmiHealthPOS.Services
                 _context.UserSessions.Add(session);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Created new session {SessionId} for user {UserId} from {IpAddress}", 
+                _logger.LogInformation("Created new session {SessionId} for user {UserId} from {IpAddress}",
                     session.Id, userId, ipAddress);
 
                 return session;

@@ -174,7 +174,7 @@ namespace UmiHealthPOS.Services
             {
                 // Learn from this query
                 await LearnFromQuery(request.Query);
-                
+
                 // Search for relevant medical information first
                 var searchResults = await _webSearchService.SearchAsync(new SearchRequestDto
                 {
@@ -521,7 +521,7 @@ Based on our conversation and current medical information, I'm building upon our
 
             // Enhanced summarization - in production, this would use more sophisticated NLP
             // For now, we'll implement improved text processing algorithms
-            
+
             try
             {
                 // Clean and preprocess text
@@ -557,11 +557,11 @@ Based on our conversation and current medical information, I'm building upon our
                 .ToList();
 
                 var summary = string.Join(". ", scoredSentences);
-                
+
                 // Ensure summary ends properly
                 if (!summary.EndsWith("."))
                     summary += ".";
-                
+
                 // Limit summary length
                 if (summary.Length > 300)
                 {
@@ -580,7 +580,7 @@ Based on our conversation and current medical information, I'm building upon our
         private double CalculateSentenceScore(string sentence, int index, int totalSentences)
         {
             var score = 0.0;
-            
+
             // Position scoring (first and last sentences often important)
             if (index == 0 || index == totalSentences - 1)
                 score += 0.3;
@@ -596,7 +596,7 @@ Based on our conversation and current medical information, I'm building upon our
 
             // Content indicators scoring
             var lowerSentence = sentence.ToLower();
-            
+
             // Medical/clinical terms
             var medicalTerms = new[] { "treatment", "diagnosis", "symptom", "medication", "therapy", "condition", "patient", "clinical", "medical" };
             score += medicalTerms.Count(term => lowerSentence.Contains(term)) * 0.1;
@@ -777,10 +777,10 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
 
                 var suggestions = new List<string>();
                 var queryType = DetermineSearchType(query);
-                
+
                 // Generate ML-enhanced suggestions based on learned patterns
                 suggestions.AddRange(GenerateMLSuggestions(query, queryType, userContext));
-                
+
                 // Add contextual suggestions based on user history
                 if (!string.IsNullOrEmpty(userContext))
                 {
@@ -806,14 +806,14 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
         {
             var suggestions = new List<string>();
             var patternKey = $"{queryType}_queries";
-            
+
             if (_learningPatterns.ContainsKey(patternKey) && _learningPatterns[patternKey].Any())
             {
                 // Generate suggestions based on learned patterns
                 var similarQueries = _learningPatterns[patternKey]
                     .Where(q => q.Contains(query.Substring(0, Math.Min(3, query.Length))))
                     .Take(3);
-                
+
                 foreach (var similarQuery in similarQueries)
                 {
                     suggestions.Add($"Tell me more about {similarQuery}");
@@ -821,14 +821,14 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
                     suggestions.Add($"How to manage {similarQuery} effectively?");
                 }
             }
-            
+
             return suggestions;
         }
 
         private List<string> GenerateContextualSuggestions(string query, string userContext)
         {
             var suggestions = new List<string>();
-            
+
             // Generate suggestions based on user context
             if (userContext.Contains("pharmacist"))
             {
@@ -842,17 +842,17 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
                 suggestions.Add("What are the treatment protocols?");
                 suggestions.Add("What monitoring is required?");
             }
-            
+
             return suggestions;
         }
 
         private double CalculateSuggestionRelevance(string suggestion, string queryType)
         {
             var baseRelevance = _algorithmWeights.ContainsKey(queryType) ? _algorithmWeights[queryType] : 0.5;
-            
+
             // Add randomness to simulate learning algorithm variation
             var variation = _random.NextDouble() * 0.2 - 0.1; // +/- 10%
-            
+
             return Math.Max(0.1, Math.Min(1.0, baseRelevance + variation));
         }
 
@@ -948,7 +948,7 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
             if (word.EndsWith("ly")) word = word[..^"ly".Length];
             if (word.EndsWith("tion")) word = word[..^"tion".Length];
             if (word.EndsWith("ness")) word = word[..^"ness".Length];
-            
+
             return word;
         }
 
@@ -966,10 +966,10 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
             {
                 // Term Frequency (TF) in document
                 var tf = (double)docTokens.Count(t => t == token) / docTokens.Count;
-                
+
                 // Inverse Document Frequency (IDF) - simplified
                 var idf = Math.Log((double)_vocabulary.Count / (1 + _tfidfWeights.GetValueOrDefault(token, 1.0)));
-                
+
                 tfidfScore += tf * idf;
             }
 
@@ -997,27 +997,27 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
         private string DetermineQueryType(string query)
         {
             var tokens = TokenizeText(query);
-            
+
             // Check for drug-related queries
             if (tokens.Any(t => _medicalKnowledgeBase["drugs"].Contains(t)))
                 return "drug";
-            
+
             // Check for symptom-related queries
             if (tokens.Any(t => _medicalKnowledgeBase["symptoms"].Contains(t)))
                 return "symptom";
-            
+
             // Check for condition-related queries
             if (tokens.Any(t => _medicalKnowledgeBase["conditions"].Contains(t)))
                 return "guideline";
-            
+
             // Check for Zambia-specific queries
             if (tokens.Any(t => _medicalKnowledgeBase["zambia_specific"].Contains(t)))
                 return "zambia_specific";
-            
+
             // Check for interaction queries
             if (tokens.Any(t => t.Contains("interact") || t.Contains("interact")))
                 return "interaction";
-            
+
             return "general";
         }
 
@@ -1027,21 +1027,21 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
             {
                 var queryType = DetermineQueryType(query);
                 var patternKey = $"{queryType}_queries";
-                
+
                 if (!_learningPatterns.ContainsKey(patternKey))
                 {
                     _learningPatterns[patternKey] = new List<string>();
                 }
-                
+
                 // Add to learning patterns (limit to prevent memory issues)
                 if (_learningPatterns[patternKey].Count < 1000)
                 {
                     _learningPatterns[patternKey].Add(query);
                 }
-                
+
                 // Update TF-IDF weights based on new query
                 UpdateTFIDFWeights(query);
-                
+
                 // Cache the learning
                 _cache.Set($"learning_{patternKey}", _learningPatterns[patternKey], TimeSpan.FromHours(1));
             }
@@ -1054,7 +1054,7 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
         private void UpdateTFIDFWeights(string query)
         {
             var tokens = TokenizeText(query);
-            
+
             foreach (var token in tokens)
             {
                 if (_tfidfWeights.ContainsKey(token))
@@ -1074,28 +1074,28 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
         private double CalculateConfidenceScore(string query, string response, List<SearchResultDto> searchResults)
         {
             double confidence = 0.5; // Base confidence
-            
+
             // Boost confidence based on search results
             if (searchResults.Any())
             {
                 confidence += 0.2 * Math.Min(searchResults.Count / 5.0, 1.0);
             }
-            
+
             // Boost confidence based on semantic similarity
             var semanticScore = CalculateSemanticSimilarity(query, response);
             confidence += 0.2 * semanticScore;
-            
+
             // Boost confidence based on medical term coverage
             var queryTokens = TokenizeText(query);
             var responseTokens = TokenizeText(response);
             var medicalTermsInQuery = queryTokens.Count(t => _medicalKnowledgeBase.Values.Any(kb => kb.Contains(t)));
             var medicalTermsInResponse = responseTokens.Count(t => _medicalKnowledgeBase.Values.Any(kb => kb.Contains(t)));
-            
+
             if (medicalTermsInQuery > 0)
             {
                 confidence += 0.1 * (double)medicalTermsInResponse / medicalTermsInQuery;
             }
-            
+
             // Ensure confidence is between 0 and 1
             return Math.Max(0.0, Math.Min(1.0, confidence));
         }
@@ -1104,7 +1104,7 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
         {
             var queryType = DetermineQueryType(query);
             var response = new StringBuilder();
-            
+
             // Start with context-aware greeting
             if (userContext.Contains("pharmacist"))
             {
@@ -1118,11 +1118,11 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
             {
                 response.Append("Here's what I can tell you about ");
             }
-            
+
             // Add query-specific information
             response.Append(query);
             response.Append(".\n\n");
-            
+
             // Add search result insights
             if (searchResults.Any())
             {
@@ -1132,18 +1132,18 @@ Sepio Corp specializes in creating cutting-edge digital solutions that combine a
                     response.Append($"• {result.Title}\n");
                 }
             }
-            
+
             // Add Zambia-specific context if applicable
             if (queryType == "zambia_specific")
             {
                 response.Append("\nFor the Zambian healthcare context, ");
                 response.Append("it's important to consider local prevalence and treatment guidelines.");
             }
-            
+
             // Add safety disclaimer
             response.Append("\n\nThis information is for educational purposes. ");
             response.Append("Always consult current clinical guidelines and use professional judgment.");
-            
+
             return response.ToString();
         }
 

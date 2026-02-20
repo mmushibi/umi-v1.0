@@ -80,8 +80,8 @@ namespace UmiHealthPOS.Services
             {
                 // Product doesn't have Barcode property, search by Name or other identifier
                 return await _context.Products
-                    .FirstOrDefaultAsync(p => p.Status == "Active" && 
-                                           (p.Name.Contains(barcode) || 
+                    .FirstOrDefaultAsync(p => p.Status == "Active" &&
+                                           (p.Name.Contains(barcode) ||
                                             (p.BrandName != null && p.BrandName.Contains(barcode)) ||
                                             (p.GenericName != null && p.GenericName.Contains(barcode))));
             }

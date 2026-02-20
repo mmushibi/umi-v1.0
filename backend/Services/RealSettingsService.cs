@@ -233,10 +233,10 @@ namespace UmiHealthPOS.Services
                 {
                     using var httpClient = new HttpClient();
                     httpClient.Timeout = TimeSpan.FromSeconds(10);
-                    
+
                     var currentVersion = await GetSettingAsync("systemVersion", "v2.1.0");
                     var response = await httpClient.GetAsync($"{updateServiceUrl}/api/updates/check?version={currentVersion}");
-                    
+
                     if (response.IsSuccessStatusCode)
                     {
                         var updateInfo = await response.Content.ReadFromJsonAsync<UpdateInfo>();
@@ -293,13 +293,13 @@ namespace UmiHealthPOS.Services
 
                 using var memoryStream = new MemoryStream();
                 using var archive = new System.IO.Compression.ZipArchive(memoryStream, System.IO.Compression.ZipArchiveMode.Create);
-                
+
                 // Add log files to archive
                 foreach (var logFile in logFiles)
                 {
                     var fileName = Path.GetFileName(logFile);
                     var entry = archive.CreateEntry($"logs/{fileName}");
-                    
+
                     using var fileStream = File.OpenRead(logFile);
                     using var entryStream = entry.Open();
                     await fileStream.CopyToAsync(entryStream);
@@ -515,12 +515,12 @@ namespace UmiHealthPOS.Services
             info.AppendLine("APPLICATION SETTINGS:");
             var settingsCount = await _context.AppSettings.CountAsync();
             info.AppendLine($"Total Settings: {settingsCount}");
-            
+
             var categories = await _context.AppSettings
                 .GroupBy(s => s.Category)
                 .Select(g => new { Category = g.Key, Count = g.Count() })
                 .ToListAsync();
-            
+
             foreach (var cat in categories)
             {
                 info.AppendLine($"  {cat.Category}: {cat.Count} settings");
@@ -533,7 +533,7 @@ namespace UmiHealthPOS.Services
                 .OrderByDescending(l => l.Timestamp)
                 .Take(10)
                 .ToListAsync();
-            
+
             foreach (var change in recentChanges)
             {
                 info.AppendLine($"  {change.Timestamp:yyyy-MM-dd HH:mm:ss} - {change.Category} by {change.UserId}");
@@ -608,18 +608,18 @@ namespace UmiHealthPOS.Services
             try
             {
                 var previousSettings = new Dictionary<string, object>();
-                
+
                 foreach (var key in newSettings.Keys)
                 {
                     var existingSetting = await _context.AppSettings
                         .FirstOrDefaultAsync(s => s.Key == key && s.Category == category);
-                    
+
                     if (existingSetting != null)
                     {
                         previousSettings[key] = existingSetting.Value;
                     }
                 }
-                
+
                 return System.Text.Json.JsonSerializer.Serialize(previousSettings);
             }
             catch

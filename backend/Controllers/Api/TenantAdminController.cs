@@ -1226,7 +1226,7 @@ namespace UmiHealthPOS.Controllers.Api
 
             // Convert HTML to bytes with proper encoding
             var bytes = Encoding.UTF8.GetBytes(htmlContent);
-            
+
             return bytes;
         }
 

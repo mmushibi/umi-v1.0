@@ -21,11 +21,11 @@ namespace UmiHealthPOS.Controllers.Api
         public int ViewCount { get; set; }
         public string Status { get; set; } = string.Empty;
         public int Order { get; set; }
-        
+
         // Additional properties for help articles
         public int ReadingTime { get; set; }
         public List<string> Tags { get; set; } = new();
-        
+
         // Legacy properties for backward compatibility
         public string Description { get; set; } = string.Empty;
         public string Difficulty { get; set; } = string.Empty;
@@ -168,7 +168,7 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 int.TryParse(articleEntity.ReadingTime = "5", out var minutes);
-                
+
                 var article = new HelpArticleDetailDto
                 {
                     Id = articleEntity.ArticleId,
@@ -275,7 +275,7 @@ namespace UmiHealthPOS.Controllers.Api
                 await _context.HelpFeedbacks.AddAsync(feedbackEntity);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Help feedback received: ArticleId={ArticleId}, Rating={Rating}, Helpful={Helpful}", 
+                _logger.LogInformation("Help feedback received: ArticleId={ArticleId}, Rating={Rating}, Helpful={Helpful}",
                     feedback.ArticleId, feedback.Rating, feedback.Helpful);
 
                 return Ok(new { message = "Feedback submitted successfully" });
@@ -380,7 +380,7 @@ Welcome to UMI Health POS! This guide will help you get started quickly.
 - Contact support at support@umihealth.com
 
 Need more help? Check out our video tutorials!",
-                
+
                 "user-account-setup" => @"
 # Setting Up Your User Account
 
@@ -414,7 +414,7 @@ Once your account is set up, you can:
 - Process sales and prescriptions
 - Generate reports
 - Manage other users (if admin)",
-                
+
                 "adding-products" => @"
 # Adding Products to Inventory
 
@@ -457,7 +457,7 @@ Make sure you have:
 - Use barcode scanner for faster entry
 - Batch import multiple products via CSV
 - Set up automatic reorder notifications",
-                
+
                 _ => @"# Article Content
 
 This article is currently being updated. Please check back soon for the complete content.

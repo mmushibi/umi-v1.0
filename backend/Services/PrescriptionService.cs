@@ -229,7 +229,7 @@ namespace UmiHealthPOS.Services
                 }
 
                 prescription.Status = "rejected";
-                prescription.Notes = string.IsNullOrEmpty(prescription.Notes) 
+                prescription.Notes = string.IsNullOrEmpty(prescription.Notes)
                     ? $"Rejected: {reason}"
                     : $"{prescription.Notes}\nRejected: {reason}";
                 prescription.UpdatedAt = DateTime.UtcNow;

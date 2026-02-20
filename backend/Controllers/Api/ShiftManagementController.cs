@@ -270,10 +270,11 @@ namespace UmiHealthPOS.Controllers.Api
                 await _context.TimeOffRequests.AddAsync(timeOffRequest);
                 await _context.SaveChangesAsync();
 
-                _logger.LogInformation("Time off request submitted: {RequestId} for user {UserId}", 
+                _logger.LogInformation("Time off request submitted: {RequestId} for user {UserId}",
                     timeOffRequest.Id, userId);
 
-                return Ok(new { 
+                return Ok(new
+                {
                     message = "Time off request submitted successfully",
                     requestId = timeOffRequest.Id
                 });

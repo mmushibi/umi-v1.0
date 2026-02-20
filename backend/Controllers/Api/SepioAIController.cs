@@ -53,7 +53,7 @@ namespace UmiHealthPOS.Controllers.Api
         public async Task<ActionResult<AIResponseDto>> AskSepioAI([FromBody] AIRequestDto request)
         {
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            
+
             try
             {
                 // Enhanced validation
@@ -66,29 +66,29 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Generate session ID if not provided
                 request.SessionId ??= GenerateSessionId();
-                
+
                 // Get user context for personalization
                 var userContext = GetUserContext();
                 var userId = GetCurrentUserId();
                 var tenantId = GetCurrentTenantId();
-                
+
                 // Use the actual AI service with real-time data support
                 var response = await _sepioAIService.AskAIAsync(request);
-                
+
                 stopwatch.Stop();
                 response.ResponseTime = stopwatch.Elapsed;
-                
+
                 // Add real-time data metadata
                 response.HasRealTimeData = request.IncludeRealTimeData;
                 response.LastUpdated = DateTime.UtcNow;
-                
+
                 // Save conversation to database
                 await SaveConversationToDatabase(request, response, userId, tenantId);
-                
+
                 // Log successful interaction
-                _logger.LogInformation("AI query processed successfully. Query: {QueryLength} chars, Confidence: {Confidence:P1}, Time: {ResponseTime}ms", 
+                _logger.LogInformation("AI query processed successfully. Query: {QueryLength} chars, Confidence: {Confidence:P1}, Time: {ResponseTime}ms",
                     request.Query.Length, response.Confidence, response.ResponseTime.TotalMilliseconds);
-                
+
                 return Ok(response);
             }
             catch (Exception ex)
@@ -163,8 +163,8 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 // Use the actual service for model training
                 var trainingResult = await _sepioAIService.TrainModelAsync(
-                    feedback.Feedback, 
-                    feedback.Query, 
+                    feedback.Feedback,
+                    feedback.Query,
                     feedback.Response
                 );
 
@@ -250,7 +250,7 @@ namespace UmiHealthPOS.Controllers.Api
             var userRole = User?.FindFirst("role")?.Value ?? "unknown";
             var tenant = User?.FindFirst("tenant")?.Value ?? "unknown";
             var userId = User?.FindFirst("sub")?.Value ?? "unknown";
-            
+
             return $"role:{userRole},tenant:{tenant},userId:{userId}";
         }
 
@@ -297,7 +297,8 @@ namespace UmiHealthPOS.Controllers.Api
                     Timestamp = DateTime.UtcNow,
                     ProcessingTimeMs = (int)response.ResponseTime.TotalMilliseconds,
                     Context = request.Context,
-                    Metadata = System.Text.Json.JsonSerializer.Serialize(new { 
+                    Metadata = System.Text.Json.JsonSerializer.Serialize(new
+                    {
                         IncludeRealTimeData = request.IncludeRealTimeData,
                         MaxTokens = request.MaxTokens
                     })
@@ -315,7 +316,8 @@ namespace UmiHealthPOS.Controllers.Api
                     ProcessingTimeMs = (int)response.ResponseTime.TotalMilliseconds,
                     Confidence = (decimal?)response.Confidence,
                     Sources = response.Sources != null ? System.Text.Json.JsonSerializer.Serialize(response.Sources) : null,
-                    Metadata = System.Text.Json.JsonSerializer.Serialize(new { 
+                    Metadata = System.Text.Json.JsonSerializer.Serialize(new
+                    {
                         HasRealTimeData = response.HasRealTimeData,
                         LastUpdated = response.LastUpdated,
                         Suggestions = response.Suggestions

@@ -47,16 +47,16 @@ namespace UmiHealthPOS.Services
             employee.TenantId = tenantId;
             employee.CreatedAt = DateTime.UtcNow;
             employee.UpdatedAt = DateTime.UtcNow;
-            
+
             // Hash password if provided
             if (!string.IsNullOrEmpty(employee.PasswordHash))
             {
                 employee.PasswordHash = _passwordService.HashPassword(employee.PasswordHash);
             }
-            
+
             _context.Employees.Add(employee);
             await _context.SaveChangesAsync();
-            
+
             return employee;
         }
 
@@ -135,16 +135,16 @@ namespace UmiHealthPOS.Services
         {
             string employeeId;
             int counter = 1;
-            
+
             do
             {
                 employeeId = $"EMP{counter:D3}";
                 var exists = await _context.Employees
                     .AnyAsync(e => e.EmployeeNumber == employeeId);
-                
+
                 if (!exists)
                     break;
-                
+
                 counter++;
             } while (counter <= 999);
 

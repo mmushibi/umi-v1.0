@@ -91,8 +91,8 @@ namespace UmiHealthPOS.Services
                 var gracePeriodSubscriptions = await context.Subscriptions
                     .Include(s => s.Tenant)
                     .Include(s => s.Plan)
-                    .Where(s => s.Status == "active" && 
-                               s.EndDate >= gracePeriodEnd && 
+                    .Where(s => s.Status == "active" &&
+                               s.EndDate >= gracePeriodEnd &&
                                s.EndDate < now)
                     .ToListAsync();
 
@@ -124,12 +124,12 @@ namespace UmiHealthPOS.Services
             var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
             var cutoffDate = DateTime.UtcNow.AddDays(daysAhead);
-            
+
             return await context.Subscriptions
                 .Include(s => s.Tenant)
                 .Include(s => s.Plan)
-                .Where(s => s.Status == "active" && 
-                           s.EndDate <= cutoffDate && 
+                .Where(s => s.Status == "active" &&
+                           s.EndDate <= cutoffDate &&
                            s.EndDate > DateTime.UtcNow)
                 .ToListAsync();
         }

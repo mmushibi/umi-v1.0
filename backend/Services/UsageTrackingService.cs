@@ -64,7 +64,7 @@ namespace UmiHealthPOS.Services
                     .CountAsync(p => p.TenantId == tenantId && p.IsActive);
 
                 var transactionCount = await _context.Sales
-                    .CountAsync(s => s.TenantId == tenantId && 
+                    .CountAsync(s => s.TenantId == tenantId &&
                                    s.CreatedAt >= currentMonth && s.CreatedAt < nextMonth);
 
                 var branchCount = await _context.Branches
@@ -126,11 +126,11 @@ namespace UmiHealthPOS.Services
                     var nextDate = date.AddDays(1);
 
                     var dailyTransactions = await _context.Sales
-                        .CountAsync(s => s.TenantId == tenantId && 
+                        .CountAsync(s => s.TenantId == tenantId &&
                                        s.CreatedAt >= date && s.CreatedAt < nextDate);
 
                     var dailyRevenue = await _context.Sales
-                        .Where(s => s.TenantId == tenantId && 
+                        .Where(s => s.TenantId == tenantId &&
                                    s.CreatedAt >= date && s.CreatedAt < nextDate)
                         .SumAsync(s => s.Total);
 
@@ -344,7 +344,7 @@ namespace UmiHealthPOS.Services
             try
             {
                 var metrics = await GetUsageMetricsAsync(tenantId);
-                
+
                 return metricType.ToLower() switch
                 {
                     "users" => metrics.Users.Percentage >= threshold * 100,
@@ -372,7 +372,7 @@ namespace UmiHealthPOS.Services
         private async Task<double> GetStorageUsagePercentageAsync(string tenantId, int maxStorageGB)
         {
             if (maxStorageGB == -1) return 0;
-            
+
             var currentUsage = await GetStorageUsageAsync(tenantId);
             return (currentUsage / maxStorageGB) * 100;
         }

@@ -45,7 +45,7 @@ namespace UmiHealthPOS.Configuration
             services.AddScoped<AIDataService>();
             services.AddScoped<ISessionTimeoutService, SessionTimeoutService>();
             services.AddScoped<ISessionManagementService, SessionManagementService>();
-            
+
             // Register notification and usage tracking services
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<ISubscriptionNotificationService, SubscriptionNotificationService>();
@@ -63,7 +63,7 @@ namespace UmiHealthPOS.Configuration
 
             // Add SignalR
             services.AddSignalR();
-            
+
             // TODO: Add other services as needed
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IImpersonationService, ImpersonationService>();

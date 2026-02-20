@@ -65,9 +65,10 @@ namespace UmiHealthPOS.Services
                     query = query.Where(s => s.BranchId == branchId.Value);
 
                 var sales = await query
-                    .GroupBy(s => new { 
-                        Year = s.CreatedAt.Year, 
-                        Month = s.CreatedAt.Month 
+                    .GroupBy(s => new
+                    {
+                        Year = s.CreatedAt.Year,
+                        Month = s.CreatedAt.Month
                     })
                     .Select(g => new Models.SalesReportDto
                     {
@@ -96,7 +97,7 @@ namespace UmiHealthPOS.Services
             try
             {
                 var query = _context.InventoryItems.AsQueryable();
-                
+
                 if (branchId.HasValue)
                     query = query.Where(i => i.BranchId == branchId.Value);
 
@@ -128,13 +129,13 @@ namespace UmiHealthPOS.Services
             try
             {
                 var query = _context.Sales.AsQueryable();
-                
+
                 if (startDate.HasValue)
                     query = query.Where(s => s.CreatedAt >= startDate.Value);
-                
+
                 if (endDate.HasValue)
                     query = query.Where(s => s.CreatedAt <= endDate.Value);
-                
+
                 if (branchId.HasValue)
                     query = query.Where(s => s.BranchId == branchId.Value);
 
@@ -174,10 +175,10 @@ namespace UmiHealthPOS.Services
             try
             {
                 var query = _context.Sales.AsQueryable();
-                
+
                 if (startDate.HasValue)
                     query = query.Where(s => s.CreatedAt >= startDate.Value);
-                
+
                 if (endDate.HasValue)
                     query = query.Where(s => s.CreatedAt <= endDate.Value);
 

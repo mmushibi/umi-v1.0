@@ -88,7 +88,7 @@ namespace UmiHealthPOS.Services
                     Current = currentUsers,
                     Limit = maxUsers,
                     Percentage = maxUsers == int.MaxValue ? 0 : (double)currentUsers / maxUsers * 100,
-                    Reason = currentUsers >= maxUsers 
+                    Reason = currentUsers >= maxUsers
                         ? $"User limit exceeded ({currentUsers}/{maxUsers})"
                         : $"User limit: {currentUsers}/{maxUsers}",
                     AdditionalUsers = additionalUsers
@@ -134,7 +134,7 @@ namespace UmiHealthPOS.Services
                     Current = currentProducts,
                     Limit = maxProducts,
                     Percentage = maxProducts == int.MaxValue ? 0 : (double)currentProducts / maxProducts * 100,
-                    Reason = currentProducts >= maxProducts 
+                    Reason = currentProducts >= maxProducts
                         ? $"Product limit exceeded ({currentProducts}/{maxProducts})"
                         : $"Product limit: {currentProducts}/{maxProducts}"
                 };
@@ -173,7 +173,7 @@ namespace UmiHealthPOS.Services
                 var nextMonth = currentMonth.AddMonths(1);
 
                 var currentTransactions = await _context.Sales
-                    .CountAsync(s => s.TenantId == tenantId && 
+                    .CountAsync(s => s.TenantId == tenantId &&
                                    s.CreatedAt >= currentMonth && s.CreatedAt < nextMonth);
 
                 var maxTransactions = subscription.Plan.MaxTransactions == -1 ? int.MaxValue : subscription.Plan.MaxTransactions;
@@ -184,7 +184,7 @@ namespace UmiHealthPOS.Services
                     Current = currentTransactions,
                     Limit = maxTransactions,
                     Percentage = maxTransactions == int.MaxValue ? 0 : (double)currentTransactions / maxTransactions * 100,
-                    Reason = currentTransactions >= maxTransactions 
+                    Reason = currentTransactions >= maxTransactions
                         ? $"Transaction limit exceeded ({currentTransactions}/{maxTransactions})"
                         : $"Transaction limit: {currentTransactions}/{maxTransactions}"
                 };
@@ -229,7 +229,7 @@ namespace UmiHealthPOS.Services
                     Current = currentBranches,
                     Limit = maxBranches,
                     Percentage = maxBranches == int.MaxValue ? 0 : (double)currentBranches / maxBranches * 100,
-                    Reason = currentBranches >= maxBranches 
+                    Reason = currentBranches >= maxBranches
                         ? $"Branch limit exceeded ({currentBranches}/{maxBranches})"
                         : $"Branch limit: {currentBranches}/{maxBranches}"
                 };
@@ -272,7 +272,7 @@ namespace UmiHealthPOS.Services
                     Current = (int)currentStorage,
                     Limit = maxStorage,
                     Percentage = maxStorage == int.MaxValue ? 0 : (double)currentStorage / maxStorage * 100,
-                    Reason = currentStorage >= maxStorage 
+                    Reason = currentStorage >= maxStorage
                         ? $"Storage limit exceeded ({currentStorage}GB/{maxStorage}GB)"
                         : $"Storage limit: {currentStorage}GB/{maxStorage}GB"
                 };
@@ -293,7 +293,7 @@ namespace UmiHealthPOS.Services
         public async Task<bool> CanCreateUserAsync(string tenantId)
         {
             var result = await CheckUserLimitAsync(tenantId);
-            
+
             if (!result.IsWithinLimit)
             {
                 await _subscriptionNotificationService.SendLimitExceededNotification(tenantId, new UsageAlert
@@ -314,7 +314,7 @@ namespace UmiHealthPOS.Services
         public async Task<bool> CanAddProductAsync(string tenantId)
         {
             var result = await CheckProductLimitAsync(tenantId);
-            
+
             if (!result.IsWithinLimit)
             {
                 await _subscriptionNotificationService.SendLimitExceededNotification(tenantId, new UsageAlert
@@ -335,7 +335,7 @@ namespace UmiHealthPOS.Services
         public async Task<bool> CanProcessTransactionAsync(string tenantId)
         {
             var result = await CheckTransactionLimitAsync(tenantId);
-            
+
             if (!result.IsWithinLimit)
             {
                 await _subscriptionNotificationService.SendLimitExceededNotification(tenantId, new UsageAlert
@@ -356,7 +356,7 @@ namespace UmiHealthPOS.Services
         public async Task<bool> CanCreateBranchAsync(string tenantId)
         {
             var result = await CheckBranchLimitAsync(tenantId);
-            
+
             if (!result.IsWithinLimit)
             {
                 await _subscriptionNotificationService.SendLimitExceededNotification(tenantId, new UsageAlert
@@ -459,7 +459,7 @@ namespace UmiHealthPOS.Services
         public async Task<bool> CanCreateUserWithAdminOverrideAsync(string tenantId)
         {
             var result = await CheckUserLimitAsync(tenantId, allowAdminOverride: true);
-            
+
             if (!result.IsWithinLimit && result.AdditionalUsers == 0)
             {
                 await _subscriptionNotificationService.SendLimitExceededNotification(tenantId, new UsageAlert
@@ -480,10 +480,10 @@ namespace UmiHealthPOS.Services
             {
                 var now = DateTime.UtcNow;
                 return await _context.AdditionalUserPurchases
-                    .Where(p => p.TenantId == tenantId && 
-                               p.Status == "active" && 
+                    .Where(p => p.TenantId == tenantId &&
+                               p.Status == "active" &&
                                p.IsActive &&
-                               p.StartDate <= now && 
+                               p.StartDate <= now &&
                                (p.EndDate == null || p.EndDate >= now))
                     .SumAsync(p => p.NumberOfUsers);
             }
@@ -498,7 +498,7 @@ namespace UmiHealthPOS.Services
         {
             return await _context.Subscriptions
                 .Include(s => s.Plan)
-                .FirstOrDefaultAsync(s => s.TenantId == tenantId && 
+                .FirstOrDefaultAsync(s => s.TenantId == tenantId &&
                                        (s.Status == "active" || s.Status == "grace_period"));
         }
 
@@ -508,32 +508,32 @@ namespace UmiHealthPOS.Services
             {
                 // Enhanced storage calculation - in production, this would calculate actual file/database storage
                 // For now, we'll estimate based on typical usage patterns
-                
+
                 var storageUsage = 0.0;
-                
+
                 // Database storage estimation based on tenant activity
                 var userCount = await _context.Users.CountAsync(u => u.TenantId == tenantId);
                 var productCount = await _context.Products.CountAsync(p => p.TenantId == tenantId);
                 var saleCount = await _context.Sales.CountAsync(s => s.TenantId == tenantId);
                 var customerCount = await _context.Customers.CountAsync(c => c.TenantId == tenantId);
-                
+
                 // Estimate database storage (in MB)
                 var dbStorage = (userCount * 0.5) +        // User records
                                (productCount * 0.2) +      // Product records
                                (saleCount * 0.8) +        // Sales records (larger due to items)
                                (customerCount * 0.3) +    // Customer records
                                10.0;                       // System overhead
-                
+
                 // Estimate file storage (in MB) based on typical usage
                 var fileStorage = Math.Max(0.5, userCount * 0.1); // Documents, images, etc.
-                
+
                 // Convert to GB
                 storageUsage = (dbStorage + fileStorage) / 1024.0;
-                
+
                 // Add some realistic variation based on tenant activity
                 var random = new Random(tenantId.GetHashCode());
                 storageUsage *= (0.8 + (random.NextDouble() * 0.4)); // ±20% variation
-                
+
                 return Math.Round(storageUsage, 2);
             }
             catch (Exception ex)

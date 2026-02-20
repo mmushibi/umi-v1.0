@@ -131,7 +131,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var tenantIdClaim = User.FindFirst("TenantId")?.Value;
-                
+
                 if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(tenantIdClaim))
                 {
                     return Unauthorized("User not authenticated");
@@ -560,11 +560,11 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 // Generate HTML content for PDF
                 var htmlContent = ReportHelper.GeneratePdfHtmlContent(data, fileName);
-                
+
                 // Convert HTML to PDF using a library like PuppeteerSharp or iTextSharp
                 // For now, we'll return the HTML as a file that can be printed to PDF
                 var bytes = System.Text.Encoding.UTF8.GetBytes(htmlContent);
-                
+
                 return await Task.FromResult(File(bytes, "text/html", $"{fileName}.html"));
             }
             catch (Exception ex)
@@ -657,9 +657,9 @@ namespace UmiHealthPOS.Controllers.Api
             // For now, we'll use a simplified calculation based on quantity and price
             var totalValue = items.Sum(i => i.Quantity * i.UnitPrice);
             var totalItems = items.Sum(i => i.Quantity);
-            
+
             if (totalItems == 0) return 0;
-            
+
             // This is a simplified calculation - in a real implementation,
             // you'd track actual sales data over time
             return Math.Round((double)totalValue / totalItems, 2);

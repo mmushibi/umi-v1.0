@@ -24,12 +24,12 @@ namespace UmiHealthPOS.Services
         Task<bool> MarkAllAsReadAsync(string? userId = null);
         Task<int> BatchUpdateNotificationsAsync(NotificationBatchRequest request, string? userId = null);
         Task CleanupExpiredNotificationsAsync();
-        
+
         // Subscription notification methods
         Task SendSubscriptionExpiredNotification(Subscription subscription);
         Task SendGracePeriodNotification(Subscription subscription);
         Task SendExpirationWarning(Subscription subscription, int days);
-        
+
         // Usage tracking notification methods
         Task SendLimitExceededNotification(string tenantId, string limitType, double currentUsage, double limit);
         Task SendLimitApproachingNotification(string tenantId, string limitType, double currentUsage, double limit);
@@ -503,10 +503,10 @@ namespace UmiHealthPOS.Services
             {
                 // Look for admin user for this tenant
                 var adminUser = await _context.UserAccounts
-                    .Where(u => u.TenantId == tenantId && 
+                    .Where(u => u.TenantId == tenantId &&
                                (u.Role == "Admin" || u.Role == "SuperAdmin" || u.Email.Contains("admin")))
                     .FirstOrDefaultAsync();
-                
+
                 return adminUser?.Id.ToString();
             }
             catch (Exception ex)
@@ -521,7 +521,7 @@ namespace UmiHealthPOS.Services
             try
             {
                 var adminUserId = await GetTenantAdminUserIdAsync(subscription.TenantId);
-                
+
                 var notification = new CreateNotificationRequest
                 {
                     Title = "Subscription Expired",
@@ -547,7 +547,7 @@ namespace UmiHealthPOS.Services
             try
             {
                 var adminUserId = await GetTenantAdminUserIdAsync(subscription.TenantId);
-                
+
                 var notification = new CreateNotificationRequest
                 {
                     Title = "Grace Period Active",
@@ -573,7 +573,7 @@ namespace UmiHealthPOS.Services
             try
             {
                 var adminUserId = await GetTenantAdminUserIdAsync(subscription.TenantId);
-                
+
                 var notification = new CreateNotificationRequest
                 {
                     Title = $"Subscription Expires in {days} Days",
@@ -600,7 +600,7 @@ namespace UmiHealthPOS.Services
             try
             {
                 var adminUserId = await GetTenantAdminUserIdAsync(tenantId);
-                
+
                 var notification = new CreateNotificationRequest
                 {
                     Title = $"{limitType} Limit Exceeded",
@@ -627,7 +627,7 @@ namespace UmiHealthPOS.Services
             {
                 var adminUserId = await GetTenantAdminUserIdAsync(tenantId);
                 var percentageUsed = (currentUsage / limit) * 100;
-                
+
                 var notification = new CreateNotificationRequest
                 {
                     Title = $"{limitType} Limit Warning",
@@ -778,7 +778,7 @@ namespace UmiHealthPOS.Services
             var notification = new CreateNotificationRequest
             {
                 Title = success ? "Backup Completed Successfully" : "Backup Failed",
-                Message = success 
+                Message = success
                     ? $"System backup completed successfully. File size: {fileSize / 1024 / 1024:F1} MB"
                     : "System backup failed. Please check the system logs.",
                 Type = "system",

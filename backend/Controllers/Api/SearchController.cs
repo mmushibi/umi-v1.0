@@ -23,7 +23,7 @@ namespace UmiHealthPOS.Controllers.Api
         private readonly ApplicationDbContext _context;
 
         public SearchController(
-            IWebSearchService webSearchService, 
+            IWebSearchService webSearchService,
             ILogger<SearchController> logger,
             IMemoryCache memoryCache,
             IHttpContextAccessor httpContextAccessor,
@@ -332,7 +332,7 @@ namespace UmiHealthPOS.Controllers.Api
                        httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ??
                        "anonymous";
             }
-            
+
             return httpContext?.Connection?.RemoteIpAddress?.ToString() ?? "anonymous";
         }
 
@@ -343,7 +343,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 return httpContext.User.FindFirst("tenantId")?.Value ?? "";
             }
-            
+
             return "";
         }
     }

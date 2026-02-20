@@ -453,13 +453,13 @@ namespace UmiHealthPOS.Controllers.Api
             var allergiesLower = allergies.Select(a => a.ToLower()).ToList();
 
             // Penicillin cross-reactivity
-            if (allergiesLower.Any(a => a.Contains("penicillin")) && 
+            if (allergiesLower.Any(a => a.Contains("penicillin")) &&
                 medsLower.Any(m => m.Contains("amoxicillin") || m.Contains("ampicillin") || m.Contains("cloxacillin")))
             {
                 result.HasAllergies = true;
-                var conflictingMed = medsLower.FirstOrDefault(m => 
+                var conflictingMed = medsLower.FirstOrDefault(m =>
                     m.Contains("amoxicillin") || m.Contains("ampicillin") || m.Contains("cloxacillin"));
-                
+
                 result.Allergies.Add(new MedicationAllergy
                 {
                     Medication = conflictingMed?.ToUpper() ?? "Penicillin-based antibiotic",
@@ -471,7 +471,7 @@ namespace UmiHealthPOS.Controllers.Api
             }
 
             // Sulfa allergy
-            if (allergiesLower.Any(a => a.Contains("sulfa") || a.Contains("sulfonamide")) && 
+            if (allergiesLower.Any(a => a.Contains("sulfa") || a.Contains("sulfonamide")) &&
                 medsLower.Any(m => m.Contains("sulfamethoxazole") || m.Contains("trimethoprim") || m.Contains("co-trimoxazole")))
             {
                 result.HasAllergies = true;
@@ -486,13 +486,13 @@ namespace UmiHealthPOS.Controllers.Api
             }
 
             // NSAID allergy
-            if (allergiesLower.Any(a => a.Contains("aspirin") || a.Contains("nsaid")) && 
+            if (allergiesLower.Any(a => a.Contains("aspirin") || a.Contains("nsaid")) &&
                 medsLower.Any(m => m.Contains("ibuprofen") || m.Contains("naproxen") || m.Contains("diclofenac")))
             {
                 result.HasAllergies = true;
-                var conflictingMed = medsLower.FirstOrDefault(m => 
+                var conflictingMed = medsLower.FirstOrDefault(m =>
                     m.Contains("ibuprofen") || m.Contains("naproxen") || m.Contains("diclofenac"));
-                
+
                 result.Allergies.Add(new MedicationAllergy
                 {
                     Medication = conflictingMed?.ToUpper() ?? "NSAID",
@@ -504,7 +504,7 @@ namespace UmiHealthPOS.Controllers.Api
             }
 
             // Codeine allergy (common in Zambia)
-            if (allergiesLower.Any(a => a.Contains("codeine")) && 
+            if (allergiesLower.Any(a => a.Contains("codeine")) &&
                 medsLower.Any(m => m.Contains("codeine") || m.Contains("tramadol") || m.Contains("morphine")))
             {
                 result.HasAllergies = true;
@@ -519,7 +519,7 @@ namespace UmiHealthPOS.Controllers.Api
             }
 
             // Quinolone allergy
-            if (allergiesLower.Any(a => a.Contains("quinolone") || a.Contains("ciprofloxacin")) && 
+            if (allergiesLower.Any(a => a.Contains("quinolone") || a.Contains("ciprofloxacin")) &&
                 medsLower.Any(m => m.Contains("ciprofloxacin") || m.Contains("levofloxacin") || m.Contains("ofloxacin")))
             {
                 result.HasAllergies = true;
@@ -632,7 +632,7 @@ namespace UmiHealthPOS.Controllers.Api
                     < 35 => 60, // 3 tablets per dose
                     _ => 80 // 4 tablets per dose
                 };
-                
+
                 calculation.RecommendedDosage = $"Weight-based dosing: {dosePerKg}mg per dose";
                 calculation.TotalDailyDose = dosePerKg * 2; // BID for 3 days
                 calculation.Frequency = "Twice daily for 3 days";
@@ -654,7 +654,7 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 calculation.Notes += " Consider dose reduction in elderly patients.";
             }
-            
+
             if (weight < 10)
             {
                 calculation.Notes += " Use pediatric formulation and precise dosing.";
@@ -924,7 +924,7 @@ namespace UmiHealthPOS.Controllers.Api
 
             // Add clinical notes based on age
             var notes = new List<string>();
-            
+
             if (age < 1)
             {
                 notes.Add("Neonatal vital signs vary significantly with gestational age and birth weight.");

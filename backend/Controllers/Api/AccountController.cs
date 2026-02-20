@@ -590,7 +590,7 @@ namespace UmiHealthPOS.Controllers.Api
         {
             var httpContext = HttpContext;
             var user = httpContext?.User;
-            
+
             if (user?.Identity?.IsAuthenticated != true)
             {
                 throw new UnauthorizedAccessException("User not authenticated");

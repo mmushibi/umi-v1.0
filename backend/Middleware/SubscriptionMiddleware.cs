@@ -48,7 +48,7 @@ namespace UmiHealthPOS.Middleware
             try
             {
                 var subscriptionCheck = await CheckSubscriptionAccess(context);
-                
+
                 if (!subscriptionCheck.IsAllowed)
                 {
                     await HandleSubscriptionViolation(context, subscriptionCheck);
@@ -70,7 +70,7 @@ namespace UmiHealthPOS.Middleware
         private bool ShouldSkipSubscriptionCheck(HttpContext context)
         {
             var path = context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
-            
+
             // Skip authentication and subscription endpoints
             var skipPaths = new[]
             {
@@ -104,7 +104,7 @@ namespace UmiHealthPOS.Middleware
             // Get subscription
             var subscription = await dbContext.Subscriptions
                 .Include(s => s.Plan)
-                .FirstOrDefaultAsync(s => s.TenantId == user.TenantId && 
+                .FirstOrDefaultAsync(s => s.TenantId == user.TenantId &&
                                        (s.Status == "active" || s.Status == "grace_period"));
 
             if (subscription == null)
@@ -187,7 +187,7 @@ namespace UmiHealthPOS.Middleware
         private string GetRequestedFeature(HttpContext context)
         {
             var path = context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
-            
+
             // Extract feature from URL path
             if (path.Contains("/api/"))
             {

@@ -53,7 +53,7 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 var today = DateTime.Today;
-                
+
                 // Use optimized queries with AsNoTracking for better performance
                 var prescriptionsTask = _context.Prescriptions
                     .AsNoTracking()
@@ -66,7 +66,7 @@ namespace UmiHealthPOS.Controllers.Api
                     .CountAsync();
 
                 await Task.WhenAll(prescriptionsTask, pendingTask);
-                
+
                 var prescriptions = await prescriptionsTask;
                 var pendingCount = await pendingTask;
 
@@ -300,7 +300,7 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 var result = await _prescriptionService.RejectPrescriptionAsync(prescriptionId, request.Reason);
-                
+
                 if (!result)
                 {
                     return BadRequest(new { error = "Prescription not found or cannot be rejected" });
@@ -568,9 +568,9 @@ namespace UmiHealthPOS.Controllers.Api
                 if (user?.Identity?.IsAuthenticated != true)
                     throw new UnauthorizedAccessException("User not authenticated");
 
-                return user.FindFirst("sub")?.Value ?? 
-                       user.FindFirst("userId")?.Value ?? 
-                       user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? 
+                return user.FindFirst("sub")?.Value ??
+                       user.FindFirst("userId")?.Value ??
+                       user.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
                        throw new UnauthorizedAccessException("User ID not found in token");
             }
             catch (Exception ex)

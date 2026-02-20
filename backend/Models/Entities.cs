@@ -983,10 +983,10 @@ namespace UmiHealthPOS.Models
         public string PaymentStatus { get; set; } = "Unpaid";
 
         public DateTime DueDate { get; set; }
-        
+
         [StringLength(1000)]
         public string? Notes { get; set; }
-        
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
@@ -1014,10 +1014,10 @@ namespace UmiHealthPOS.Models
 
         [StringLength(500)]
         public string? Reason { get; set; }
-        
+
         [StringLength(1000)]
         public string? Notes { get; set; }
-        
+
         [StringLength(20)]
         public string Status { get; set; } = "Active";
 
@@ -1200,10 +1200,10 @@ namespace UmiHealthPOS.Models
 
         [StringLength(20)]
         public string Status { get; set; } = "Active";
-        
+
         [StringLength(255)]
         public string? PasswordHash { get; set; }
-        
+
         public DateTime HireDate { get; set; } = DateTime.UtcNow;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;

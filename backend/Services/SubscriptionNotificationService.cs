@@ -45,7 +45,7 @@ namespace UmiHealthPOS.Services
 
                 var title = "Subscription Expired";
                 var message = $"Your subscription has expired. Please renew to continue using Umi Health POS services.";
-                
+
                 foreach (var user in adminUsers)
                 {
                     await CreateNotification(user.UserId, title, message, "subscription", "critical", new
@@ -76,7 +76,7 @@ namespace UmiHealthPOS.Services
 
                 var title = "Grace Period Started";
                 var message = $"Your subscription has entered a 7-day grace period. Please renew to avoid service interruption.";
-                
+
                 foreach (var user in adminUsers)
                 {
                     await CreateNotification(user.UserId, title, message, "subscription", "warning", new
@@ -108,7 +108,7 @@ namespace UmiHealthPOS.Services
                 var severity = daysUntilExpiration <= 3 ? "critical" : "warning";
                 var title = daysUntilExpiration == 1 ? "Subscription Expires Tomorrow" : $"Subscription Expires in {daysUntilExpiration} Days";
                 var message = $"Your subscription will expire in {daysUntilExpiration} day(s). Please renew to continue using our services.";
-                
+
                 foreach (var user in adminUsers)
                 {
                     await CreateNotification(user.UserId, title, message, "subscription", severity, new
@@ -139,7 +139,7 @@ namespace UmiHealthPOS.Services
 
                 var title = $"{alert.Type.ToUpperInvariant()} Limit Exceeded";
                 var message = $"You have exceeded your {alert.Type} limit. {alert.Message}";
-                
+
                 foreach (var user in adminUsers)
                 {
                     await CreateNotification(user.UserId, title, message, "limit", "critical", new
@@ -171,7 +171,7 @@ namespace UmiHealthPOS.Services
 
                 var title = $"{alert.Type.ToUpperInvariant()} Limit Warning";
                 var message = $"You are approaching your {alert.Type} limit. {alert.Message}";
-                
+
                 foreach (var user in adminUsers)
                 {
                     await CreateNotification(user.UserId, title, message, "limit", "warning", new
@@ -203,7 +203,7 @@ namespace UmiHealthPOS.Services
 
                 var title = "Feature Upgrade Required";
                 var message = $"The '{feature}' feature requires a {requiredPlan} subscription or higher.";
-                
+
                 foreach (var user in adminUsers)
                 {
                     await CreateNotification(user.UserId, title, message, "upgrade", "info", new
@@ -227,17 +227,17 @@ namespace UmiHealthPOS.Services
         private async Task<List<UserAccount>> GetTenantAdminUsersAsync(string tenantId)
         {
             return await _context.Users
-                .Where(u => u.TenantId == tenantId && 
+                .Where(u => u.TenantId == tenantId &&
                            u.IsActive &&
                            (u.Role == "admin" || u.Role == "TenantAdmin"))
                 .ToListAsync();
         }
 
         private async Task CreateNotification(
-            string userId, 
-            string title, 
-            string message, 
-            string category, 
+            string userId,
+            string title,
+            string message,
+            string category,
             string severity,
             object metadata)
         {

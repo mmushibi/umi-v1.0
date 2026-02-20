@@ -36,7 +36,7 @@ namespace UmiHealthPOS.Services
             try
             {
                 var emailSettings = await GetEmailSettingsAsync();
-                
+
                 if (!ValidateEmailSettings(emailSettings))
                 {
                     _logger.LogError("Email settings are not properly configured");
@@ -61,7 +61,7 @@ namespace UmiHealthPOS.Services
 
                 await client.SendMailAsync(mailMessage);
                 _logger.LogInformation("Email sent successfully to {Email}", to);
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -76,7 +76,7 @@ namespace UmiHealthPOS.Services
             try
             {
                 var emailSettings = await GetEmailSettingsAsync();
-                
+
                 if (!ValidateEmailSettings(emailSettings))
                 {
                     return false;

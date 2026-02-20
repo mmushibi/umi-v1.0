@@ -49,10 +49,10 @@ namespace UmiHealthPOS.Services
                 {
                     // Backup database data
                     await BackupDatabaseDataAsync(archive);
-                    
+
                     // Backup configuration files
                     await BackupConfigurationFilesAsync(archive);
-                    
+
                     // Backup logs
                     await BackupLogFilesAsync(archive);
                 }
@@ -104,7 +104,7 @@ namespace UmiHealthPOS.Services
                     .ToListAsync();
 
                 var backupList = new List<BackupInfo>();
-                
+
                 foreach (var backup in backups)
                 {
                     var backupData = System.Text.Json.JsonSerializer.Deserialize<BackupRecord>(backup.Value ?? "{}");
@@ -175,7 +175,7 @@ namespace UmiHealthPOS.Services
                 foreach (var table in tables)
                 {
                     var entry = archive.CreateEntry($"database/{table.ToLower()}.json");
-                    
+
                     using var writer = new StreamWriter(entry.Open());
                     var data = await ExportTableToJsonAsync(table);
                     await writer.WriteAsync(data);
@@ -267,7 +267,7 @@ namespace UmiHealthPOS.Services
                     return "[]";
                 }
 
-                var data = await Task.Run(() => 
+                var data = await Task.Run(() =>
                 {
                     var query = System.Linq.Expressions.Expression.Call(
                         System.Linq.Expressions.Expression.Constant(dbSet),

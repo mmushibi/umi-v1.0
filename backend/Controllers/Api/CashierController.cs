@@ -199,10 +199,10 @@ namespace UmiHealthPOS.Controllers.Api
 
                 // Real database implementation - search products filtered by tenant
                 var searchQuery = query.ToLower().Trim();
-                
+
                 var products = await _context.Products
                     .Where(p => p.TenantId == tenantId && p.Status == "Active")
-                    .Where(p => p.Name.ToLower().Contains(searchQuery) || 
+                    .Where(p => p.Name.ToLower().Contains(searchQuery) ||
                                p.Description != null && p.Description.ToLower().Contains(searchQuery) ||
                                p.Category != null && p.Category.ToLower().Contains(searchQuery) ||
                                p.BrandName != null && p.BrandName.ToLower().Contains(searchQuery) ||
@@ -486,9 +486,9 @@ namespace UmiHealthPOS.Controllers.Api
                 if (user?.Identity?.IsAuthenticated != true)
                     throw new UnauthorizedAccessException("User not authenticated");
 
-                return user.FindFirst("sub")?.Value ?? 
-                       user.FindFirst("userId")?.Value ?? 
-                       user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? 
+                return user.FindFirst("sub")?.Value ??
+                       user.FindFirst("userId")?.Value ??
+                       user.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
                        throw new UnauthorizedAccessException("User ID not found in token");
             }
             catch (Exception ex)

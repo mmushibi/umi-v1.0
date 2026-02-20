@@ -210,7 +210,7 @@ namespace UmiHealthPOS.Services
             {
                 // Enhanced API simulation - in production, this would call actual search APIs
                 // For now, we'll simulate different API behaviors based on source type
-                
+
                 // Simulate API call with realistic timing and potential failures
                 var random = new Random(source.GetHashCode());
                 var baseDelay = source.ToLower() switch
@@ -221,7 +221,7 @@ namespace UmiHealthPOS.Services
                     "clinical" => 300,  // Clinical guidelines - slower due to complexity
                     _ => 100
                 };
-                
+
                 // Add random variation to simulate network conditions
                 var delay = baseDelay + random.Next(-50, 100);
                 await Task.Delay(Math.Max(50, delay));
@@ -403,7 +403,7 @@ namespace UmiHealthPOS.Services
         private async Task<List<SearchResultDto>> PerformRealTimeWebSearch(string query, string searchType)
         {
             var results = new List<SearchResultDto>();
-            
+
             try
             {
                 // Use Bing Search API for real-time web search
@@ -435,7 +435,7 @@ namespace UmiHealthPOS.Services
         private async Task<List<SearchResultDto>> SearchBingAsync(string query, string searchType)
         {
             var results = new List<SearchResultDto>();
-            
+
             try
             {
                 var apiKey = _configuration["BingSearchAPI:Key"];
@@ -446,7 +446,7 @@ namespace UmiHealthPOS.Services
                 }
 
                 var searchUrl = $"https://api.bing.microsoft.com/v7.0/search?q={Uri.EscapeDataString(query)}&mkt=en-US&count=5";
-                
+
                 _httpClient.DefaultRequestHeaders.Clear();
                 _httpClient.DefaultRequestHeaders.Add("Ocp-Apim-Subscription-Key", apiKey);
 
@@ -484,12 +484,12 @@ namespace UmiHealthPOS.Services
         private async Task<List<SearchResultDto>> SearchGoogleAsync(string query, string searchType)
         {
             var results = new List<SearchResultDto>();
-            
+
             try
             {
                 var apiKey = _configuration["GoogleSearchAPI:Key"];
                 var searchEngineId = _configuration["GoogleSearchAPI:SearchEngineId"];
-                
+
                 if (string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(searchEngineId))
                 {
                     _logger.LogWarning("Google Search API not properly configured");
@@ -497,7 +497,7 @@ namespace UmiHealthPOS.Services
                 }
 
                 var searchUrl = $"https://www.googleapis.com/customsearch/v1?key={apiKey}&cx={searchEngineId}&q={Uri.EscapeDataString(query)}&num=5";
-                
+
                 var response = await _httpClient.GetAsync(searchUrl);
                 if (response.IsSuccessStatusCode)
                 {
@@ -532,12 +532,12 @@ namespace UmiHealthPOS.Services
         private async Task<List<SearchResultDto>> SearchDuckDuckGoAsync(string query, string searchType)
         {
             var results = new List<SearchResultDto>();
-            
+
             try
             {
                 // DuckDuckGo Instant Answer API (HTML format)
                 var searchUrl = $"https://duckduckgo.com/html/?q={Uri.EscapeDataString(query)}";
-                
+
                 var response = await _httpClient.GetAsync(searchUrl);
                 if (response.IsSuccessStatusCode)
                 {
@@ -556,7 +556,7 @@ namespace UmiHealthPOS.Services
         private List<SearchResultDto> ParseDuckDuckGoResults(string html, string query)
         {
             var results = new List<SearchResultDto>();
-            
+
             try
             {
                 // Simple HTML parsing for DuckDuckGo results
@@ -572,7 +572,7 @@ namespace UmiHealthPOS.Services
                         // Extract title and URL
                         var titleMatch = System.Text.RegularExpressions.Regex.Match(line, @"<a[^>]*>([^<]+)</a>");
                         var urlMatch = System.Text.RegularExpressions.Regex.Match(line, @"href=""([^""]+)""");
-                        
+
                         if (titleMatch.Success && urlMatch.Success)
                         {
                             currentResult.Title = System.Web.HttpUtility.HtmlDecode(titleMatch.Groups[1].Value);
@@ -589,7 +589,7 @@ namespace UmiHealthPOS.Services
                             currentResult.Description = System.Web.HttpUtility.HtmlDecode(snippetMatch.Groups[1].Value);
                             currentResult.RelevanceScore = CalculateRelevanceScore(query, currentResult.Title, currentResult.Description);
                             currentResult.Date = DateTime.Now.ToString("yyyy-MM-dd");
-                            
+
                             results.Add(currentResult);
                             currentResult = new SearchResultDto();
                             inResult = false;
@@ -617,11 +617,11 @@ namespace UmiHealthPOS.Services
                 // Title matches are more important
                 if (titleLower.Contains(term))
                     score += 0.4;
-                
+
                 // Description matches
                 if (descLower.Contains(term))
                     score += 0.2;
-                
+
                 // Exact phrase match
                 if (titleLower.Contains(query.ToLower()) || descLower.Contains(query.ToLower()))
                     score += 0.3;

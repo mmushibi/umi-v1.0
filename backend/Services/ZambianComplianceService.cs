@@ -804,7 +804,7 @@ namespace UmiHealthPOS.Services
                 // In production, this would call ZAMRA API
                 // For now, simulate validation with basic rules
                 var licenseNumberInt = int.Parse(numericPart);
-                
+
                 // Simulate ZAMRA database validation
                 // Valid ranges: 100000-999999 (6 digits) or 10000000-99999999 (8 digits)
                 var isValidRange = (licenseNumberInt >= 100000 && licenseNumberInt <= 999999) ||
@@ -937,7 +937,7 @@ namespace UmiHealthPOS.Services
         {
             // In production, this would query actual database records
             await Task.Delay(50);
-            
+
             return new List<UpcomingExpiration>
             {
                 new() { ItemType = "Pharmacy License", ExpiryDate = DateTime.UtcNow.AddDays(45), DaysUntil = 45 },
@@ -949,7 +949,7 @@ namespace UmiHealthPOS.Services
         {
             // In production, this would check actual documentation status
             await Task.Delay(50);
-            
+
             return new List<MissingDocument>
             {
                 new() { DocumentType = "Controlled Substance Register" },

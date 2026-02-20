@@ -140,7 +140,7 @@ namespace UmiHealthPOS.Services.AI
                     pattern.Frequency++;
                     pattern.LastSeen = DateTime.UtcNow;
                     pattern.UpdatedAt = DateTime.UtcNow;
-                    
+
                     // Update running averages
                     pattern.AverageConfidence = (pattern.AverageConfidence * (pattern.Frequency - 1) + confidence) / pattern.Frequency;
                     pattern.SuccessRate = Math.Max(0, Math.Min(1, confidence)); // Simplified success rate
