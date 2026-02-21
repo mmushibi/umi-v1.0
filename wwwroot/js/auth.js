@@ -13,10 +13,11 @@ class UmiAuth {
     }
 
     getApiBase() {
-        // In production, use the same origin or configured API base
+        // In development, point to backend API server
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return window.location.origin;
+            return 'http://127.0.0.1:8080';
         }
+        // In production, use the same origin or configured API base
         return window.location.origin;
     }
 
@@ -329,6 +330,9 @@ class UmiAuth {
             this.error = '';
             this.success = '';
 
+            console.log('Attempting login to:', `${this.apiBase}/api/auth/login`);
+            console.log('Login payload:', { email, password, remember });
+
             const response = await fetch(`${this.apiBase}/api/auth/login`, {
                 method: 'POST',
                 headers: {
@@ -337,12 +341,17 @@ class UmiAuth {
                 body: JSON.stringify({ email, password, remember })
             });
 
+            console.log('Login response status:', response.status);
+            console.log('Login response headers:', response.headers);
+
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
+                console.error('Login error response:', errorData);
                 throw new Error(errorData.message || 'Login failed');
             }
 
             const data = await response.json();
+            console.log('Login success data:', data);
             
             // Store tokens
             this.storeTokens(data.accessToken, data.refreshToken, remember);

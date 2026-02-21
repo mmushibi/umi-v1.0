@@ -10,6 +10,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using BCrypt.Net;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Authorization;
 
 namespace UmiHealthPOS.Controllers.Api
 {
@@ -20,12 +22,16 @@ namespace UmiHealthPOS.Controllers.Api
         private readonly ApplicationDbContext _context;
         private readonly IJwtService _jwtService;
         private readonly IConfiguration _configuration;
+        private readonly IPermissionService _permissionService = null!;
+        private readonly ILogger<AuthController> _logger = null!;
 
-        public AuthController(ApplicationDbContext context, IJwtService jwtService, IConfiguration configuration)
+        public AuthController(ApplicationDbContext context, IJwtService jwtService, IConfiguration configuration, IPermissionService permissionService, ILogger<AuthController> logger)
         {
             _context = context;
             _jwtService = jwtService;
             _configuration = configuration;
+            _permissionService = permissionService;
+            _logger = logger;
         }
 
         [HttpPost("signin")]
@@ -107,6 +113,78 @@ namespace UmiHealthPOS.Controllers.Api
             return Ok(response);
         }
 
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+                {
+                    return BadRequest(new { message = "Email and password are required" });
+                }
+
+                var user = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Email.ToLower() == request.Email.ToLower());
+
+                if (user == null)
+                {
+                    return Unauthorized(new { message = "Invalid email or password" });
+                }
+
+                if (user.Status != "active")
+                {
+                    return Unauthorized(new { message = "Account is not active" });
+                }
+
+                // Verify password
+                if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                {
+                    return Unauthorized(new { message = "Invalid email or password" });
+                }
+
+                // Update last login
+                user.LastLogin = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                // Get user permissions
+                var userPermissions = await _permissionService.GetUserRolePermissionsAsync(user.Id.ToString());
+
+                // Generate JWT token
+                var accessToken = _jwtService.GenerateAccessToken(user);
+                var refreshToken = _jwtService.GenerateRefreshToken();
+
+                // Store refresh token
+                user.RefreshToken = refreshToken;
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+                await _context.SaveChangesAsync();
+
+                var response = new
+                {
+                    accessToken = accessToken,
+                    refreshToken = refreshToken,
+                    user = new
+                    {
+                        userId = user.Id.ToString(),
+                        email = user.Email,
+                        name = $"{user.FirstName} {user.LastName}",
+                        role = user.Role,
+                        tenantId = user.UserBranches.FirstOrDefault()?.Branch.Id.ToString() ?? "default",
+                        tenantName = user.UserBranches.FirstOrDefault()?.Branch.Name ?? "Default Branch",
+                        permissions = userPermissions.ToArray(),
+                        isImpersonated = false,
+                        originalUser = (object)null
+                    }
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Login error: {Error}", ex.Message);
+                return StatusCode(500, new { message = "Internal server error during login" });
+            }
+        }
+
         [HttpPost("refresh-token")]
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
@@ -166,14 +244,63 @@ namespace UmiHealthPOS.Controllers.Api
                         user.RefreshToken = null;
                         user.RefreshTokenExpiryTime = null;
                         await _context.SaveChangesAsync();
+
+                        // Invalidate all active sessions for this user
+                        var userSessions = await _context.UserSessions
+                            .Where(s => s.UserId == userId && s.IsActive)
+                            .ToListAsync();
+
+                        foreach (var session in userSessions)
+                        {
+                            session.IsActive = false;
+                            session.ExpiresAt = DateTime.UtcNow; // Immediately expire
+                        }
+                        await _context.SaveChangesAsync();
                     }
                 }
 
-                return Ok(new { message = "Logged out successfully" });
+                return Ok(new { message = "Logged out successfully from all devices" });
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogError(ex, "Logout error: {Error}", ex.Message);
                 return StatusCode(500, new { message = "Internal server error during logout" });
+            }
+        }
+
+        [HttpPost("logout-all")]
+        [Authorize(Roles = "TenantAdmin,SuperAdmin")]
+        public async Task<IActionResult> LogoutAllUsers()
+        {
+            try
+            {
+                // Invalidate all refresh tokens
+                var allUsers = await _context.Users.ToListAsync();
+                foreach (var user in allUsers)
+                {
+                    user.RefreshToken = null;
+                    user.RefreshTokenExpiryTime = null;
+                }
+
+                // Invalidate all active sessions
+                var allSessions = await _context.UserSessions
+                    .Where(s => s.IsActive)
+                    .ToListAsync();
+
+                foreach (var session in allSessions)
+                {
+                    session.IsActive = false;
+                    session.ExpiresAt = DateTime.UtcNow;
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "All users have been logged out successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Logout all users error: {Error}", ex.Message);
+                return StatusCode(500, new { message = "Internal server error during logout all users" });
             }
         }
 
@@ -199,10 +326,8 @@ namespace UmiHealthPOS.Controllers.Api
                     return NotFound(new { message = "User not found" });
                 }
 
-                var tenant = await _context.Pharmacies
-                    .Include(p => p.Subscription)
-                    .ThenInclude(s => s.Plan)
-                    .FirstOrDefaultAsync(p => p.Id == user.BranchId);
+                var tenant = await _context.Tenants
+                    .FirstOrDefaultAsync(t => t.TenantId == user.TenantId);
 
                 var response = new
                 {
@@ -212,7 +337,7 @@ namespace UmiHealthPOS.Controllers.Api
                     role = user.Role,
                     tenantId = user.BranchId.ToString(),
                     tenantName = tenant?.Name,
-                    plan = tenant?.Subscription?.Plan?.Name ?? "starter",
+                    plan = "starter", // TODO: Implement subscription plans
                     lastLogin = user.LastLogin,
                     createdAt = user.CreatedAt
                 };
@@ -258,6 +383,12 @@ namespace UmiHealthPOS.Controllers.Api
                     return BadRequest(new { message = "A pharmacy with this name already exists. Please choose a different name." });
                 }
 
+                // Check if phone number already exists
+                if (!string.IsNullOrEmpty(request.Phone) && await _context.Users.AnyAsync(u => u.PhoneNumber == request.Phone))
+                {
+                    return BadRequest(new { message = "A user with this phone number already exists. Please use a different phone number." });
+                }
+
                 // Create user
                 var user = new UserAccount
                 {
@@ -269,10 +400,13 @@ namespace UmiHealthPOS.Controllers.Api
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                     Role = request.Role ?? "TenantAdmin",
                     Department = "Management",
+                    Status = "Active",
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
-                    LastLogin = DateTime.UtcNow
+                    LastLogin = DateTime.UtcNow,
+                    NormalizedEmail = request.Email.ToUpper(),
+                    TwoFactorEnabled = false
                 };
 
                 _context.Users.Add(user);
@@ -288,7 +422,9 @@ namespace UmiHealthPOS.Controllers.Api
                     PostalCode = "10101",
                     Phone = request.Phone ?? "+260 000 000 000",
                     Email = request.Email,
+                    Country = "Zambia",
                     IsActive = true,
+                    TenantId = user.UserId,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -341,7 +477,9 @@ namespace UmiHealthPOS.Controllers.Api
                     UserRole = user.Role,
                     Permission = user.Role == "TenantAdmin" ? "admin" : "write",
                     IsActive = true,
-                    AssignedAt = DateTime.UtcNow
+                    AssignedAt = DateTime.UtcNow,
+                    User = user,
+                    Branch = branch
                 };
 
                 _context.UserBranches.Add(userBranch);
@@ -384,7 +522,7 @@ namespace UmiHealthPOS.Controllers.Api
                     Browser = "Unknown",
                     IpAddress = "127.0.0.1",
                     ExpiresAt = DateTime.UtcNow.AddMinutes(30), // 30 minutes inactivity
-                    LastAccessAt = DateTime.UtcNow,
+                    LastActivityAt = DateTime.UtcNow,
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -392,14 +530,27 @@ namespace UmiHealthPOS.Controllers.Api
                 _context.UserSessions.Add(userSession);
                 await _context.SaveChangesAsync();
 
-                // Return response matching frontend expectations
+                // Get user permissions
+                var userPermissions = await _permissionService.GetUserRolePermissionsAsync(user.Id.ToString());
+
+                // Return response matching login endpoint format
                 return Ok(new
                 {
-                    tenantId = pharmacy.Id.ToString(),
-                    UserId = user.Id.ToString(),
                     accessToken = tokenString,
                     refreshToken = refreshToken,
-                    plan = "trial", // Always start with trial plan
+                    user = new
+                    {
+                        userId = user.Id.ToString(),
+                        email = user.Email,
+                        name = $"{user.FirstName} {user.LastName}",
+                        role = user.Role,
+                        tenantId = pharmacy.Id.ToString(),
+                        tenantName = pharmacy.Name,
+                        permissions = userPermissions.ToArray(),
+                        isImpersonated = false,
+                        originalUser = (object)null
+                    },
+                    plan = "trial",
                     trialEndDate = DateTime.UtcNow.AddDays(14).ToString("yyyy-MM-dd"),
                     isTrial = true,
                     message = "Account created successfully. Your 14-day trial has started!"
@@ -414,35 +565,61 @@ namespace UmiHealthPOS.Controllers.Api
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] CreateUserRequest request)
         {
-            // Validate role
-            var validRoles = new[] { "admin", "pharmacist", "cashier" };
-            if (!validRoles.Contains(request.Role.ToLower()))
+            try
             {
-                return BadRequest(new { message = "Invalid role. Must be admin, pharmacist, or cashier." });
-            }
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(request.Name) ||
+                    string.IsNullOrWhiteSpace(request.Email) ||
+                    string.IsNullOrWhiteSpace(request.Password))
+                {
+                    return BadRequest(new { message = "Name, email, and password are required" });
+                }
 
-            // Check if email already exists
-            if (await _context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()))
-            {
-                return BadRequest(new { message = "Email already exists." });
-            }
+                // Validate email format
+                if (!IsValidEmail(request.Email))
+                {
+                    return BadRequest(new { message = "Invalid email format" });
+                }
 
-            var user = new UserAccount
-            {
-                UserId = Guid.NewGuid().ToString(),
-                // Split name into first and last name
-                FirstName = request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? request.Name,
-                LastName = string.Join(" ", request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)),
-                Email = request.Email,
-                PhoneNumber = request.Phone,
-                Role = request.Role,
-                Department = "Management",
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+                // Validate role
+                var validRoles = new[] { "admin", "pharmacist", "cashier", "TenantAdmin" };
+                if (!validRoles.Contains(request.Role.ToLower()))
+                {
+                    return BadRequest(new { message = "Invalid role. Must be admin, pharmacist, or cashier." });
+                }
 
-            _context.Users.Add(user);
+                // Check if email already exists
+                if (await _context.Users.AnyAsync(u => u.Email.ToLower() == request.Email.ToLower()))
+                {
+                    return BadRequest(new { message = "Email already exists." });
+                }
+
+                // Check if phone number already exists
+                if (!string.IsNullOrEmpty(request.Phone) && await _context.Users.AnyAsync(u => u.PhoneNumber == request.Phone))
+                {
+                    return BadRequest(new { message = "A user with this phone number already exists. Please use a different phone number." });
+                }
+
+                var user = new UserAccount
+                {
+                    UserId = Guid.NewGuid().ToString(),
+                    // Split name into first and last name
+                    FirstName = request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? request.Name,
+                    LastName = string.Join(" ", request.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)),
+                    Email = request.Email.ToLower(),
+                    PhoneNumber = request.Phone,
+                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                    Role = request.Role,
+                    Department = "Management",
+                    Status = "Active",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    NormalizedEmail = request.Email.ToUpper(),
+                    TwoFactorEnabled = false
+                };
+
+                _context.Users.Add(user);
 
             // Assign to branch if specified
             if (!string.IsNullOrEmpty(request.Branch))
@@ -459,28 +636,35 @@ namespace UmiHealthPOS.Controllers.Api
                         UserRole = request.Role,
                         Permission = GetDefaultPermissionForRole(request.Role),
                         IsActive = true,
-                        AssignedAt = DateTime.UtcNow
+                        AssignedAt = DateTime.UtcNow,
+                        User = user,
+                        Branch = branch
                     };
                     _context.UserBranches.Add(userBranch);
                 }
             }
 
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
 
-            var response = new UserResponse
+                var response = new UserResponse
+                {
+                    Id = user.Id.ToString(),
+                    Name = $"{user.FirstName} {user.LastName}",
+                    Email = user.Email,
+                    Phone = user.PhoneNumber,
+                    Role = user.Role,
+                    Branch = request.Branch,
+                    Status = user.IsActive ? "active" : "inactive",
+                    LastLogin = user.LastLogin,
+                    CreatedAt = user.CreatedAt
+                };
+
+                return CreatedAtAction(nameof(GetUser), new { id = user.Id }, response);
+            }
+            catch (Exception ex)
             {
-                Id = user.Id,
-                Name = $"{user.FirstName} {user.LastName}",
-                Email = user.Email,
-                Phone = user.PhoneNumber,
-                Role = user.Role,
-                Branch = request.Branch,
-                Status = user.IsActive ? "active" : "inactive",
-                LastLogin = user.LastLogin,
-                CreatedAt = user.CreatedAt
-            };
-
-            return CreatedAtAction(nameof(GetUser), new { id = user.Id }, response);
+                return StatusCode(500, new { message = $"Internal server error: {ex.Message}" });
+            }
         }
 
         [HttpGet("users/{id}")]
@@ -492,7 +676,7 @@ namespace UmiHealthPOS.Controllers.Api
                 .Where(u => u.Id.ToString() == id || u.UserId == id)
                 .Select(u => new UserResponse
                 {
-                    Id = u.Id,
+                    Id = u.Id.ToString(),
                     Name = $"{u.FirstName} {u.LastName}",
                     Email = u.Email,
                     Phone = u.PhoneNumber,
@@ -592,6 +776,13 @@ namespace UmiHealthPOS.Controllers.Api
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+    }
+
+    public class LoginRequest
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public bool Remember { get; set; } = true;
     }
 
     public class SignInResponse

@@ -30,11 +30,17 @@ builder.WebHost.ConfigureKestrel(options =>
 // Configure allowed hosts based on environment
 var allowedHosts = builder.Environment.IsProduction()
     ? "umihealth.zm,www.umihealth.zm,api.umihealth.zm"
-    : "*";
+    : "localhost,127.0.0.1,*";
 builder.Configuration.AddInMemoryCollection([new("AllowedHosts", allowedHosts)]);
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+// Add host filtering services
+builder.Services.AddHostFiltering(options =>
+{
+    options.AllowedHosts = new[] { "localhost", "127.0.0.1", "*" };
+});
 
 // Add Authentication and Authorization
 builder.Services.AddAuthentication(options =>
@@ -58,8 +64,18 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // Add database context
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Database connection string not configured")));
+if (builder.Environment.IsDevelopment())
+{
+    // Use SQLite for development
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=umihealthpos.db"));
+}
+else
+{
+    // Use PostgreSQL for production
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+}
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -84,10 +100,11 @@ builder.Services.AddApplicationServices();
 builder.Services.AddScoped<IRowLevelSecurityService, RowLevelSecurityService>();
 builder.Services.AddScoped<IImpersonationService, ImpersonationService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
 
 // Add subscription services
 builder.Services.AddScoped<ISubscriptionExpirationService, SubscriptionExpirationService>();
-builder.Services.AddHostedService<SubscriptionExpirationService>();
+// builder.Services.AddHostedService<SubscriptionExpirationService>(); // Temporarily disabled for testing
 builder.Services.AddScoped<IUsageTrackingService, UsageTrackingService>();
 builder.Services.AddScoped<ILimitService, LimitService>();
 builder.Services.AddScoped<ISubscriptionNotificationService, SubscriptionNotificationService>();
@@ -98,10 +115,21 @@ builder.Services.AddScoped<SubscriptionDataSeeder>();
 
 var app = builder.Build();
 
+// Add host filtering middleware
+app.UseHostFiltering();
+
 // app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "..")),
+    RequestPath = ""
+});
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseMiddleware<RowLevelSecurityMiddleware>();
+app.UseMiddleware<PermissionMiddleware>();
 app.UseSubscriptionMiddleware();
 // app.UseBranchIsolation();
 // app.UseInactivityCheck();
@@ -118,8 +146,22 @@ if (app.Environment.IsDevelopment())
 {
     using var scope = app.Services.CreateScope();
     {
-        // Data seeding is handled by DataSeeder static class
-        // await DataSeeder.SeedDataAsync(scope.ServiceProvider);
+        try
+        {
+            var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+            
+            // Seed permissions and roles
+            await permissionService.SeedDefaultPermissionsAsync();
+            await permissionService.SeedDefaultRolesAsync();
+            
+            // Data seeding is handled by DataSeeder static class
+            await DataSeeder.SeedDataAsync(scope.ServiceProvider);
+        }
+        catch (Exception ex)
+        {
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "Error during data seeding: {Error}", ex.Message);
+        }
     }
 }
 

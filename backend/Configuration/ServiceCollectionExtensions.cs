@@ -59,7 +59,7 @@ namespace UmiHealthPOS.Configuration
             services.AddScoped<IRealSettingsService, RealSettingsService>();
 
             // Add background services
-            services.AddHostedService<SessionCleanupService>();
+            // services.AddHostedService<SessionCleanupService>(); // Temporarily disabled for testing
 
             // Add SignalR
             services.AddSignalR();

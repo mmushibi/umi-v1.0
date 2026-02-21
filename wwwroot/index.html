@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" x-data="landing()">
+<html lang="en" x-data="landing()" x-init="init()">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -56,8 +56,8 @@
       <h1 class="text-4xl font-bold text-slate-900 md:text-6xl">Run Your Pharmacy Better</h1>
       <p class="max-w-3xl text-lg text-slate-600 md:text-xl">A simple system that helps you manage sales, track medicines, handle prescriptions, and serve customers. Perfect for any pharmacy size.</p>
       <div class="flex flex-col gap-3 sm:flex-row">
-        <a href="./modules/auth/signup.html" class="rounded-full bg-ocean-500 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-ocean-500/30 hover:bg-ocean-600">Get Started</a>
-        <a href="./modules/auth/signin.html" class="rounded-full border border-ocean-500 px-8 py-3 text-base font-semibold text-ocean-600 hover:bg-ocean-50">Sign In</a>
+        <a href="./wwwroot/modules/auth/signup.html" class="rounded-full bg-ocean-500 px-8 py-3 text-base font-semibold text-white shadow-lg shadow-ocean-500/30 hover:bg-ocean-600">Get Started</a>
+        <a href="./wwwroot/modules/auth/signin.html" class="rounded-full border border-ocean-500 px-8 py-3 text-base font-semibold text-ocean-600 hover:bg-ocean-50">Sign In</a>
       </div>
       <div class="mt-10 grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-3">
         <template x-for="card in heroCards" :key="card.title">
@@ -359,7 +359,7 @@
                    x-model="contactForm.name"
                    required
                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-ocean-500 focus:outline-none focus:ring-1 focus:ring-ocean-500"
-                   placeholder="John Doe">
+                   placeholder="">
           </div>
           
           <div>
@@ -369,7 +369,7 @@
                    x-model="contactForm.email"
                    required
                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-ocean-500 focus:outline-none focus:ring-1 focus:ring-ocean-500"
-                   placeholder="john@example.com">
+                   placeholder="">
           </div>
           
           <div>
@@ -378,7 +378,7 @@
                    id="contact-phone"
                    x-model="contactForm.phone"
                    class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-ocean-500 focus:outline-none focus:ring-1 focus:ring-ocean-500"
-                   placeholder="+260 123 456 789">
+                   placeholder="">
           </div>
           
           <div>
@@ -508,6 +508,12 @@
           { title: 'Shift Management', description: 'Manage staff work schedules and time tracking.', link: './modules/auth/signin.html', icon: '<i class="fas fa-clock"></i>' }
         ],
         submitContactForm() {
+          // Validate form before submission
+          if (!this.contactForm.name || !this.contactForm.email || !this.contactForm.subject || !this.contactForm.message) {
+            alert('Please fill in all required fields.');
+            return;
+          }
+          
           this.contactSubmitting = true;
           
           // Simulate API call delay
@@ -531,8 +537,8 @@
             const body = encodeURIComponent(emailContent);
             const mailtoLink = `mailto:contact@umihealth.com?subject=${subject}&body=${body}`;
             
-            // Open email client
-            window.location.href = mailtoLink;
+            // Open email client in a new window to avoid page redirect
+            window.open(mailtoLink, '_blank');
             
             // Show success state
             this.contactSubmitting = false;
@@ -549,6 +555,12 @@
             subject: '',
             message: ''
           };
+          // Clear any stored form state
+          localStorage.removeItem('contactFormState');
+        },
+        init() {
+          // Clear any stored form state on page load
+          localStorage.removeItem('contactFormState');
         }
       }
     }

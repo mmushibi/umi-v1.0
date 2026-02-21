@@ -85,13 +85,13 @@
             <form class="mt-6 space-y-5">
               <div>
                 <label class="text-sm font-semibold text-slate-700">Pharmacy or organisation name</label>
-                <input type="text" x-model="form.organization" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="Eg. Wellness Care Group">
+                <input type="text" x-model="form.organization" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="Pharmacy Name">
               </div>
               <div>
                 <label class="text-sm font-semibold text-slate-700">Primary email</label>
                 <input type="email" x-model="form.email" @input="handleIdentifierInput(form.email, 'signup')"
                   class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100"
-                  placeholder="you@pharmacy.com">
+                  placeholder="Email">
                 <div x-show="signupMatch" x-cloak
                   class="mt-3 rounded-xl border border-ocean-200 bg-ocean-50/80 p-3 text-xs text-ocean-700">
                   <p class="font-semibold">This email is already registered.</p>
@@ -112,11 +112,11 @@
               <div class="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label class="text-sm font-semibold text-slate-700">First name</label>
-                  <input type="text" x-model="form.firstName" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="Maria">
+                  <input type="text" x-model="form.firstName" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="First Name">
                 </div>
                 <div>
                   <label class="text-sm font-semibold text-slate-700">Last name</label>
-                  <input type="text" x-model="form.lastName" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="Nkhoma">
+                  <input type="text" x-model="form.lastName" class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100" placeholder="Last Name">
                 </div>
               </div>
               <div class="flex justify-between">
@@ -171,11 +171,11 @@
         <div x-show="mode === 'login'" x-cloak>
           <form class="space-y-5" @submit.prevent="login">
             <div>
-              <label class="text-sm font-semibold text-slate-700">Email or username</label>
+              <label class="text-sm font-semibold text-slate-700">Email or Username</label>
               <input type="text" x-model="loginForm.identifier"
                 @input="handleIdentifierInput(loginForm.identifier, 'login')"
                 class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-100"
-                placeholder="you@pharmacy.com or username">
+                placeholder="Email or Username">
             </div>
             <div>
               <label class="flex items-center justify-between text-sm font-semibold text-slate-700">
@@ -381,14 +381,14 @@
               const role = result.role || result.userRole || this.matchedAccount?.role || 'admin';
               const permissions = result.permissions || this.roleDefaults[role] || [];
               this.persistSession({
-                tenantId: result.tenantId,
-                userId: result.userId,
+                tenantId: result.user.tenantId,
+                userId: result.user.userId,
                 accessToken: result.accessToken,
                 refreshToken: result.refreshToken,
                 plan: result.plan,
-                email: result.email ?? identifier,
-                name: result.name,
-                tenantName: result.tenantName
+                email: result.user.email,
+                name: result.user.name,
+                tenantName: result.user.tenantName
               }, { role, permissions, remember: this.loginForm.remember });
               this.loginSuccess = 'Welcome back! Redirecting...';
             } else {
@@ -458,17 +458,17 @@
               const permissions = this.signupMatch?.permissions || this.roleDefaults[role] || [];
 
               this.persistSession({
-                tenantId: result.tenantId,
-                userId: result.userId,
+                tenantId: result.user.tenantId,
+                userId: result.user.userId,
                 accessToken: result.accessToken,
                 refreshToken: result.refreshToken,
                 plan: this.form.plan || result.plan,
-                email: this.form.email,
-                name: `${this.form.firstName} ${this.form.lastName}`,
-                tenantName: this.form.organization,
+                email: result.user.email,
+                name: result.user.name,
+                tenantName: result.user.tenantName,
                 isTrial: result.isTrial || false,
                 trialEndDate: result.trialEndDate || null
-              }, { role, permissions, remember: true });
+              }, { role: result.user.role, permissions: result.user.permissions, remember: true });
               this.success = result.isTrial ? 
                 'Account created! Your 14-day trial has started. Redirecting to dashboard...' : 
                 'Account created! Redirecting to dashboard...';
@@ -483,7 +483,7 @@
             }
 
             setTimeout(() => {
-              this.redirectToDashboard('admin'); // New signups default to tenant admin
+              this.redirectToDashboard(result.user.role); // Use actual role from signup response
             }, 1500);
           } catch (err) {
             console.error(err);
@@ -651,6 +651,7 @@
         redirectToDashboard(role) {
           const rolePaths = {
             'admin': '../Tenant-Admin/home.html',
+            'TenantAdmin': '../Tenant-Admin/home.html',
             'pharmacist': '../Pharmacist/home.html',
             'cashier': '../Cashier/home.html',
             'operations': '../Operations/home.html'
