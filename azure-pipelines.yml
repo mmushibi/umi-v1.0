@@ -187,7 +187,7 @@ stages:
     - task: Docker@2
       displayName: 'Build and Push Backend Image'
       inputs:
-        containerRegistry: 'dockerhub'
+        containerRegistry: 'umihealthposacr'
         repository: 'umihealthpos/backend'
         command: 'buildAndPush'
         Dockerfile: 'backend/Dockerfile'
@@ -200,7 +200,7 @@ stages:
     - task: Docker@2
       displayName: 'Build and Push Frontend Image'
       inputs:
-        containerRegistry: 'dockerhub'
+        containerRegistry: 'umihealthposacr'
         repository: 'umihealthpos/frontend'
         command: 'buildAndPush'
         Dockerfile: 'Dockerfile.frontend'
