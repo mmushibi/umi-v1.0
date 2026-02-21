@@ -15,7 +15,6 @@ using UmiHealthPOS.Models;
 using Npgsql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Data.Sqlite;
 
 // Developer: Sepio Corp
 // Umi Health POS System - Backend Application
