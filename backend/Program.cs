@@ -139,7 +139,7 @@ if (app.Environment.IsDevelopment())
         try
         {
             var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
-            
+
             // Seed permissions and roles
             await permissionService.SeedDefaultPermissionsAsync();
             await permissionService.SeedDefaultRolesAsync();

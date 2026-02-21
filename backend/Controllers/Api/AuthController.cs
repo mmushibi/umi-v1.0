@@ -644,7 +644,7 @@ namespace UmiHealthPOS.Controllers.Api
                 }
             }
 
-                await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
                 var response = new UserResponse
                 {

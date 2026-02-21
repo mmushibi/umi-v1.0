@@ -30,7 +30,7 @@
     <Compile Remove="Controllers\Api\RBACController.cs" />
     <Compile Remove="Controllers\Api\SubscriptionHistoryController.cs" />
     <Compile Remove="Controllers\Api\DatabaseTestController.cs" />
-    <Compile Remove="Controllers\AuthController.cs" />
+    <Compile Remove="Controllers\Api\AuthController.cs" />
     <Compile Remove="Controllers\EmployeeController.cs" />
     <Compile Remove="Data\CategoryDataSeeder.cs" />
     <Compile Remove="Services\SuperAdminDashboardService.cs" />
