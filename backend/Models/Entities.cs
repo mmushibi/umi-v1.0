@@ -229,6 +229,11 @@ namespace UmiHealthPOS.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+        [StringLength(512)]
+        public string? RefreshToken { get; set; }
+
+        public DateTime? RefreshTokenExpiryTime { get; set; }
+
         // Navigation properties
         public virtual Tenant? Tenant { get; set; }
         public virtual Branch? Branch { get; set; }
@@ -840,7 +845,7 @@ namespace UmiHealthPOS.Models
         public string Description { get; set; } = string.Empty;
 
         [StringLength(450)]
-        public string? User { get; set; }
+        public string? UserName { get; set; }
 
         [StringLength(50)]
         public string? Type { get; set; }

@@ -502,7 +502,7 @@ namespace UmiHealthPOS.Services
             try
             {
                 // Look for admin user for this tenant
-                var adminUser = await _context.UserAccounts
+                var adminUser = await _context.Users
                     .Where(u => u.TenantId == tenantId &&
                                (u.Role == "Admin" || u.Role == "SuperAdmin" || u.Email.Contains("admin")))
                     .FirstOrDefaultAsync();

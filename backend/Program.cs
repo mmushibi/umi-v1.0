@@ -143,7 +143,7 @@ if (app.Environment.IsDevelopment())
             // Seed permissions and roles
             await permissionService.SeedDefaultPermissionsAsync();
             await permissionService.SeedDefaultRolesAsync();
-            
+
             // Data seeding is handled by DataSeeder static class
             await DataSeeder.SeedDataAsync(scope.ServiceProvider);
         }

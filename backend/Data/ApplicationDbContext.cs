@@ -36,7 +36,6 @@ namespace UmiHealthPOS.Data
         public required DbSet<Branch> Branches { get; set; } = null!;
         public required DbSet<UserBranch> UserBranches { get; set; } = null!;
         public required DbSet<Tenant> Tenants { get; set; } = null!;
-        public required DbSet<UserAccount> UserAccounts { get; set; } = null!;
         public required DbSet<DaybookTransaction> DaybookTransactions { get; set; } = null!;
         public required DbSet<DaybookTransactionItem> DaybookTransactionItems { get; set; } = null!;
         public required DbSet<Invoice> Invoices { get; set; } = null!;
@@ -447,11 +446,6 @@ namespace UmiHealthPOS.Data
                 entity.Property(e => e.IpAddress).HasMaxLength(100);
                 entity.Property(e => e.UserAgent).HasMaxLength(500);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-
-                entity.HasOne(e => e.User)
-                      .WithMany()
-                      .HasForeignKey(e => e.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.Type);
