@@ -24,7 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="Controllers\Api\AuthController.cs" />
     <Compile Remove="Controllers\Api\BillingController.cs" />
     <Compile Remove="Controllers\Api\SuperAdminController.cs" />
     <Compile Remove="Controllers\Api\EmployeeController.cs" />

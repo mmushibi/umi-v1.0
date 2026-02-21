@@ -116,15 +116,15 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        key: ${{ runner.os }}-nuget-${{ hashFiles('backend/UmiHealthPOS.csproj') }}
         restore-keys: |
           ${{ runner.os }}-nuget-
     
     - name: Restore dependencies
-      run: dotnet restore backend/UmiHealthPOS.csproj
+      run: dotnet restore backend/UmiHealthPOS.csproj --verbosity normal
     
     - name: Build application
-      run: dotnet build backend/UmiHealthPOS.csproj --no-restore --configuration Release
+      run: dotnet build backend/UmiHealthPOS.csproj --no-restore --configuration Release -v normal
     
     - name: Publish application
       run: dotnet publish backend/UmiHealthPOS.csproj --configuration Release --output ./publish

@@ -15,7 +15,6 @@ using UmiHealthPOS.Models;
 using Npgsql;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.EntityFrameworkCore.Sqlite;
 
 // Developer: Sepio Corp
 // Umi Health POS System - Backend Application
@@ -65,18 +64,8 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 
 // Add database context
-if (builder.Environment.IsDevelopment())
-{
-    // Use SQLite for development
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") ?? "Data Source=umihealthpos.db"));
-}
-else
-{
-    // Use PostgreSQL for production
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
-}
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add CORS
 builder.Services.AddCors(options =>
