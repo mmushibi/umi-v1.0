@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Maintenance - Umi Health POS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-50" x-data="maintenanceApp" x-cloak>
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-tools text-2xl mr-3"></i>
+                    <h1 class="text-xl font-semibold">System Maintenance</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button @click="refreshData" class="bg-blue-500 hover:bg-blue-400 px-4 py-2 rounded transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>Refresh
+                    </button>
+                    <a href="../Super-Admin/home.html" class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <!-- System Health Status -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-heartbeat text-green-500 mr-2"></i>System Health Status
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" x-show="healthStatus">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-green-600 font-medium">Database</p>
+                            <p class="text-lg font-semibold text-green-800" x-text="healthStatus?.databaseStatus"></p>
+                        </div>
+                        <i class="fas fa-database text-green-500 text-2xl"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-blue-600 font-medium">Cache</p>
+                            <p class="text-lg font-semibold text-blue-800" x-text="healthStatus?.cacheStatus"></p>
+                        </div>
+                        <i class="fas fa-memory text-blue-500 text-2xl"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-purple-600 font-medium">Total Records</p>
+                            <p class="text-lg font-semibold text-purple-800" x-text="healthStatus?.totalRecords?.toLocaleString()"></p>
+                        </div>
+                        <i class="fas fa-chart-bar text-purple-500 text-2xl"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-orange-600 font-medium">Active Sessions</p>
+                            <p class="text-lg font-semibold text-orange-800" x-text="healthStatus?.activeSessions"></p>
+                        </div>
+                        <i class="fas fa-users text-orange-500 text-2xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database Statistics -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-chart-pie text-blue-500 mr-2"></i>Database Statistics
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" x-show="dbStats">
+                <div class="text-center p-4 bg-gray-50 rounded">
+                    <i class="fas fa-shopping-cart text-blue-500 text-3xl mb-2"></i>
+                    <p class="text-sm text-gray-600">Sales</p>
+                    <p class="text-xl font-bold text-gray-800" x-text="dbStats?.salesCount?.toLocaleString()"></p>
+                </div>
+                
+                <div class="text-center p-4 bg-gray-50 rounded">
+                    <i class="fas fa-pills text-green-500 text-3xl mb-2"></i>
+                    <p class="text-sm text-gray-600">Prescriptions</p>
+                    <p class="text-xl font-bold text-gray-800" x-text="dbStats?.prescriptionsCount?.toLocaleString()"></p>
+                </div>
+                
+                <div class="text-center p-4 bg-gray-50 rounded">
+                    <i class="fas fa-users text-purple-500 text-3xl mb-2"></i>
+                    <p class="text-sm text-gray-600">Patients</p>
+                    <p class="text-xl font-bold text-gray-800" x-text="dbStats?.patientsCount?.toLocaleString()"></p>
+                </div>
+                
+                <div class="text-center p-4 bg-gray-50 rounded">
+                    <i class="fas fa-box text-orange-500 text-3xl mb-2"></i>
+                    <p class="text-sm text-gray-600">Inventory Items</p>
+                    <p class="text-xl font-bold text-gray-800" x-text="dbStats?.inventoryItemsCount?.toLocaleString()"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maintenance Actions -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                <i class="fas fa-wrench text-red-500 mr-2"></i>Maintenance Actions
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Clear Transactional Data -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-800 mb-2">
+                        <i class="fas fa-broom text-orange-500 mr-2"></i>Clear Transactional Data
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">Clear all sales, prescriptions, and related transactional data</p>
+                    <button @click="clearTransactionalData" 
+                            :disabled="loading.clearTransactional"
+                            class="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white px-4 py-2 rounded transition-colors">
+                        <i class="fas fa-spinner fa-spin mr-2" x-show="loading.clearTransactional"></i>
+                        <span x-show="!loading.clearTransactional">Clear Data</span>
+                    </button>
+                </div>
+
+                <!-- Clear Sessions -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-800 mb-2">
+                        <i class="fas fa-sign-out-alt text-blue-500 mr-2"></i>Clear Sessions
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">Clear all active user sessions</p>
+                    <button @click="clearSessionData" 
+                            :disabled="loading.clearSessions"
+                            class="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-4 py-2 rounded transition-colors">
+                        <i class="fas fa-spinner fa-spin mr-2" x-show="loading.clearSessions"></i>
+                        <span x-show="!loading.clearSessions">Clear Sessions</span>
+                    </button>
+                </div>
+
+                <!-- Clear Activity Logs -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-800 mb-2">
+                        <i class="fas fa-history text-purple-500 mr-2"></i>Clear Activity Logs
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">Clear all system activity logs</p>
+                    <button @click="clearActivityLogs" 
+                            :disabled="loading.clearLogs"
+                            class="w-full bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-4 py-2 rounded transition-colors">
+                        <i class="fas fa-spinner fa-spin mr-2" x-show="loading.clearLogs"></i>
+                        <span x-show="!loading.clearLogs">Clear Logs</span>
+                    </button>
+                </div>
+
+                <!-- Clear Cache -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-800 mb-2">
+                        <i class="fas fa-memory text-green-500 mr-2"></i>Clear Cache Memory
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-4">Clear all system cache memory</p>
+                    <button @click="clearCacheMemory" 
+                            :disabled="loading.clearCache"
+                            class="w-full bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded transition-colors">
+                        <i class="fas fa-spinner fa-spin mr-2" x-show="loading.clearCache"></i>
+                        <span x-show="!loading.clearCache">Clear Cache</span>
+                    </button>
+                </div>
+
+                <!-- Clear Cache by Pattern -->
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <h3 class="font-semibold text-gray-800 mb-2">
+                        <i class="fas fa-filter text-teal-500 mr-2"></i>Clear Cache by Pattern
+                    </h3>
+                    <p class="text-sm text-gray-600 mb-2">Clear cache entries matching pattern</p>
+                    <input type="text" x-model="cachePattern" placeholder="e.g., User, Product, Session"
+                           class="w-full px-3 py-2 border border-gray-300 rounded mb-2">
+                    <button @click="clearCacheByPattern" 
+                            :disabled="loading.clearCachePattern || !cachePattern"
+                            class="w-full bg-teal-500 hover:bg-teal-600 disabled:bg-gray-400 text-white px-4 py-2 rounded transition-colors">
+                        <i class="fas fa-spinner fa-spin mr-2" x-show="loading.clearCachePattern"></i>
+                        <span x-show="!loading.clearCachePattern">Clear by Pattern</span>
+                    </button>
+                </div>
+
+                <!-- Full Cleanup -->
+                <div class="border border-red-200 rounded-lg p-4 bg-red-50">
+                    <h3 class="font-semibold text-red-800 mb-2">
+                        <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>Full System Cleanup
+                    </h3>
+                    <p class="text-sm text-red-600 mb-4">⚠️ Clear all data and cache - This action cannot be undone!</p>
+                    <button @click="performFullCleanup" 
+                            :disabled="loading.fullCleanup"
+                            class="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded transition-colors">
+                        <i class="fas fa-spinner fa-spin mr-2" x-show="loading.fullCleanup"></i>
+                        <span x-show="!loading.fullCleanup">Full Cleanup</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Display -->
+        <div x-show="result" class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4" :class="result.success ? 'text-green-600' : 'text-red-600'">
+                <i :class="result.success ? 'fas fa-check-circle' : 'fas fa-exclamation-circle'" class="mr-2"></i>
+                <span x-text="result.message"></span>
+            </h3>
+            
+            <div x-show="result.details" class="mt-4">
+                <h4 class="font-semibold text-gray-800 mb-2">Operation Details:</h4>
+                <div class="bg-gray-50 rounded p-4">
+                    <pre class="text-sm text-gray-700 whitespace-pre-wrap" x-text="JSON.stringify(result.details, null, 2)"></pre>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function maintenanceApp() {
+            return {
+                healthStatus: null,
+                dbStats: null,
+                cachePattern: '',
+                result: null,
+                loading: {
+                    clearTransactional: false,
+                    clearSessions: false,
+                    clearLogs: false,
+                    clearCache: false,
+                    clearCachePattern: false,
+                    fullCleanup: false
+                },
+
+                init() {
+                    this.loadHealthStatus();
+                    this.loadDatabaseStatistics();
+                },
+
+                async loadHealthStatus() {
+                    try {
+                        const response = await fetch('/api/SystemMaintenance/health-status', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        this.healthStatus = data.status;
+                    } catch (error) {
+                        console.error('Error loading health status:', error);
+                        this.showResult('Error loading system health status', false, error.message);
+                    }
+                },
+
+                async loadDatabaseStatistics() {
+                    try {
+                        const response = await fetch('/api/SystemMaintenance/database-statistics', {
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        this.dbStats = data.statistics;
+                    } catch (error) {
+                        console.error('Error loading database statistics:', error);
+                        this.showResult('Error loading database statistics', false, error.message);
+                    }
+                },
+
+                async clearTransactionalData() {
+                    if (!confirm('Are you sure you want to clear all transactional data? This action cannot be undone.')) {
+                        return;
+                    }
+
+                    this.loading.clearTransactional = true;
+                    try {
+                        const response = await fetch('/api/SystemMaintenance/clear-transactional-data', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        this.showResult(data.message, response.ok, data.result);
+                        if (response.ok) {
+                            this.loadDatabaseStatistics();
+                        }
+                    } catch (error) {
+                        this.showResult('Error clearing transactional data', false, error.message);
+                    } finally {
+                        this.loading.clearTransactional = false;
+                    }
+                },
+
+                async clearSessionData() {
+                    if (!confirm('Are you sure you want to clear all user sessions? This will log out all users.')) {
+                        return;
+                    }
+
+                    this.loading.clearSessions = true;
+                    try {
+                        const response = await fetch('/api/SystemMaintenance/clear-sessions', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        this.showResult(data.message, response.ok, data.result);
+                        if (response.ok) {
+                            this.loadHealthStatus();
+                        }
+                    } catch (error) {
+                        this.showResult('Error clearing session data', false, error.message);
+                    } finally {
+                        this.loading.clearSessions = false;
+                    }
+                },
+
+                async clearActivityLogs() {
+                    if (!confirm('Are you sure you want to clear all activity logs? This action cannot be undone.')) {
+                        return;
+                    }
+
+                    this.loading.clearLogs = true;
+                    try {
+                        const response = await fetch('/api/SystemMaintenance/clear-activity-logs', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        this.showResult(data.message, response.ok, data.result);
+                    } catch (error) {
+                        this.showResult('Error clearing activity logs', false, error.message);
+                    } finally {
+                        this.loading.clearLogs = false;
+                    }
+                },
+
+                async clearCacheMemory() {
+                    this.loading.clearCache = true;
+                    try {
+                        const response = await fetch('/api/SystemMaintenance/clear-cache', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        this.showResult(data.message, response.ok, data.result);
+                    } catch (error) {
+                        this.showResult('Error clearing cache memory', false, error.message);
+                    } finally {
+                        this.loading.clearCache = false;
+                    }
+                },
+
+                async clearCacheByPattern() {
+                    if (!this.cachePattern.trim()) {
+                        alert('Please enter a cache pattern');
+                        return;
+                    }
+
+                    this.loading.clearCachePattern = true;
+                    try {
+                        const response = await fetch('/api/SystemMaintenance/clear-cache-by-pattern', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ pattern: this.cachePattern })
+                        });
+                        const data = await response.json();
+                        this.showResult(data.message, response.ok, data.result);
+                        if (response.ok) {
+                            this.cachePattern = '';
+                        }
+                    } catch (error) {
+                        this.showResult('Error clearing cache by pattern', false, error.message);
+                    } finally {
+                        this.loading.clearCachePattern = false;
+                    }
+                },
+
+                async performFullCleanup() {
+                    if (!confirm('⚠️ WARNING: This will clear ALL transactional data, sessions, logs, and cache. This action cannot be undone and will significantly impact system operation. Are you absolutely sure?')) {
+                        return;
+                    }
+
+                    if (!confirm('🚨 FINAL WARNING: This is a destructive action that will reset most of your system data. Type "FULL CLEANUP" to confirm.')) {
+                        return;
+                    }
+
+                    const confirmation = prompt('Please type "FULL CLEANUP" to confirm:');
+                    if (confirmation !== 'FULL CLEANUP') {
+                        return;
+                    }
+
+                    this.loading.fullCleanup = true;
+                    try {
+                        const response = await fetch('/api/SystemMaintenance/full-cleanup', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${localStorage.getItem('token')}`
+                            }
+                        });
+                        const data = await response.json();
+                        this.showResult(data.message, response.ok, data.result);
+                        if (response.ok) {
+                            setTimeout(() => {
+                                this.loadHealthStatus();
+                                this.loadDatabaseStatistics();
+                            }, 2000);
+                        }
+                    } catch (error) {
+                        this.showResult('Error performing full cleanup', false, error.message);
+                    } finally {
+                        this.loading.fullCleanup = false;
+                    }
+                },
+
+                refreshData() {
+                    this.loadHealthStatus();
+                    this.loadDatabaseStatistics();
+                    this.result = null;
+                },
+
+                showResult(message, success, details) {
+                    this.result = {
+                        message,
+                        success,
+                        details
+                    };
+                    
+                    // Auto-hide success messages after 5 seconds
+                    if (success) {
+                        setTimeout(() => {
+                            this.result = null;
+                        }, 5000);
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>

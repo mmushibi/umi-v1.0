@@ -40,7 +40,7 @@ namespace UmiHealthPOS.Configuration
             services.AddScoped<IDashboardNotificationService, DashboardNotificationService>();
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IPasswordService, PasswordService>();
-            services.AddScoped<IWebSearchService, WebSearchService>();
+            // services.AddScoped<IWebSearchService, WebSearchService>(); // Commented out - WebSearchService not found
             services.AddScoped<ISepioAIService, SepioAIService>();
             services.AddScoped<AIDataService>();
             services.AddScoped<ISessionTimeoutService, SessionTimeoutService>();
@@ -55,8 +55,12 @@ namespace UmiHealthPOS.Configuration
 
             // Register settings and system services
             services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<ISmsService, SmsService>();
             services.AddScoped<IBackupService, BackupService>();
+            services.AddScoped<ISubscriptionPlanService, SubscriptionPlanService>();
+            services.AddScoped<IUpdateService, UpdateService>();
             services.AddScoped<IRealSettingsService, RealSettingsService>();
+            services.AddScoped<DatabaseCleanupService>();
 
             // Add background services
             // services.AddHostedService<SessionCleanupService>(); // Temporarily disabled for testing
@@ -64,10 +68,11 @@ namespace UmiHealthPOS.Configuration
             // Add SignalR
             services.AddSignalR();
 
-            // TODO: Add other services as needed
+            // Additional services can be added here as needed
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IImpersonationService, ImpersonationService>();
             services.AddScoped<IZambianComplianceService, ZambianComplianceService>();
+            // services.AddScoped<IClinicalService, ClinicalService>(); // Temporarily disabled
 
             return services;
         }
