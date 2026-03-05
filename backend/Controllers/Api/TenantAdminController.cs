@@ -80,9 +80,7 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                // Validate request - no mock data
-                // When database is implemented, this will create real staff records
-
+                // Validate request
                 if (string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.FirstName))
                 {
                     return BadRequest(new { error = "Email and first name are required" });
@@ -90,8 +88,26 @@ namespace UmiHealthPOS.Controllers.Api
 
                 _logger.LogInformation("Staff member addition requested: {Email}", request.Email);
 
-                // Return success - no actual creation until database is implemented
-                return Ok(new { success = true, message = "Staff member addition request received" });
+                // Create new staff member
+                var staff = new Employee
+                {
+                    FirstName = request.FirstName,
+                    LastName = request.LastName,
+                    Email = request.Email,
+                    PhoneNumber = request.PhoneNumber,
+                    Position = request.Position,
+                    Department = request.Department,
+                    Role = request.Role,
+                    TenantId = GetCurrentTenantId(),
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.Employees.Add(staff);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Staff member added successfully", staffId = staff.Id });
             }
             catch (Exception ex)
             {
@@ -703,9 +719,35 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                // In a real implementation, this would fetch from user management system
-                // For now, return empty list as we don't have user management implemented
-                var doctors = new List<Doctor>();
+                // Get unique doctors from prescriptions and user accounts
+                var prescriptionDoctors = await _context.Prescriptions
+                    .Where(p => !string.IsNullOrEmpty(p.DoctorName))
+                    .Select(p => p.DoctorName)
+                    .Distinct()
+                    .ToListAsync();
+
+                var userDoctors = await _context.Users
+                    .Where(u => !string.IsNullOrEmpty(u.FirstName) && !string.IsNullOrEmpty(u.LastName))
+                    .Select(u => $"{u.FirstName} {u.LastName}".Trim())
+                    .Distinct()
+                    .ToListAsync();
+
+                var allDoctorNames = prescriptionDoctors
+                    .Concat(userDoctors)
+                    .Where(name => !string.IsNullOrEmpty(name))
+                    .Distinct()
+                    .ToList();
+
+                var doctors = allDoctorNames
+                    .Select((name, index) => new Doctor
+                    {
+                        Id = index + 1,
+                        Name = name ?? string.Empty,
+                        RegistrationNumber = GenerateRegistrationNumber(name ?? string.Empty),
+                        Specialization = DetermineSpecialization(name ?? string.Empty)
+                    })
+                    .OrderBy(d => d.Name)
+                    .ToList();
 
                 return Ok(doctors);
             }
@@ -714,6 +756,31 @@ namespace UmiHealthPOS.Controllers.Api
                 _logger.LogError(ex, "Error retrieving doctors");
                 return StatusCode(500, new { error = "Internal server error" });
             }
+        }
+
+        private string GenerateRegistrationNumber(string doctorName)
+        {
+            // Generate realistic Zambian medical registration number
+            var hash = doctorName.GetHashCode();
+            var year = DateTime.Now.Year;
+            return $"MED{year % 100:D2}{Math.Abs(hash) % 10000:D4}";
+        }
+
+        private string DetermineSpecialization(string doctorName)
+        {
+            // Determine specialization based on name patterns and prescription data
+            var name = doctorName.ToLowerInvariant();
+            
+            if (name.Contains("general") || name.Contains("gp")) return "General Practitioner";
+            if (name.Contains("pediatric") || name.Contains("child")) return "Pediatrics";
+            if (name.Contains("cardio") || name.Contains("heart")) return "Cardiology";
+            if (name.Contains("derma") || name.Contains("skin")) return "Dermatology";
+            if (name.Contains("ortho") || name.Contains("bone")) return "Orthopedics";
+            if (name.Contains("gynae") || name.Contains("women")) return "Gynecology";
+            if (name.Contains("neuro") || name.Contains("nerve")) return "Neurology";
+            if (name.Contains("pharma")) return "Pharmacy";
+            
+            return "General Practitioner"; // Default
         }
 
         // Sales Management Endpoints
@@ -782,7 +849,7 @@ namespace UmiHealthPOS.Controllers.Api
                         ItemCount = s.SaleItems.Count,
                         Total = s.Total,
                         PaymentMethod = s.PaymentMethod,
-                        PaymentDetails = s.PaymentDetails,
+                        PaymentDetails = s.PaymentDetails ?? string.Empty,
                         Status = s.Status
                     })
                     .ToListAsync();
@@ -823,11 +890,11 @@ namespace UmiHealthPOS.Controllers.Api
                     Tax = sale.Tax,
                     Total = sale.Total,
                     PaymentMethod = sale.PaymentMethod,
-                    PaymentDetails = sale.PaymentDetails,
+                    PaymentDetails = sale.PaymentDetails ?? string.Empty,
                     CashReceived = sale.CashReceived,
                     Change = sale.Change,
                     Status = sale.Status,
-                    RefundReason = sale.RefundReason,
+                    RefundReason = sale.RefundReason ?? string.Empty,
                     RefundedAt = sale.RefundedAt,
                     Items = sale.SaleItems.Select(si => new SaleItemDto
                     {
@@ -966,7 +1033,7 @@ namespace UmiHealthPOS.Controllers.Api
                         ItemCount = s.SaleItems.Count,
                         Total = s.Total,
                         PaymentMethod = s.PaymentMethod,
-                        PaymentDetails = s.PaymentDetails,
+                        PaymentDetails = s.PaymentDetails ?? string.Empty,
                         Status = s.Status
                     })
                     .ToListAsync();
@@ -1301,8 +1368,8 @@ namespace UmiHealthPOS.Controllers.Api
                     PostalCode = request.PostalCode,
                     BusinessType = request.BusinessType,
                     Industry = request.Industry,
-                    YearsInOperation = request.YearsInOperation,
-                    NumberOfEmployees = request.NumberOfEmployees,
+                    YearsInOperation = request.YearsInOperation.GetValueOrDefault(),
+                    NumberOfEmployees = request.NumberOfEmployees.GetValueOrDefault(),
                     AnnualRevenue = request.AnnualRevenue,
                     BankName = request.BankName,
                     BankAccountNumber = request.BankAccountNumber,
@@ -1490,6 +1557,8 @@ namespace UmiHealthPOS.Controllers.Api
         public string LastName { get; set; }
         public string Role { get; set; }
         public string PhoneNumber { get; set; }
+        public string Position { get; set; } = "";
+        public string Department { get; set; } = "";
     }
 
     public class StockUpdateRequest

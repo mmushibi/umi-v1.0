@@ -8,9 +8,23 @@ using UmiHealthPOS.Data;
 
 namespace UmiHealthPOS.Security
 {
+    public class RowLevelSecurityContext
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string TenantId { get; set; } = string.Empty;
+        public UserRoleEnum Role { get; set; }
+        public List<string> Permissions { get; set; } = new List<string>();
+        public List<int> AccessibleBranches { get; set; } = new List<int>();
+        public bool IsImpersonating { get; set; }
+        public string? OriginalUserId { get; set; }
+        public string? ImpersonatedByUserId { get; set; }
+        public int? BranchId { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
     public interface IRowLevelSecurityService
     {
-        Task<SecurityContext> GetSecurityContextAsync(ClaimsPrincipal user);
+        Task<RowLevelSecurityContext> GetSecurityContextAsync(ClaimsPrincipal user);
         Task<bool> HasPermissionAsync(ClaimsPrincipal user, string permission);
         Task<bool> CanAccessTenantAsync(ClaimsPrincipal user, string tenantId);
         Task<bool> CanAccessBranchAsync(ClaimsPrincipal user, int? branchId);
@@ -29,7 +43,7 @@ namespace UmiHealthPOS.Security
             _logger = logger;
         }
 
-        public async Task<SecurityContext> GetSecurityContextAsync(ClaimsPrincipal user)
+        public async Task<RowLevelSecurityContext> GetSecurityContextAsync(ClaimsPrincipal user)
         {
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
@@ -49,19 +63,19 @@ namespace UmiHealthPOS.Security
             var activeSession = await _context.Set<EnhancedUserSession>()
                 .FirstOrDefaultAsync(s => s.UserId == userId && s.IsActive && s.ExpiresAt > DateTime.UtcNow);
 
-            var securityContext = new SecurityContext
+            var securityContext = new RowLevelSecurityContext
             {
                 UserId = userId,
                 Role = Enum.Parse<UserRoleEnum>(userAccount.Role),
                 TenantId = userAccount.TenantId,
-                BranchId = userAccount.BranchId,
-                IsImpersonated = activeSession?.IsImpersonated ?? false,
-                ImpersonatedByUserId = activeSession?.ImpersonatedByUserId,
+                AccessibleBranches = userAccount.BranchId.HasValue ? new List<int> { userAccount.BranchId.Value } : new List<int>(),
+                IsImpersonating = activeSession?.IsImpersonated ?? false,
+                OriginalUserId = activeSession?.ImpersonatedByUserId,
                 Permissions = RolePermissions.GetPermissionsForRole(Enum.Parse<UserRoleEnum>(userAccount.Role))
             };
 
             // If impersonated, get original context
-            if (securityContext.IsImpersonated && !string.IsNullOrEmpty(activeSession?.ImpersonatedByUserId))
+            if (securityContext.IsImpersonating && !string.IsNullOrEmpty(activeSession?.ImpersonatedByUserId))
             {
                 var impersonatedByUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.UserId == activeSession.ImpersonatedByUserId);
@@ -102,7 +116,7 @@ namespace UmiHealthPOS.Security
                     return true;
 
                 // Operations can access all tenants for monitoring
-                if (context.Role == UserRoleEnum.Operations)
+                if (context.Role == UserRoleEnum.Sales)
                     return true;
 
                 // Other roles can only access their own tenant
@@ -122,7 +136,7 @@ namespace UmiHealthPOS.Security
                 var context = await GetSecurityContextAsync(user);
 
                 // Super Admin and Operations can access all branches
-                if (context.Role == UserRoleEnum.SuperAdmin || context.Role == UserRoleEnum.Operations)
+                if (context.Role == UserRoleEnum.SuperAdmin || context.Role == UserRoleEnum.Sales)
                     return true;
 
                 // Tenant Admin can access all branches in their tenant
@@ -148,7 +162,7 @@ namespace UmiHealthPOS.Security
             var context = await GetSecurityContextAsync(user);
 
             // Super Admin and Operations see all data
-            if (context.Role == UserRoleEnum.SuperAdmin || context.Role == UserRoleEnum.Operations)
+            if (context.Role == UserRoleEnum.SuperAdmin || context.Role == UserRoleEnum.Sales)
                 return query;
 
             // Apply tenant filter for other roles
@@ -169,7 +183,7 @@ namespace UmiHealthPOS.Security
             var context = await GetSecurityContextAsync(user);
 
             // Super Admin and Operations see all data
-            if (context.Role == UserRoleEnum.SuperAdmin || context.Role == UserRoleEnum.Operations)
+            if (context.Role == UserRoleEnum.SuperAdmin || context.Role == UserRoleEnum.Sales)
                 return query;
 
             // Tenant Admin sees all branches in their tenant (handled by tenant filter)
@@ -310,10 +324,10 @@ namespace UmiHealthPOS.Security
     // Extension methods for easy access to security context
     public static class SecurityContextExtensions
     {
-        public static SecurityContext? GetSecurityContext(this HttpContext context)
+        public static RowLevelSecurityContext? GetSecurityContext(this HttpContext context)
         {
             return context.Items.TryGetValue("SecurityContext", out var contextObj)
-                ? contextObj as SecurityContext
+                ? contextObj as RowLevelSecurityContext
                 : null;
         }
 

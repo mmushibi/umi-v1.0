@@ -65,11 +65,11 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     query = query.Where(s =>
                         s.BusinessName.Contains(search) ||
-                        (s.TradeName != null && s.TradeName.Contains(search)) ||
-                        (s.ContactPerson != null && s.ContactPerson.Contains(search)) ||
-                        (s.Email != null && s.Email.Contains(search)) ||
-                        (s.PrimaryPhoneNumber != null && s.PrimaryPhoneNumber.Contains(search)) ||
-                        (s.RegistrationNumber != null && s.RegistrationNumber.Contains(search)));
+                        (!string.IsNullOrEmpty(s.TradeName) && s.TradeName.Contains(search)) ||
+                        (!string.IsNullOrEmpty(s.ContactPerson) && s.ContactPerson.Contains(search)) ||
+                        (!string.IsNullOrEmpty(s.Email) && s.Email.Contains(search)) ||
+                        (!string.IsNullOrEmpty(s.PrimaryPhoneNumber) && s.PrimaryPhoneNumber.Contains(search)) ||
+                        (!string.IsNullOrEmpty(s.RegistrationNumber) && s.RegistrationNumber.Contains(search)));
                 }
 
                 if (!string.IsNullOrEmpty(status))
@@ -199,7 +199,7 @@ namespace UmiHealthPOS.Controllers.Api
                     BusinessType = request.BusinessType,
                     Industry = request.Industry,
                     YearsInOperation = request.YearsInOperation,
-                    NumberOfEmployees = request.NumberOfEmployees,
+                    NumberOfEmployees = request.NumberOfEmployees.GetValueOrDefault(),
                     AnnualRevenue = request.AnnualRevenue,
                     BankName = request.BankName,
                     BankAccountNumber = request.BankAccountNumber,
@@ -243,9 +243,9 @@ namespace UmiHealthPOS.Controllers.Api
                             ContactName = contactRequest.ContactName,
                             ContactTitle = contactRequest.ContactTitle,
                             Department = contactRequest.Department,
-                            PhoneNumber = contactRequest.PhoneNumber,
-                            MobileNumber = contactRequest.MobileNumber,
-                            Email = contactRequest.Email,
+                            PhoneNumber = contactRequest.PhoneNumber ?? string.Empty,
+                            MobileNumber = contactRequest.MobileNumber ?? string.Empty,
+                            Email = contactRequest.Email ?? string.Empty,
                             IsPrimary = contactRequest.IsPrimary,
                             IsOrderContact = contactRequest.IsOrderContact,
                             IsBillingContact = contactRequest.IsBillingContact,
@@ -334,7 +334,7 @@ namespace UmiHealthPOS.Controllers.Api
                 supplier.BusinessType = request.BusinessType;
                 supplier.Industry = request.Industry;
                 supplier.YearsInOperation = request.YearsInOperation;
-                supplier.NumberOfEmployees = request.NumberOfEmployees;
+                supplier.NumberOfEmployees = request.NumberOfEmployees.GetValueOrDefault();
                 supplier.AnnualRevenue = request.AnnualRevenue;
                 supplier.BankName = request.BankName;
                 supplier.BankAccountNumber = request.BankAccountNumber;
@@ -488,7 +488,7 @@ namespace UmiHealthPOS.Controllers.Api
                 var supplierProduct = new SupplierProduct
                 {
                     SupplierId = id,
-                    ProductId = request.ProductId,
+                    ProductId = request.ProductId.GetValueOrDefault(),
                     InventoryItemId = request.InventoryItemId,
                     SupplierProductCode = request.SupplierProductCode,
                     SupplierProductName = request.SupplierProductName,
@@ -496,7 +496,7 @@ namespace UmiHealthPOS.Controllers.Api
                     UnitCost = request.UnitCost,
                     Currency = request.Currency ?? "ZMW",
                     MinimumOrderQuantity = request.MinimumOrderQuantity,
-                    MaximumOrderQuantity = request.MaximumOrderQuantity,
+                    MaximumOrderQuantity = (decimal)(request.MaximumOrderQuantity ?? 0),
                     OrderMultiples = request.OrderMultiples,
                     MinimumOrderValue = request.MinimumOrderValue,
                     IsAvailable = request.IsAvailable ?? true,
@@ -553,10 +553,10 @@ namespace UmiHealthPOS.Controllers.Api
                         s.TenantId == tenantId &&
                         s.IsActive &&
                         (s.BusinessName.Contains(query) ||
-                         (s.TradeName != null && s.TradeName.Contains(query)) ||
-                         (s.ContactPerson != null && s.ContactPerson.Contains(query)) ||
-                         (s.Email != null && s.Email.Contains(query)) ||
-                         (s.PrimaryPhoneNumber != null && s.PrimaryPhoneNumber.Contains(query))))
+                         (!string.IsNullOrEmpty(s.TradeName) && s.TradeName.Contains(query)) ||
+                         (!string.IsNullOrEmpty(s.ContactPerson) && s.ContactPerson.Contains(query)) ||
+                         (!string.IsNullOrEmpty(s.Email) && s.Email.Contains(query)) ||
+                         (!string.IsNullOrEmpty(s.PrimaryPhoneNumber) && s.PrimaryPhoneNumber.Contains(query))))
                     .OrderByDescending(s => s.CreatedAt)
                     .Take(20)
                     .ToListAsync();
@@ -574,7 +574,7 @@ namespace UmiHealthPOS.Controllers.Api
         {
             var datePrefix = DateTime.UtcNow.ToString("yyyyMMdd");
             var count = await _context.Suppliers
-                .CountAsync(s => s.TenantId == tenantId && s.SupplierCode.StartsWith(datePrefix));
+                .CountAsync(s => s.TenantId == tenantId && s.SupplierCode != null && s.SupplierCode.StartsWith(datePrefix));
 
             return $"SUP{datePrefix}{(count + 1):D3}";
         }

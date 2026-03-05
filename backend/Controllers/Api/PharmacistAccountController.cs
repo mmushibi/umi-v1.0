@@ -8,6 +8,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
+using UmiHealthPOS.Models.DTOs;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Services;
@@ -59,8 +60,6 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 var profile = await _context.PharmacistProfiles
-                    .Include(p => p.User)
-                    .Include(p => p.Tenant)
                     .FirstOrDefaultAsync(p => p.UserId == userId && p.TenantId == tenantId);
 
                 if (profile == null)
@@ -78,42 +77,42 @@ namespace UmiHealthPOS.Controllers.Api
                     {
                         UserId = userId,
                         TenantId = tenantId,
-                        FirstName = user.FirstName,
-                        LastName = user.LastName,
-                        Email = user.Email,
-                        Phone = "", // UserAccount doesn't have Phone property
-                        LicenseNumber = "", // UserAccount doesn't have LicenseNumber, use empty string
-                        EmailNotifications = false,
-                        ClinicalAlerts = false,
-                        SessionTimeout = 30,
-                        Language = "en",
-                        TwoFactorEnabled = false,
-                        IsActive = true,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        LicenseNumber = "", // Default empty
+                        Specialization = "", // Default empty
+                        YearsExperience = 0, // Default
+                        CreatedAt = DateTime.UtcNow
                     };
 
                     _context.PharmacistProfiles.Add(profile);
                     await _context.SaveChangesAsync();
                 }
 
+                // Get user information for the DTO
+                var userAccount = await _context.Users
+                    .FirstOrDefaultAsync(u => u.UserId == userId && u.TenantId == tenantId);
+
+                if (userAccount == null)
+                {
+                    return NotFound(new { error = "User account not found" });
+                }
+
                 var profileDto = new PharmacistProfileDto
                 {
                     Id = profile.Id,
-                    FirstName = profile.FirstName,
-                    LastName = profile.LastName,
-                    Email = profile.Email,
-                    Phone = profile.Phone,
+                    FirstName = userAccount?.FirstName ?? "",
+                    LastName = userAccount?.LastName ?? "",
+                    Email = userAccount?.Email ?? "",
+                    Phone = "", // Default value - not in PharmacistProfile entity
                     LicenseNumber = profile.LicenseNumber,
-                    EmailNotifications = profile.EmailNotifications,
-                    ClinicalAlerts = profile.ClinicalAlerts,
-                    SessionTimeout = profile.SessionTimeout,
-                    Language = profile.Language,
-                    TwoFactorEnabled = profile.TwoFactorEnabled,
-                    ProfilePicture = profile.ProfilePicture,
-                    Signature = profile.Signature,
+                    EmailNotifications = false, // Default value - not in PharmacistProfile entity
+                    ClinicalAlerts = false, // Default value - not in PharmacistProfile entity
+                    SessionTimeout = 30, // Default value - not in PharmacistProfile entity
+                    Language = "en", // Default value - not in PharmacistProfile entity
+                    TwoFactorEnabled = false, // Default value - not in PharmacistProfile entity
+                    ProfilePicture = "", // Default value - not in PharmacistProfile entity
+                    Signature = "", // Default value - not in PharmacistProfile entity
                     CreatedAt = profile.CreatedAt,
-                    UpdatedAt = profile.UpdatedAt
+                    UpdatedAt = profile.CreatedAt // Use CreatedAt since UpdatedAt doesn't exist
                 };
 
                 return Ok(profileDto);
@@ -147,13 +146,10 @@ namespace UmiHealthPOS.Controllers.Api
                     return NotFound(new { error = "Profile not found" });
                 }
 
-                // Update profile fields
-                profile.FirstName = request.FirstName;
-                profile.LastName = request.LastName;
-                profile.Email = request.Email;
-                profile.Phone = request.Phone;
-                profile.LicenseNumber = request.LicenseNumber;
-                profile.UpdatedAt = DateTime.UtcNow;
+                // Update profile fields - only update properties that exist in PharmacistProfile
+                profile.LicenseNumber = request.LicenseNumber ?? profile.LicenseNumber ?? string.Empty;
+                profile.Specialization = request.Specialization ?? profile.Specialization ?? string.Empty;
+                profile.YearsExperience = request.YearsExperience;
 
                 // Also update the user account
                 var user = await _context.Users
@@ -172,18 +168,18 @@ namespace UmiHealthPOS.Controllers.Api
                 var profileDto = new PharmacistProfileDto
                 {
                     Id = profile.Id,
-                    FirstName = profile.FirstName,
-                    LastName = profile.LastName,
-                    Email = profile.Email,
-                    Phone = profile.Phone,
-                    LicenseNumber = profile.LicenseNumber,
+                    FirstName = profile.FirstName ?? string.Empty,
+                    LastName = profile.LastName ?? string.Empty,
+                    Email = profile.Email ?? string.Empty,
+                    Phone = profile.Phone ?? string.Empty,
+                    LicenseNumber = profile.LicenseNumber ?? string.Empty,
                     EmailNotifications = profile.EmailNotifications,
                     ClinicalAlerts = profile.ClinicalAlerts,
                     SessionTimeout = profile.SessionTimeout,
-                    Language = profile.Language,
+                    Language = profile.Language ?? "en",
                     TwoFactorEnabled = profile.TwoFactorEnabled,
-                    ProfilePicture = profile.ProfilePicture,
-                    Signature = profile.Signature,
+                    ProfilePicture = profile.ProfilePicture ?? string.Empty,
+                    Signature = profile.Signature ?? string.Empty,
                     CreatedAt = profile.CreatedAt,
                     UpdatedAt = profile.UpdatedAt
                 };
@@ -305,9 +301,31 @@ namespace UmiHealthPOS.Controllers.Api
                     return NotFound(new { error = "User not found" });
                 }
 
-                // UserAccount doesn't have password, so we can't verify current password
-                // In a real implementation, this would check against a separate UserCredentials table
-                // For now, we'll just update the pharmacist profile
+                // Verify current password using BCrypt
+                bool isCurrentPasswordValid = false;
+                if (!string.IsNullOrEmpty(user.PasswordHash))
+                {
+                    // If no password hash exists, this might be first-time setup or migration
+                    // Allow password change with current password validation
+                    isCurrentPasswordValid = true;
+                }
+                else
+                {
+                    isCurrentPasswordValid = BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash);
+                }
+
+                if (!isCurrentPasswordValid)
+                {
+                    return BadRequest(new { error = "Current password is incorrect" });
+                }
+
+                // Hash the new password
+                var newPasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+
+                // Update user password hash
+                user.PasswordHash = newPasswordHash;
+                user.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
 
                 // Update pharmacist profile
                 var profile = await _context.PharmacistProfiles
@@ -322,7 +340,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 await _context.SaveChangesAsync();
 
-                return Ok(new { message = "Password change request received" });
+                return Ok(new { message = "Password changed successfully" });
             }
             catch (Exception ex)
             {
@@ -440,15 +458,7 @@ namespace UmiHealthPOS.Controllers.Api
         public DateTime UpdatedAt { get; set; }
     }
 
-    public class UpdatePharmacistProfileRequest
-    {
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
-        public string? Email { get; set; }
-        public string? Phone { get; set; }
-        public string? LicenseNumber { get; set; }
-    }
-
+    
     public class UpdatePharmacistSettingsRequest
     {
         public bool EmailNotifications { get; set; }

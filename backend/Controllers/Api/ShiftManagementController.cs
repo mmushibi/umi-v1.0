@@ -3,12 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
+using UmiHealthPOS.Attributes;
 
 namespace UmiHealthPOS.Controllers.Api
 {
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [RequirePermission("ViewDashboard", "AccessSystem")]
     public class ShiftManagementController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -189,7 +191,7 @@ namespace UmiHealthPOS.Controllers.Api
 
                 var todayHours = todayShifts
                     .Where(sa => sa.TotalWorkedMinutes.HasValue)
-                    .Sum(sa => sa.TotalWorkedMinutes.Value) / 60.0;
+                    .Sum(sa => sa.TotalWorkedMinutes ?? 0) / 60.0;
 
                 var todayCompleted = todayShifts.Count(sa => sa.AssignmentStatus == "Completed");
                 var nextShift = todayShifts
@@ -253,15 +255,14 @@ namespace UmiHealthPOS.Controllers.Api
                 }
 
                 // Create time off request
-                var timeOffRequest = new Models.TimeOffRequest
+                var timeOffRequest = new TimeOffRequest
                 {
                     UserId = userId,
                     TenantId = tenantId,
-                    EmployeeName = request.EmployeeName ?? "Employee",
                     StartDate = request.StartDate,
                     EndDate = request.EndDate,
-                    RequestType = request.RequestType ?? "Leave",
-                    Reason = request.Reason,
+                    TimeOffType = request.RequestType ?? "Annual Leave",
+                    Reason = request.Reason ?? "Time off request",
                     Status = "Pending",
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
@@ -294,9 +295,53 @@ namespace UmiHealthPOS.Controllers.Api
                 var userId = GetCurrentUserId();
                 var tenantId = GetCurrentTenantId();
 
-                // This would create a shift swap request in a real implementation
-                // For now, return a success message
-                return Ok(new { message = "Shift swap request submitted successfully" });
+                // Validate the shift belongs to the current user
+                var userShift = await _context.ShiftAssignments
+                    .Where(sa => sa.Id == request.ShiftId &&
+                                 sa.UserId == userId &&
+                                 sa.TenantId == tenantId)
+                    .FirstOrDefaultAsync();
+
+                if (userShift == null)
+                {
+                    return BadRequest(new { error = "Shift not found or does not belong to current user" });
+                }
+
+                // Validate target user exists and belongs to same tenant
+                var targetUser = await _context.Users
+                    .Where(u => u.UserId == request.TargetUserId.ToString() &&
+                               u.TenantId == tenantId)
+                    .FirstOrDefaultAsync();
+
+                if (targetUser == null)
+                {
+                    return BadRequest(new { error = "Target user not found or does not belong to same tenant" });
+                }
+
+                // Create shift swap request
+                var swapRequest = new ShiftSwapRequest
+                {
+                    OriginalShiftId = request.ShiftId,
+                    OriginalUserId = userId,
+                    TargetUserId = request.TargetUserId.ToString(),
+                    TenantId = tenantId,
+                    Reason = request.Reason,
+                    Status = "Pending",
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                await _context.ShiftSwapRequests.AddAsync(swapRequest);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Shift swap request created: {RequestId} for shift {ShiftId}",
+                    swapRequest.Id, request.ShiftId);
+
+                return Ok(new 
+                { 
+                    message = "Shift swap request submitted successfully",
+                    requestId = swapRequest.Id
+                });
             }
             catch (Exception ex)
             {
@@ -307,14 +352,36 @@ namespace UmiHealthPOS.Controllers.Api
 
         private string GetCurrentUserId()
         {
-            // This would extract user ID from JWT token in a real implementation
-            return User.FindFirst("sub")?.Value ?? "demo-user";
+            // Extract user ID from JWT token claims
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                userId = User.FindFirst("userId")?.Value;
+            }
+            
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new UnauthorizedAccessException("User ID not found in token");
+            }
+            
+            return userId;
         }
 
         private string GetCurrentTenantId()
         {
-            // This would extract tenant ID from JWT token in a real implementation
-            return User.FindFirst("tenant_id")?.Value ?? "demo-tenant";
+            // Extract tenant ID from JWT token claims
+            var tenantId = User.FindFirst("TenantId")?.Value;
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                tenantId = User.FindFirst("tenant_id")?.Value;
+            }
+            
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                throw new UnauthorizedAccessException("Tenant ID not found in token");
+            }
+            
+            return tenantId;
         }
 
         private string GetShiftStatus(ShiftAssignment shift)
@@ -359,7 +426,7 @@ namespace UmiHealthPOS.Controllers.Api
     {
         public int ShiftId { get; set; }
         public int TargetUserId { get; set; }
-        public string Reason { get; set; }
+        public string Reason { get; set; } = string.Empty;
     }
 }
 

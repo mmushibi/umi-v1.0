@@ -17,6 +17,7 @@ namespace UmiHealthPOS.Controllers.Api
 {
     [ApiController]
     [Route("api/[controller]")]
+    [AllowAnonymous]
     public class AuthController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -66,7 +67,8 @@ namespace UmiHealthPOS.Controllers.Api
             var activeSessionCount = await _context.UserSessions
                 .CountAsync(s => s.UserId == user.UserId && s.IsActive && s.ExpiresAt > DateTime.UtcNow);
 
-            var maxDevices = 5; // Default device limit
+            // Check device limit
+            var maxDevices = int.TryParse(_configuration["Defaults:MaxDevicesPerUser"], out int configuredMaxDevices) ? configuredMaxDevices : 5;
             var deviceLimitSetting = await _context.AppSettings
                 .FirstOrDefaultAsync(s => s.Key == "maxDeviceLimit" && s.Category == "security");
             
@@ -329,6 +331,15 @@ namespace UmiHealthPOS.Controllers.Api
                 var tenant = await _context.Tenants
                     .FirstOrDefaultAsync(t => t.TenantId == user.TenantId);
 
+                // Get user's subscription plan
+                var subscription = await _context.Subscriptions
+                    .Include(s => s.Plan)
+                    .Where(s => s.TenantId == user.TenantId && s.IsActive && s.EndDate > DateTime.UtcNow)
+                    .OrderByDescending(s => s.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                var plan = subscription?.Plan?.Name?.ToLower() ?? "starter";
+
                 var response = new
                 {
                     UserId = user.Id.ToString(),
@@ -337,7 +348,7 @@ namespace UmiHealthPOS.Controllers.Api
                     role = user.Role,
                     tenantId = user.BranchId.ToString(),
                     tenantName = tenant?.Name,
-                    plan = "starter", // TODO: Implement subscription plans
+                    plan = plan,
                     lastLogin = user.LastLogin,
                     createdAt = user.CreatedAt
                 };
@@ -415,14 +426,14 @@ namespace UmiHealthPOS.Controllers.Api
                 var pharmacy = new Pharmacy
                 {
                     Name = request.OrganizationName,
-                    LicenseNumber = $"ZMP-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}",
-                    Address = "123 Main Street, Lusaka",
-                    City = "Lusaka",
-                    Province = "Lusaka Province",
-                    PostalCode = "10101",
-                    Phone = request.Phone ?? "+260 000 000 000",
+                    LicenseNumber = $"{_configuration["Defaults:LicensePrefix"]}-{DateTime.Now:yyyyMMdd}-{new Random().Next(1000, 9999)}",
+                    Address = _configuration["Defaults:DefaultAddress"] ?? "123 Main Street, Lusaka",
+                    City = _configuration["Defaults:DefaultCity"] ?? "Lusaka",
+                    Province = _configuration["Defaults:DefaultProvince"] ?? "Lusaka Province",
+                    PostalCode = _configuration["Defaults:DefaultPostalCode"] ?? "10101",
+                    Phone = request.Phone ?? _configuration["Defaults:DefaultPhone"] ?? "+260 000 000 000",
                     Email = request.Email,
-                    Country = "Zambia",
+                    Country = _configuration["Defaults:Country"] ?? "Zambia",
                     IsActive = true,
                     TenantId = user.UserId,
                     CreatedAt = DateTime.UtcNow,
@@ -431,14 +442,15 @@ namespace UmiHealthPOS.Controllers.Api
 
                 _context.Pharmacies.Add(pharmacy);
 
-                // Create 14-day trial subscription
+                // Create trial subscription
+                var trialDays = int.TryParse(_configuration["Defaults:TrialPeriodDays"], out int configuredTrialDays) ? configuredTrialDays : 14;
                 var subscription = new Subscription
                 {
                     PharmacyId = pharmacy.Id,
                     PlanId = 1, // Basic plan ID
                     Status = "trial",
                     StartDate = DateTime.UtcNow,
-                    EndDate = DateTime.UtcNow.AddDays(14),
+                    EndDate = DateTime.UtcNow.AddDays(trialDays),
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
@@ -453,13 +465,13 @@ namespace UmiHealthPOS.Controllers.Api
                     branch = new Branch
                     {
                         Name = $"{request.OrganizationName} - Main Branch",
-                        Address = "123 Main Street, Lusaka",
-                        Region = "Lusaka Province",
-                        Phone = request.Phone ?? "+260 000 000 000",
+                        Address = _configuration["Defaults:DefaultAddress"] ?? "123 Main Street, Lusaka",
+                        Region = _configuration["Defaults:DefaultProvince"] ?? "Lusaka Province",
+                        Phone = request.Phone ?? _configuration["Defaults:DefaultPhone"] ?? "+260 000 000 000",
                         Email = request.Email,
                         ManagerName = $"{request.FirstName} {request.LastName}",
-                        ManagerPhone = request.Phone ?? "+260 000 000 000",
-                        OperatingHours = "08:00-18:00",
+                        ManagerPhone = request.Phone ?? _configuration["Defaults:DefaultPhone"] ?? "+260 000 000 000",
+                        OperatingHours = _configuration["Defaults:DefaultOperatingHours"] ?? "08:00-18:00",
                         Status = "active",
                         IsActive = true,
                         CreatedAt = DateTime.UtcNow,
@@ -551,7 +563,7 @@ namespace UmiHealthPOS.Controllers.Api
                         originalUser = (object)null
                     },
                     plan = "trial",
-                    trialEndDate = DateTime.UtcNow.AddDays(14).ToString("yyyy-MM-dd"),
+                    trialEndDate = DateTime.UtcNow.AddDays(trialDays).ToString("yyyy-MM-dd"),
                     isTrial = true,
                     message = "Account created successfully. Your 14-day trial has started!"
                 });

@@ -1,0 +1,345 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using UmiHealthPOS.Models;
+using UmiHealthPOS.Models.DTOs;
+using UmiHealthPOS.Data;
+using UmiHealthPOS.Services;
+
+namespace UmiHealthPOS.Controllers.Api
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class ClinicalController : ControllerBase
+    {
+        private readonly ILogger<ClinicalController> _logger;
+        private readonly ApplicationDbContext _context;
+        private readonly IClinicalService _clinicalService;
+
+        public ClinicalController(
+            ILogger<ClinicalController> logger,
+            ApplicationDbContext context,
+            IClinicalService clinicalService)
+        {
+            _logger = logger;
+            _context = context;
+            _clinicalService = clinicalService;
+        }
+
+        private string GetCurrentUserId()
+        {
+            return User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value ?? "";
+        }
+
+        private string GetCurrentTenantId()
+        {
+            return User.FindFirst("TenantId")?.Value ?? "";
+        }
+
+        [HttpGet("drug-interactions")]
+        public async Task<ActionResult<IEnumerable<Models.DrugInteraction>>> GetDrugInteractions([FromQuery] string medications)
+        {
+            try
+            {
+                var tenantId = GetCurrentTenantId();
+                if (string.IsNullOrEmpty(tenantId))
+                {
+                    return Unauthorized(new { error = "Tenant not found" });
+                }
+
+                if (string.IsNullOrWhiteSpace(medications))
+                {
+                    return BadRequest(new { error = "Medications parameter is required" });
+                }
+
+                var medicationList = medications.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(m => m.Trim().ToLower())
+                    .Where(m => !string.IsNullOrEmpty(m))
+                    .ToList();
+
+                if (medicationList.Count < 2)
+                {
+                    return BadRequest(new { error = "At least 2 medications are required for interaction check" });
+                }
+
+                // Real clinical data integration - using ClinicalService for database-driven results
+                var interactions = await _clinicalService.GetDrugInteractionsAsync(medicationList);
+
+                return Ok(interactions);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking drug interactions for medications: {Medications}", medications);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("allergy-check")]
+        public async Task<ActionResult<AllergyCheckResult>> CheckAllergies([FromQuery] string medications, [FromQuery] string allergies)
+        {
+            try
+            {
+                var tenantId = GetCurrentTenantId();
+                if (string.IsNullOrEmpty(tenantId))
+                {
+                    return Unauthorized(new { error = "Tenant not found" });
+                }
+
+                if (string.IsNullOrWhiteSpace(medications))
+                {
+                    return BadRequest(new { error = "Medications parameter is required" });
+                }
+
+                var medicationList = medications.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(m => m.Trim().ToLower())
+                    .ToList();
+
+                var allergyList = string.IsNullOrWhiteSpace(allergies)
+                    ? new List<string>()
+                    : allergies.Split(',', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(a => a.Trim().ToLower())
+                        .ToList();
+
+                // Real clinical data integration - using ClinicalService for database-driven results
+                var result = await _clinicalService.CheckAllergiesAsync(medicationList, allergyList);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking allergies for medications: {Medications}, allergies: {Allergies}", medications, allergies);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("dosage-calculator")]
+        public async Task<ActionResult<DosageCalculation>> CalculateDosage(
+            [FromQuery] string medication,
+            [FromQuery] decimal weight,
+            [FromQuery] int age,
+            [FromQuery] string? gender = null)
+        {
+            try
+            {
+                var tenantId = GetCurrentTenantId();
+                if (string.IsNullOrEmpty(tenantId))
+                {
+                    return Unauthorized(new { error = "Tenant not found" });
+                }
+
+                if (string.IsNullOrWhiteSpace(medication) || weight <= 0 || age <= 0)
+                {
+                    return BadRequest(new { error = "Medication, weight, and age are required parameters" });
+                }
+
+                // Real clinical data integration - using ClinicalService for database-driven results
+                var calculation = await _clinicalService.CalculateDosageAsync(medication, weight, age, gender);
+
+                return Ok(calculation);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calculating dosage for medication: {Medication}, weight: {Weight}, age: {Age}",
+                    medication, weight, age);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("clinical-guidelines")]
+        public async Task<ActionResult<IEnumerable<Models.ClinicalGuideline>>> GetClinicalGuidelines([FromQuery] string condition = null, [FromQuery] string? medication = null)
+        {
+            try
+            {
+                var tenantId = GetCurrentTenantId();
+                if (string.IsNullOrEmpty(tenantId))
+                {
+                    return Unauthorized(new { error = "Tenant not found" });
+                }
+
+                // Real clinical data integration - using ClinicalService for database-driven results
+                var guidelines = await _clinicalService.GetClinicalGuidelinesAsync(condition, medication);
+
+                return Ok(guidelines);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving clinical guidelines for condition: {Condition}, medication: {Medication}",
+                    condition, medication);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("vital-signs-reference")]
+        public async Task<ActionResult<VitalSignsReference>> GetVitalSignsReference([FromQuery] int age)
+        {
+            try
+            {
+                var tenantId = GetCurrentTenantId();
+                if (string.IsNullOrEmpty(tenantId))
+                {
+                    return Unauthorized(new { error = "Tenant not found" });
+                }
+
+                if (age <= 0)
+                {
+                    return BadRequest(new { error = "Valid age is required" });
+                }
+
+                // Real clinical data integration - using ClinicalService for database-driven results
+                var reference = await _clinicalService.GetVitalSignsReferenceAsync(age);
+
+                return Ok(reference);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving vital signs reference for age: {Age}", age);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("clinical-notes")]
+        public async Task<ActionResult<Models.ClinicalNote>> CreateClinicalNote([FromBody] CreateClinicalNoteRequest request)
+        {
+            try
+            {
+                var tenantId = GetCurrentTenantId();
+                var userId = GetCurrentUserId();
+
+                if (string.IsNullOrEmpty(tenantId) || string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new { error = "User not authenticated" });
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                // Verify patient exists and belongs to tenant
+                var patient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.Id == request.PatientId && p.TenantId == tenantId && p.IsActive);
+
+                if (patient == null)
+                {
+                    return BadRequest(new { error = "Patient not found" });
+                }
+
+                var clinicalNote = new ClinicalNote
+                {
+                    PatientId = request.PatientId,
+                    NoteType = request.NoteType,
+                    Content = request.Content,
+                    Diagnosis = request.Diagnosis,
+                    Symptoms = request.Symptoms,
+                    Treatment = request.Treatment,
+                    FollowUpRequired = request.FollowUpRequired,
+                    FollowUpDate = request.FollowUpDate,
+                    TenantId = tenantId,
+                    CreatedBy = userId,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.ClinicalNotes.Add(clinicalNote);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Clinical note {NoteId} created for patient {PatientId} by user {UserId}",
+                    clinicalNote.Id, request.PatientId, userId);
+
+                return CreatedAtAction(nameof(GetClinicalNote), new { id = clinicalNote.Id }, clinicalNote);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating clinical note");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("clinical-notes/{id}")]
+        public async Task<ActionResult<ClinicalNote>> GetClinicalNote(int id)
+        {
+            try
+            {
+                var tenantId = GetCurrentTenantId();
+                if (string.IsNullOrEmpty(tenantId))
+                {
+                    return Unauthorized(new { error = "Tenant not found" });
+                }
+
+                var note = await _context.ClinicalNotes
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(n => n.Id == id && n.TenantId == tenantId);
+
+                if (note == null)
+                {
+                    return NotFound(new { error = "Clinical note not found" });
+                }
+
+                return Ok(note);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving clinical note {NoteId}", id);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpGet("patients/{patientId}/clinical-notes")]
+        public async Task<ActionResult<IEnumerable<ClinicalNote>>> GetPatientClinicalNotes(
+            int patientId,
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 20)
+        {
+            try
+            {
+                var tenantId = GetCurrentTenantId();
+                if (string.IsNullOrEmpty(tenantId))
+                {
+                    return Unauthorized(new { error = "Tenant not found" });
+                }
+
+                // Verify patient exists and belongs to tenant
+                var patient = await _context.Patients
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.Id == patientId && p.TenantId == tenantId && p.IsActive);
+
+                if (patient == null)
+                {
+                    return NotFound(new { error = "Patient not found" });
+                }
+
+                var query = _context.ClinicalNotes
+                    .AsNoTracking()
+                    .Where(n => n.PatientId == patientId && n.TenantId == tenantId);
+
+                var totalCount = await query.CountAsync();
+                var notes = await query
+                    .OrderByDescending(n => n.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    notes,
+                    totalCount,
+                    currentPage = page,
+                    pageSize,
+                    totalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving clinical notes for patient {PatientId}", patientId);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+    }
+}

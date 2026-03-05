@@ -606,16 +606,45 @@
             if (response.ok) {
               this.branches = await response.json();
               // Set default to "All Branches" if available
-              if (this.branches.length > 0) {
-                this.selectedBranch = this.branches[0].id;
-              }
-              console.log('Branches loaded:', this.branches);
+              this.selectedBranch = this.branches.length > 0 ? this.branches[0].id : 'all';
+            } else {
+              console.error('Failed to fetch branches');
             }
           } catch (error) {
             console.error('Error loading branches:', error);
-            // Fallback to default
-            this.branches = [{ id: 'all', name: 'All Branches' }];
           }
+        },
+        
+        getDateRange() {
+          const now = new Date();
+          let start, end;
+          
+          switch (this.dateRange) {
+            case 'today':
+              start = now.toISOString().split('T')[0];
+              end = start;
+              break;
+            case 'week':
+              const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+              start = weekAgo.toISOString().split('T')[0];
+              end = now.toISOString().split('T')[0];
+              break;
+            case 'month':
+              const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+              start = monthStart.toISOString().split('T')[0];
+              end = now.toISOString().split('T')[0];
+              break;
+            case 'year':
+              start = new Date(now.getFullYear(), 0, 1).toISOString().split('T')[0];
+              end = now.toISOString().split('T')[0];
+              break;
+            default:
+              const defaultMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+              start = defaultMonthAgo.toISOString().split('T')[0];
+              end = now.toISOString().split('T')[0];
+          }
+          
+          return { start, end };
         },
         
         loadReportData() {
@@ -625,13 +654,21 @@
         async fetchReportData() {
           try {
             this.loading = true;
+            
+            // Get date range based on selection
+            const { start, end } = this.getDateRange();
+            
+            // Build API parameters
             const params = new URLSearchParams({
-              reportType: this.selectedReportType,
-              dateRange: this.dateRange,
-              branch: this.selectedBranch
+              type: this.selectedReportType,
+              start: start,
+              end: end,
+              branch: this.selectedBranch === 'all' ? null : this.selectedBranch
             });
             
-            const response = await fetch(`/api/reports/generate?${params}`);
+            // Make authenticated API request
+            const response = await window.umiAuth.makeApiRequest(`/api/reports/generate?${params}`);
+            
             if (!response.ok) throw new Error('Failed to fetch report data');
             
             const data = await response.json();
@@ -820,25 +857,33 @@
         async exportReport() {
           try {
             this.loading = true;
+            
+            // Get date range based on selection
+            const { start, end } = this.getDateRange();
+            
+            // Build API parameters
             const params = new URLSearchParams({
-              reportType: this.selectedReportType,
-              dateRange: this.dateRange,
-              branch: this.selectedBranch,
+              type: this.selectedReportType,
+              start: start,
+              end: end,
+              branch: this.selectedBranch === 'all' ? null : this.selectedBranch,
               format: this.exportFormat
             });
             
-            const response = await fetch(`/api/reports/export?${params}`);
+            // Make authenticated API request
+            const response = await window.umiAuth.makeApiRequest(`/api/reports/export?${params}`);
+            
             if (!response.ok) throw new Error('Failed to export report');
             
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `${this.selectedReportType}-report.${this.exportFormat}`;
+            a.download = `report-${this.selectedReportType}-${new Date().toISOString().split('T')[0]}.${this.exportFormat}`;
             document.body.appendChild(a);
             a.click();
-            window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
             
             this.showNotification('Report exported successfully', 'success');
           } catch (error) {
@@ -862,7 +907,8 @@
               recipientEmail: this.scheduleEmail || 'cashier@umihealth.com'
             };
             
-            const response = await fetch('/api/reports/schedule', {
+            // Make authenticated API request
+            const response = await window.umiAuth.makeApiRequest('/api/reports/schedule', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json'

@@ -794,9 +794,20 @@
           this.loadBranches();
         },
         
-        loadStats() {
-          // In production, this would come from API
-          this.monthlyRevenue = 0;
+        async loadStats() {
+          try {
+            const response = await fetch('/api/tenantadmin/dashboard/stats');
+            if (response.ok) {
+              const stats = await response.json();
+              this.monthlyRevenue = stats.monthlyRevenue || 0;
+            } else {
+              console.warn('Failed to load stats from API');
+              this.monthlyRevenue = 0;
+            }
+          } catch (error) {
+            console.error('Error loading stats:', error);
+            this.monthlyRevenue = 0;
+          }
         },
         
         loadBranches() {
@@ -1133,17 +1144,34 @@
           };
         },
         
-        storeUserCredentials(email, password, role) {
-          // In production, this would be handled securely by the backend
-          // Storing in localStorage is not secure and should only be used for development
-          console.warn('storeUserCredentials should only be used in development - not secure for production');
-          const users = JSON.parse(localStorage.getItem('umi_users') || '{}');
-          users[email] = {
-            password: password,
-            role: role,
-            createdAt: new Date().toISOString()
-          };
-          localStorage.setItem('umi_users', JSON.stringify(users));
+        async storeUserCredentials(email, password, role) {
+          try {
+            const response = await fetch('/api/tenantadmin/users/credentials', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${window.umiAuth.getToken()}`
+              },
+              body: JSON.stringify({
+                email: email,
+                password: password,
+                role: role
+              })
+            });
+
+            if (response.ok) {
+              const result = await response.json();
+              console.log('User credentials stored securely:', result.message);
+              return result;
+            } else {
+              const error = await response.json();
+              console.error('Failed to store credentials:', error);
+              throw new Error(error.message || 'Failed to store user credentials');
+            }
+          } catch (error) {
+            console.error('Error storing user credentials:', error);
+            throw error;
+          }
         },
         
         showNotification(message, type = 'info', title = 'Notification') {

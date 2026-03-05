@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
 using UmiHealthPOS.DTOs;
@@ -238,7 +239,7 @@ namespace UmiHealthPOS.Controllers.Api
                 await _context.ActivityLogs.AddAsync(auditLog);
                 await _context.SaveChangesAsync();
 
-                return CreatedAtAction(nameof(GetAuditLog), new { id = auditLog.Id }, new AuditLogDto
+                return CreatedAtAction("GetAuditLog", new { id = auditLog.Id }, new AuditLogDto
                 {
                     Id = auditLog.Id,
                     UserId = auditLog.UserId ?? string.Empty,

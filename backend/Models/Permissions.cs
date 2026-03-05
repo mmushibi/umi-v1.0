@@ -281,6 +281,23 @@ namespace UmiHealthPOS.Models
         };
     }
 
+    // Role-based permission mappings
+    public static class RolePermissions
+    {
+        public static List<string> GetPermissionsForRole(UserRoleEnum role)
+        {
+            return role switch
+            {
+                UserRoleEnum.SuperAdmin => SystemRolePermissions.SuperAdminPermissions,
+                UserRoleEnum.TenantAdmin => SystemRolePermissions.TenantAdminPermissions,
+                UserRoleEnum.Pharmacist => SystemRolePermissions.PharmacistPermissions,
+                UserRoleEnum.Cashier => SystemRolePermissions.CashierPermissions,
+                UserRoleEnum.Sales => SystemRolePermissions.OperationsPermissions,
+                _ => new List<string>()
+            };
+        }
+    }
+
     // Permission service interface
     public interface IPermissionService
     {

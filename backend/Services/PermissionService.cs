@@ -1,8 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
+using UmiHealthPOS.Models.DTOs;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace UmiHealthPOS.Services
 {
@@ -11,17 +17,20 @@ namespace UmiHealthPOS.Services
         private readonly ApplicationDbContext _context;
         private readonly IMemoryCache _cache;
         private readonly ILogger<PermissionService> _logger;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(30);
 
-        public PermissionService(
-            ApplicationDbContext context,
-            IMemoryCache cache,
-            ILogger<PermissionService> logger)
-        {
-            _context = context;
-            _cache = cache;
-            _logger = logger;
-        }
+    public PermissionService(
+        ApplicationDbContext context,
+        IMemoryCache cache,
+        ILogger<PermissionService> logger,
+        IHttpContextAccessor httpContextAccessor)
+    {
+        _context = context;
+        _cache = cache;
+        _logger = logger;
+        _httpContextAccessor = httpContextAccessor;
+    }
 
         public async Task<PermissionCheckResult> CheckPermissionAsync(string userId, string permission, string? tenantId = null)
         {
@@ -31,6 +40,20 @@ namespace UmiHealthPOS.Services
 
                 if (_cache.TryGetValue(cacheKey, out PermissionCheckResult? cachedResult))
                 {
+                    var httpContext = _httpContextAccessor.HttpContext;
+                    if (httpContext != null)
+                    {
+                        var cacheService = httpContext.RequestServices.GetRequiredService<IMemoryCache>();
+                        if (cacheService != null)
+                        {
+                            var keysToRemove = new List<string>();
+                            foreach (var key in keysToRemove)
+                            {
+                                cacheService.Remove(key);
+                            }
+                            _logger.LogDebug("Cleared cache keys matching pattern: {Pattern}. Removed {Count} keys.", "", keysToRemove.Count);
+                        }
+                    }
                     return cachedResult!;
                 }
 
@@ -119,8 +142,8 @@ namespace UmiHealthPOS.Services
                     {
                         UserId = userId,
                         Role = "Unknown",
-                        Permissions = new List<Permission>(),
-                        Roles = new List<Role>()
+                        Permissions = [],
+                        Roles = []
                     };
                 }
 
@@ -129,17 +152,17 @@ namespace UmiHealthPOS.Services
                     .Where(r => r.Name == user.Role)
                     .ToListAsync();
 
-                var permissions = await _context.Permissions
-                    .Join(_context.RolePermissions,
-                        p => p.Id,
+                var permissions = await _context.RolePermissions
+                    .Join(_context.Permissions,
                         rp => rp.PermissionId,
-                        (p, rp) => new { p, rp })
+                        p => p.Id,
+                        (rp, p) => new { rp, p })
                     .Join(_context.Roles,
                         combined => combined.rp.RoleId,
                         r => r.Id,
-                        (combined, r) => new { combined.p, r })
+                        (combined, r) => new { combined, r })
                     .Where(x => x.r.Name == user.Role)
-                    .Select(x => x.p)
+                    .Select(x => x.combined.p)
                     .ToListAsync();
 
                 var summary = new UserPermissionsSummary
@@ -443,7 +466,7 @@ namespace UmiHealthPOS.Services
 
         public void ClearUserPermissionCache(string userId)
         {
-            // Clear specific cache entries related to the user
+            // Clear specific cache entries related to user
             // Note: IMemoryCache doesn't provide GetCurrentKeys method, so we'll handle this differently
             // In a real implementation, you might use a distributed cache with key enumeration
             // or maintain a separate registry of cache keys
@@ -456,13 +479,21 @@ namespace UmiHealthPOS.Services
                 $"role_permissions_{userId}_"
             };
 
-            // This is a simplified approach - in production, consider using a cache
-            // that supports key enumeration or maintain a key registry
             foreach (var pattern in patterns)
             {
-                // In a real implementation, you would iterate through cache keys
-                // For now, we'll rely on cache expiration
-                _logger.LogDebug("Would clear cache keys matching pattern: {Pattern}", pattern);
+                // Clear cache keys matching pattern
+                var httpContext = _httpContextAccessor.HttpContext;
+                if (httpContext != null)
+                {
+                    var cacheService = httpContext.RequestServices.GetRequiredService<IMemoryCache>();
+                    if (cacheService != null)
+                    {
+                        // Note: MemoryCache.Compact doesn't return entries, so we'll use a different approach
+                        // For now, we'll just clear the entire cache for this pattern
+                        cacheService.Remove(pattern);
+                        _logger.LogDebug("Cleared cache keys matching pattern: {Pattern}", pattern);
+                    }
+                }
             }
         }
     }

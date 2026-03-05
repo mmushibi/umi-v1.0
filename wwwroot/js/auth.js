@@ -17,8 +17,8 @@ class UmiAuth {
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
             return 'http://127.0.0.1:8080';
         }
-        // In production, use the same origin or configured API base
-        return window.location.origin;
+        // In production, use configured API base from environment or fallback to same origin
+        return window.UMI_CONFIG?.API_BASE_URL || window.location.origin;
     }
 
     isProductionMode() {
@@ -323,7 +323,7 @@ class UmiAuth {
         }
     }
 
-    // Enhanced login method with role-based redirection
+    // Enhanced login method with role-based redirection and UI permissions loading
     async login(email, password, remember = true) {
         try {
             this.loading = true;
@@ -378,6 +378,13 @@ class UmiAuth {
             localStorage.setItem('umihealthUserName', data.user.name);
             localStorage.setItem('umihealthTenantId', data.user.tenantId);
             localStorage.setItem('umihealthTenantName', data.user.tenantName);
+            
+            // Load UI permissions from server
+            try {
+                await this.loadUIPermissions();
+            } catch (error) {
+                console.warn('Failed to load UI permissions:', error);
+            }
             
             // Redirect to appropriate dashboard
             this.redirectToDashboard(data.user.role);
@@ -471,6 +478,347 @@ class UmiAuth {
             tenantName: session?.tenantName || sessionStorage.getItem('umihealthTenantName') || '',
             plan: session?.plan || localStorage.getItem('umihealthPlan') || 'starter'
         };
+    }
+
+    // Load UI permissions from server
+    async loadUIPermissions() {
+        try {
+            const response = await this.apiRequest(`${this.apiBase}/api/uipermissions/current`);
+            if (response.ok) {
+                const uiPermissions = await response.json();
+                
+                // Store UI permissions in sessionStorage for quick access
+                sessionStorage.setItem('umihealth_ui_permissions', JSON.stringify(uiPermissions));
+                
+                console.log('UI permissions loaded:', uiPermissions);
+                return uiPermissions;
+            }
+        } catch (error) {
+            console.error('Failed to load UI permissions:', error);
+            throw error;
+        }
+    }
+
+    // Get cached UI permissions
+    getUIPermissions() {
+        const permissions = sessionStorage.getItem('umihealth_ui_permissions');
+        return permissions ? JSON.parse(permissions) : null;
+    }
+
+    // Check if user can access specific UI element
+    canAccessUIElement(elementId) {
+        const uiPermissions = this.getUIPermissions();
+        if (!uiPermissions || !uiPermissions.UIElements) {
+            return false; // Default to deny if permissions not loaded
+        }
+        return uiPermissions.UIElements[elementId] === true;
+    }
+
+    // Check if user can perform specific action
+    canPerformAction(action) {
+        const uiPermissions = this.getUIPermissions();
+        if (!uiPermissions || !uiPermissions.Actions) {
+            return false; // Default to deny if permissions not loaded
+        }
+        return uiPermissions.Actions[action] === true;
+    }
+
+    // Get navigation items for current user
+    getNavigationItems() {
+        const uiPermissions = this.getUIPermissions();
+        return uiPermissions?.Navigation || [];
+    }
+
+    // Get dashboard widgets for current user
+    getDashboardWidgets() {
+        const uiPermissions = this.getUIPermissions();
+        return uiPermissions?.DashboardWidgets || [];
+    }
+
+    // Validate UI element access with server fallback
+    async validateUIElementAccess(elementId) {
+        try {
+            // Check local permissions first
+            if (this.canAccessUIElement(elementId)) {
+                return true;
+            }
+
+            // Fallback to server validation
+            const response = await this.apiRequest(`${this.apiBase}/api/uipermissions/validate-element`, {
+                method: 'POST',
+                body: JSON.stringify({ elementId })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return result.HasAccess;
+            }
+
+            return false;
+        } catch (error) {
+            console.error('Error validating UI element access:', error);
+            return false;
+        }
+    }
+
+    // Validate action access with server fallback
+    async validateActionAccess(action, permission) {
+        try {
+            // Check local permissions first
+            if (this.canPerformAction(action)) {
+                return true;
+            }
+
+            // Fallback to server validation
+            const response = await this.apiRequest(`${this.apiBase}/api/uipermissions/validate-action`, {
+                method: 'POST',
+                body: JSON.stringify({ action, permission })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return result.HasAccess;
+            }
+
+            return false;
+        } catch (error) {
+            console.error('Error validating action access:', error);
+            return false;
+        }
+    }
+
+    // Enhanced page access validation with UI permissions and advanced security
+    validatePageAccess(requiredRole = null, requiredPermissions = []) {
+        // Check authentication
+        if (!this.isAuthenticated()) {
+            this.redirectToLogin(window.location.href);
+            return false;
+        }
+
+        // Check role-based access
+        if (requiredRole && !this.canAccessPage(requiredRole)) {
+            this.redirectToUnauthorized();
+            return false;
+        }
+
+        // Check permission-based access
+        if (requiredPermissions.length > 0 && !this.hasAllPermissions(requiredPermissions)) {
+            this.redirectToUnauthorized();
+            return false;
+        }
+
+        // Check UI permissions for current page
+        const currentPage = window.location.pathname.split('/').pop();
+        if (currentPage && !this.canAccessUIElement(currentPage.replace('.html', '_page'))) {
+            this.redirectToUnauthorized();
+            return false;
+        }
+
+        // Enhanced security: Validate UI access with server
+        this.validateUIElementAccess(currentPage.replace('.html', '_page')).then(hasAccess => {
+            if (!hasAccess) {
+                this.redirectToUnauthorized();
+                return false;
+            }
+        }).catch(error => {
+            console.error('Error validating UI access:', error);
+            // Continue with local validation if server validation fails
+        });
+
+        return true;
+    }
+
+    // Enhanced UI element validation with caching and fallback
+    async validateUIElementAccessWithCache(elementId) {
+        try {
+            const cacheKey = `ui_access_${elementId}`;
+            const cached = sessionStorage.getItem(cacheKey);
+            
+            if (cached) {
+                const { timestamp, result } = JSON.parse(cached);
+                const age = Date.now() - timestamp;
+                
+                // Use cached result if less than 5 minutes old
+                if (age < 300000) {
+                    return result;
+                }
+            }
+
+            // Validate with server
+            const response = await this.apiRequest(`${this.apiBase}/api/compliance/validate-ui-access`, {
+                method: 'POST',
+                body: JSON.stringify({ elementId, action: 'view' })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                
+                // Cache the result
+                sessionStorage.setItem(cacheKey, JSON.stringify({
+                    timestamp: Date.now(),
+                    result: result.data.hasAccess
+                }));
+                
+                return result.data.hasAccess;
+            }
+
+            return false;
+        } catch (error) {
+            console.error('Error validating UI element access:', error);
+            return false;
+        }
+    }
+
+    // Enhanced action validation with security context
+    async validateActionAccessWithSecurity(action, permission) {
+        try {
+            // Check local permissions first
+            if (this.canPerformAction(action)) {
+                return true;
+            }
+
+            // Get security context for enhanced validation
+            const securityContext = await this.getSecurityContext();
+            
+            // Time-based validation
+            if (!this.isWithinAllowedHours(securityContext.role, action)) {
+                console.warn(`Action ${action} not allowed outside business hours`);
+                return false;
+            }
+
+            // Validate with server
+            const response = await this.apiRequest(`${this.apiBase}/api/compliance/validate-ui-access`, {
+                method: 'POST',
+                body: JSON.stringify({ elementId: action, action, permission })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return result.data.hasAccess;
+            }
+
+            return false;
+        } catch (error) {
+            console.error('Error validating action access:', error);
+            return false;
+        }
+    }
+
+    // Get security context for current user
+    async getSecurityContext() {
+        const session = this.getSession();
+        return {
+            userId: session?.userId,
+            role: session?.role,
+            tenantId: session?.tenantId,
+            permissions: session?.permissions || []
+        };
+    }
+
+    // Check if action is allowed within business hours
+    isWithinAllowedHours(role, action) {
+        const restrictedActions = ['user_management', 'system_settings', 'financial_reports'];
+        const restrictedRoles = ['Pharmacist', 'Cashier'];
+        
+        if (!restrictedActions.includes(action) || !restrictedRoles.includes(role)) {
+            return true;
+        }
+
+        const now = new Date();
+        const hours = now.getHours();
+        const isBusinessHours = hours >= 8 && hours <= 18;
+        
+        return isBusinessHours;
+    }
+
+    // Enhanced security: Anti-CSRF token validation
+    async validateAntiForgeryToken(token) {
+        try {
+            const userId = this.getUserId();
+            const response = await this.apiRequest(`${this.apiBase}/api/compliance/validate-csrf`, {
+                method: 'POST',
+                body: JSON.stringify({ userId, token })
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                return result.data.isValid;
+            }
+
+            return false;
+        } catch (error) {
+            console.error('Error validating CSRF token:', error);
+            return false;
+        }
+    }
+
+    // Generate CSRF token for forms
+    generateCSRFToken() {
+        const array = new Uint8Array(32);
+        crypto.getRandomValues(array);
+        return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Enhanced security headers for API requests
+    async apiRequest(url, options = {}) {
+        const defaultOptions = {
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': this.generateCSRFToken()
+            }
+        };
+
+        const finalOptions = { ...defaultOptions, ...options };
+
+        // Add security headers
+        if (this.isAuthenticated()) {
+            finalOptions.headers.Authorization = `Bearer ${this.getAccessToken()}`;
+        }
+
+        try {
+            const response = await fetch(url, finalOptions);
+            
+            // Check for security headers
+            const sessionExpired = response.headers.get('X-Session-Expired');
+            const timeoutWarning = response.headers.get('X-Session-Timeout-Warning');
+            const remainingMinutes = response.headers.get('X-Session-Remaining-Minutes');
+
+            if (sessionExpired === 'true') {
+                alert('Your session has expired. Please log in again.');
+                this.logout();
+                return null;
+            }
+
+            if (timeoutWarning === 'true' && remainingMinutes && parseInt(remainingMinutes) <= 5) {
+                alert(`Your session will expire in ${remainingMinutes} minutes. Please save your work.`);
+            }
+
+            return response;
+        } catch (error) {
+            console.error('API request failed:', error);
+            throw error;
+        }
+    }
+
+    // Handle session timeout warnings
+    handleSessionTimeout() {
+        // Check for session timeout headers
+        const sessionExpired = document.querySelector('meta[name="session-expired"]')?.content;
+        const timeoutWarning = document.querySelector('meta[name="session-warning"]')?.content;
+
+        if (sessionExpired === 'true') {
+            alert('Your session has expired. Please log in again.');
+            this.logout();
+            return;
+        }
+
+        if (timeoutWarning === 'true') {
+            const remainingMinutes = document.querySelector('meta[name="session-remaining-minutes"]')?.content;
+            if (remainingMinutes && parseInt(remainingMinutes) <= 5) {
+                alert(`Your session will expire in ${remainingMinutes} minutes. Please save your work.`);
+            }
+        }
     }
 }
 

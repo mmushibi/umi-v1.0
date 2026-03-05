@@ -737,6 +737,13 @@
           status: 'Active'
         },
         employees: [],
+        user: {
+          name: '',
+          email: '',
+          role: '',
+          permissions: [],
+          tenantName: ''
+        },
         // Computed property for filtered employees
         get filteredEmployees() {
           let filtered = this.employees;
@@ -768,6 +775,21 @@
           return filtered;
         },
         init() {
+          // Initialize authentication
+          if (!window.umiAuth.initPageAuth('SuperAdmin')) {
+            return; // Will redirect if not authenticated
+          }
+          
+          // Load user data from authentication
+          const userInfo = window.umiAuth.getUserInfo();
+          this.user = {
+            name: userInfo.name || 'Super Admin',
+            email: userInfo.email || '',
+            role: userInfo.role || 'SuperAdmin',
+            permissions: window.umiAuth.getUserPermissions(),
+            tenantName: userInfo.tenantName || ''
+          };
+          
           // Initialize any required data
           this.loadEmployees();
         },

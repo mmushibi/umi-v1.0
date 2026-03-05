@@ -27,76 +27,76 @@ namespace UmiHealthPOS.Data
                 {
                     var categories = new[]
                     {
-                        new HelpCategory
+                        new Models.HelpCategory
                         {
                             CategoryId = "getting-started",
                             Name = "Getting Started",
                             Description = "Basic setup and initial configuration",
                             Icon = "fas fa-rocket",
-                            Order = 1,
+                            Order = "1",
                             Status = "Active"
                         },
-                        new HelpCategory
+                        new Models.HelpCategory
                         {
                             CategoryId = "inventory-management",
                             Name = "Inventory Management",
                             Description = "Managing products, stock, and suppliers",
                             Icon = "fas fa-boxes",
-                            Order = 2,
+                            Order = "2",
                             Status = "Active"
                         },
-                        new HelpCategory
+                        new Models.HelpCategory
                         {
                             CategoryId = "prescriptions",
                             Name = "Prescriptions",
                             Description = "Creating and managing prescriptions",
                             Icon = "fas fa-pills",
-                            Order = 3,
+                            Order = "3",
                             Status = "Active"
                         },
-                        new HelpCategory
+                        new Models.HelpCategory
                         {
                             CategoryId = "billing-payments",
                             Name = "Billing & Payments",
                             Description = "Processing sales and managing payments",
                             Icon = "fas fa-cash-register",
-                            Order = 4,
+                            Order = "4",
                             Status = "Active"
                         },
-                        new HelpCategory
+                        new Models.HelpCategory
                         {
                             CategoryId = "reports",
                             Name = "Reports",
                             Description = "Generating and analyzing reports",
                             Icon = "fas fa-chart-bar",
-                            Order = 5,
+                            Order = "5",
                             Status = "Active"
                         },
-                        new HelpCategory
+                        new Models.HelpCategory
                         {
                             CategoryId = "user-management",
                             Name = "User Management",
                             Description = "Managing users and permissions",
                             Icon = "fas fa-users",
-                            Order = 6,
+                            Order = "6",
                             Status = "Active"
                         },
-                        new HelpCategory
+                        new Models.HelpCategory
                         {
                             CategoryId = "compliance",
                             Name = "Compliance & Regulations",
                             Description = "Zambia pharmacy regulations and compliance",
                             Icon = "fas fa-shield-alt",
-                            Order = 7,
+                            Order = "7",
                             Status = "Active"
                         },
-                        new HelpCategory
+                        new Models.HelpCategory
                         {
                             CategoryId = "troubleshooting",
                             Name = "Troubleshooting",
                             Description = "Common issues and solutions",
                             Icon = "fas fa-tools",
-                            Order = 8,
+                            Order = "8",
                             Status = "Active"
                         }
                     };
@@ -106,12 +106,17 @@ namespace UmiHealthPOS.Data
                     _logger.LogInformation("Seeded {Count} help categories", categories.Length);
                 }
 
+                // Get category mapping for proper CategoryId assignment
+                var categoryMapping = await _context.HelpCategories
+                    .Where(c => c.CategoryId != null)
+                    .ToDictionaryAsync(c => c.CategoryId!, c => c.Id);
+
                 // Seed Help Articles
                 if (!await _context.HelpArticles.AnyAsync())
                 {
                     var articles = new[]
                     {
-                        new HelpArticle
+                        new Models.HelpArticle
                         {
                             ArticleId = "quick-start-guide",
                             Title = "Quick Start Guide",
@@ -127,12 +132,12 @@ namespace UmiHealthPOS.Data
 <h3>Step 4: Add Products</h3>
 <p>Import or manually add your product inventory to the system.</p>
 <p>For detailed assistance, please refer to our video tutorials or contact support.</p>",
-                            CategoryId = "getting-started",
+                            CategoryIdentifier = "getting-started",
                             Order = 1,
                             ReadingTime = "5 min read",
                             Status = "Published"
                         },
-                        new HelpArticle
+                        new Models.HelpArticle
                         {
                             ArticleId = "user-account-setup",
                             Title = "Setting Up Your User Account",
@@ -145,12 +150,12 @@ namespace UmiHealthPOS.Data
 <p>Configure your password, two-factor authentication, and security preferences.</p>
 <h3>Notification Preferences</h3>
 <p>Choose how you want to receive important updates and alerts.</p>",
-                            CategoryId = "getting-started",
+                            CategoryIdentifier = "getting-started",
                             Order = 2,
                             ReadingTime = "3 min read",
                             Status = "Published"
                         },
-                        new HelpArticle
+                        new Models.HelpArticle
                         {
                             ArticleId = "adding-products",
                             Title = "Adding Products to Inventory",
@@ -165,12 +170,12 @@ namespace UmiHealthPOS.Data
 <p>Organize your products with appropriate categorization.</p>
 <h3>Pricing and Stock Levels</h3>
 <p>Set up pricing structures and maintain optimal stock levels.</p>",
-                            CategoryId = "inventory-management",
+                            CategoryId = categoryMapping["inventory-management"],
                             Order = 1,
                             ReadingTime = "7 min read",
                             Status = "Published"
                         },
-                        new HelpArticle
+                        new Models.HelpArticle
                         {
                             ArticleId = "stock-management",
                             Title = "Stock Level Management",
@@ -183,12 +188,12 @@ namespace UmiHealthPOS.Data
 <p>Set up automatic reorder points to prevent stockouts.</p>
 <h3>Stock Adjustments</h3>
 <p>Handle stock returns, damages, and adjustments properly.</p>",
-                            CategoryId = "inventory-management",
+                            CategoryId = categoryMapping["inventory-management"],
                             Order = 2,
                             ReadingTime = "6 min read",
                             Status = "Published"
                         },
-                        new HelpArticle
+                        new Models.HelpArticle
                         {
                             ArticleId = "creating-prescriptions",
                             Title = "Creating Prescriptions",
@@ -203,12 +208,12 @@ namespace UmiHealthPOS.Data
 <p>Set proper dosages and provide clear instructions.</p>
 <h3>Prescription Validation</h3>
 <p>Ensure prescription accuracy with built-in validation checks.</p>",
-                            CategoryId = "prescriptions",
+                            CategoryId = categoryMapping["prescriptions"],
                             Order = 1,
                             ReadingTime = "8 min read",
                             Status = "Published"
                         },
-                        new HelpArticle
+                        new Models.HelpArticle
                         {
                             ArticleId = "payment-processing",
                             Title = "Payment Processing",
@@ -223,12 +228,12 @@ namespace UmiHealthPOS.Data
 <p>Accept debit and credit card payments.</p>
 <h3>Insurance Claims</h3>
 <p>Process insurance claims and reimbursements.</p>",
-                            CategoryId = "billing-payments",
+                            CategoryId = categoryMapping["billing-payments"],
                             Order = 1,
                             ReadingTime = "6 min read",
                             Status = "Published"
                         },
-                        new HelpArticle
+                        new Models.HelpArticle
                         {
                             ArticleId = "sales-reports",
                             Title = "Sales Reports Analysis",
@@ -241,12 +246,12 @@ namespace UmiHealthPOS.Data
 <p>Analyze top-selling products and inventory turnover.</p>
 <h3>Customer Analytics</h3>
 <p>Track customer behavior and purchase patterns.</p>",
-                            CategoryId = "reports",
+                            CategoryId = categoryMapping["reports"],
                             Order = 1,
                             ReadingTime = "5 min read",
                             Status = "Published"
                         },
-                        new HelpArticle
+                        new Models.HelpArticle
                         {
                             ArticleId = "zambia-compliance",
                             Title = "Zambia Pharmacy Compliance",
@@ -259,7 +264,7 @@ namespace UmiHealthPOS.Data
 <p>Proper handling and documentation of controlled substances.</p>
 <h3Record Keeping</h3>
 <p>Maintain proper records as required by law.</p>",
-                            CategoryId = "compliance",
+                            CategoryId = categoryMapping["compliance"],
                             Order = 1,
                             ReadingTime = "10 min read",
                             Status = "Published"

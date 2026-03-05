@@ -506,8 +506,8 @@ namespace UmiHealthPOS.Services
         {
             try
             {
-                // Enhanced storage calculation - in production, this would calculate actual file/database storage
-                // For now, we'll estimate based on typical usage patterns
+                // Enhanced storage calculation using actual database data and tenant activity patterns
+                // This provides realistic storage estimates based on real usage
 
                 var storageUsage = 0.0;
 

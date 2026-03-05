@@ -25,6 +25,7 @@ namespace UmiHealthPOS.Data
         public required DbSet<Prescription> Prescriptions { get; set; } = null!;
         public required DbSet<Patient> Patients { get; set; } = null!;
         public required DbSet<PrescriptionItem> PrescriptionItems { get; set; } = null!;
+        public required DbSet<Doctor> Doctors { get; set; } = null!;
         public required DbSet<ReportSchedule> ReportSchedules { get; set; } = null!;
         public required DbSet<Pharmacy> Pharmacies { get; set; } = null!;
         public required DbSet<SubscriptionPlan> SubscriptionPlans { get; set; } = null!;
@@ -92,17 +93,20 @@ namespace UmiHealthPOS.Data
 
         // Supplier Management
         public required DbSet<Supplier> Suppliers { get; set; } = null!;
-        public required DbSet<SupplierContact> SupplierContacts { get; set; } = null!;
         public required DbSet<SupplierProduct> SupplierProducts { get; set; } = null!;
+        public required DbSet<SupplierContact> SupplierContacts { get; set; } = null!;
 
         // Search History
         public required DbSet<SearchHistory> SearchHistories { get; set; } = null!;
 
-        // Pharmacist Account Management
-        public required DbSet<PharmacistProfile> PharmacistProfiles { get; set; }
-
-        // Clinical Management
+        // Clinical Entities
+        public required DbSet<DrugInteraction> DrugInteractions { get; set; } = null!;
+        public required DbSet<MedicationAllergy> MedicationAllergies { get; set; } = null!;
+        public required DbSet<ClinicalGuideline> ClinicalGuidelines { get; set; } = null!;
         public required DbSet<ClinicalNote> ClinicalNotes { get; set; } = null!;
+
+        // Pharmacist Account Management
+        public required DbSet<PharmacistProfile> PharmacistProfiles { get; set; } = null!;
 
         // Help & Training System
         public required DbSet<HelpCategory> HelpCategories { get; set; } = null!;
@@ -111,6 +115,7 @@ namespace UmiHealthPOS.Data
 
         // Admin Functions
         public required DbSet<TimeOffRequest> TimeOffRequests { get; set; } = null!;
+        public required DbSet<ShiftSwapRequest> ShiftSwapRequests { get; set; } = null!;
         public required DbSet<BackupLog> BackupLogs { get; set; } = null!;
 
         // Enhanced Security Entities
@@ -253,6 +258,24 @@ namespace UmiHealthPOS.Data
                 entity.HasIndex(e => e.InventoryItemName);
             });
 
+            // Doctor configuration
+            modelBuilder.Entity<Doctor>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.RegistrationNumber).HasMaxLength(50);
+                entity.Property(e => e.Specialization).HasMaxLength(100);
+                entity.Property(e => e.Address).HasMaxLength(500);
+                entity.Property(e => e.Phone).HasMaxLength(50);
+                entity.Property(e => e.Email).HasMaxLength(100);
+                entity.Property(e => e.TenantId).HasMaxLength(6);
+
+                entity.HasIndex(e => e.Name);
+                entity.HasIndex(e => e.RegistrationNumber);
+                entity.HasIndex(e => e.TenantId);
+                entity.HasIndex(e => e.IsActive);
+            });
+
             // Prescription configuration
             modelBuilder.Entity<Prescription>(entity =>
             {
@@ -281,6 +304,11 @@ namespace UmiHealthPOS.Data
                       .WithMany()
                       .HasForeignKey(e => e.PatientId)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.Doctor)
+                      .WithMany(d => d.Prescriptions)
+                      .HasForeignKey(e => e.DoctorId)
+                      .OnDelete(DeleteBehavior.SetNull);
             });
 
             // Patient configuration
@@ -952,23 +980,22 @@ namespace UmiHealthPOS.Data
             modelBuilder.Entity<ImpersonationLog>(entity =>
             {
                 entity.HasKey(e => e.Id);
-                entity.Property(e => e.SuperAdminUserId).IsRequired().HasMaxLength(450);
-                entity.Property(e => e.ImpersonatedUserId).IsRequired().HasMaxLength(450);
+                entity.Property(e => e.AdminUserId).IsRequired().HasMaxLength(450);
+                entity.Property(e => e.TargetUserId).IsRequired().HasMaxLength(450);
                 entity.Property(e => e.TenantId).HasMaxLength(6);
                 entity.Property(e => e.Reason).HasMaxLength(1000);
                 entity.Property(e => e.IpAddress).HasMaxLength(45);
                 entity.Property(e => e.UserAgent).HasMaxLength(500);
-                entity.Property(e => e.StartedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
-                entity.Property(e => e.IsActive).HasDefaultValue(true);
+                entity.Property(e => e.StartTime).HasDefaultValueSql("CURRENT_TIMESTAMP");
 
-                entity.HasOne(e => e.SuperAdminUser)
+                entity.HasOne(e => e.AdminUser)
                       .WithMany()
-                      .HasForeignKey(e => e.SuperAdminUserId)
+                      .HasForeignKey(e => e.AdminUserId)
                       .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(e => e.ImpersonatedUser)
+                entity.HasOne(e => e.TargetUser)
                       .WithMany()
-                      .HasForeignKey(e => e.ImpersonatedUserId)
+                      .HasForeignKey(e => e.TargetUserId)
                       .OnDelete(DeleteBehavior.Cascade);
 
                 entity.HasOne(e => e.Tenant)
@@ -976,11 +1003,9 @@ namespace UmiHealthPOS.Data
                       .HasForeignKey(e => e.TenantId)
                       .OnDelete(DeleteBehavior.SetNull);
 
-                entity.HasIndex(e => e.SuperAdminUserId);
-                entity.HasIndex(e => e.ImpersonatedUserId);
+                entity.HasIndex(e => e.AdminUserId);
+                entity.HasIndex(e => e.TargetUserId);
                 entity.HasIndex(e => e.TenantId);
-                entity.HasIndex(e => e.IsActive);
-                entity.HasIndex(e => e.StartedAt);
             });
 
             // UserRole configuration
@@ -1276,6 +1301,148 @@ namespace UmiHealthPOS.Data
                 entity.HasIndex(e => e.TenantId);
                 entity.HasIndex(e => e.Status);
                 entity.HasIndex(e => e.StartedAt);
+            });
+
+            // Clinical Entities Configuration
+            modelBuilder.Entity<DrugInteraction>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Medication1).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Medication2).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Severity).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Description).IsRequired().HasMaxLength(1000);
+                entity.Property(e => e.Recommendation).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => new { e.Medication1, e.Medication2 });
+                entity.HasIndex(e => e.Severity);
+            });
+
+            modelBuilder.Entity<MedicationAllergy>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Medication).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Allergen).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Severity).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Reaction).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Recommendation).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.Allergen);
+                entity.HasIndex(e => e.Severity);
+            });
+
+            modelBuilder.Entity<ClinicalGuideline>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Condition).HasMaxLength(100);
+                entity.Property(e => e.Medication).HasMaxLength(100);
+                entity.Property(e => e.Recommendation).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.EvidenceLevel).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.Source).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasIndex(e => e.Condition);
+                entity.HasIndex(e => e.Medication);
+                entity.HasIndex(e => e.EvidenceLevel);
+                entity.HasIndex(e => e.LastUpdated);
+            });
+
+            modelBuilder.Entity<ClinicalNote>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.NoteType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Content).IsRequired().HasMaxLength(2000);
+                entity.Property(e => e.Diagnosis).HasMaxLength(500);
+                entity.Property(e => e.Symptoms).HasMaxLength(1000);
+                entity.Property(e => e.Treatment).HasMaxLength(1000);
+                entity.Property(e => e.TenantId).IsRequired().HasMaxLength(36);
+                entity.Property(e => e.CreatedBy).IsRequired().HasMaxLength(36);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+
+                entity.HasOne(e => e.Patient)
+                    .WithMany(p => p.ClinicalNotes)
+                    .HasForeignKey(e => e.PatientId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.PatientId);
+                entity.HasIndex(e => e.TenantId);
+                entity.HasIndex(e => e.CreatedBy);
+                entity.HasIndex(e => e.CreatedAt);
+            });
+
+            // Supplier configuration
+            modelBuilder.Entity<Supplier>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(200);
+                    
+                entity.Property(e => e.ContactPerson)
+                    .HasMaxLength(100);
+                    
+                entity.Property(e => e.Email)
+                    .HasMaxLength(100);
+                    
+                entity.Property(e => e.Phone)
+                    .HasMaxLength(50);
+                    
+                entity.Property(e => e.Address)
+                    .HasMaxLength(500);
+                    
+                entity.Property(e => e.Status)
+                    .HasMaxLength(20)
+                    .HasDefaultValue("Active");
+                    
+                entity.Property(e => e.Notes)
+                    .HasMaxLength(500);
+
+                entity.HasIndex(e => e.Name);
+                entity.HasIndex(e => e.Status);
+                entity.HasIndex(e => e.IsPreferredSupplier);
+            });
+
+            // SupplierProduct configuration
+            modelBuilder.Entity<SupplierProduct>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                
+                entity.Property(e => e.SupplierProductCode)
+                    .HasMaxLength(100);
+                    
+                entity.Property(e => e.SupplierPrice)
+                    .HasColumnType("decimal(15,2)");
+                    
+                entity.Property(e => e.MinimumOrderQuantity)
+                    .HasColumnType("decimal(15,2)");
+                    
+                entity.Property(e => e.LeadTimeDays)
+                    .HasMaxLength(20);
+                    
+                entity.Property(e => e.Status)
+                    .HasMaxLength(20)
+                    .HasDefaultValue("Active");
+
+                entity.HasOne(e => e.Supplier)
+                    .WithMany(s => s.Products)
+                    .HasForeignKey(e => e.SupplierId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Product)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProductId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.SupplierId);
+                entity.HasIndex(e => e.ProductId);
+                entity.HasIndex(e => e.Status);
             });
         }
     }

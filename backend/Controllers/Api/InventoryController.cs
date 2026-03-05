@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -25,15 +26,18 @@ namespace UmiHealthPOS.Controllers.Api
         private readonly ILogger<InventoryController> _logger;
         private readonly IInventoryService _inventoryService;
         private readonly ApplicationDbContext _context;
+        private readonly IConfiguration _configuration;
 
         public InventoryController(
             ILogger<InventoryController> logger,
             IInventoryService inventoryService,
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            IConfiguration configuration)
         {
             _logger = logger;
             _inventoryService = inventoryService;
             _context = context;
+            _configuration = configuration;
         }
 
         [HttpGet("items")]
@@ -168,9 +172,8 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                // Generate a simple CSV template
-                var template = "Inventory Item Name,Generic Name,Brand Name,Manufacture Date,Batch Number,License Number,Zambia REG Number,Packing Type,Quantity,Unit Price,Selling Price,Reorder Level\n" +
-                              "Sample Item,Sample Generic,Sample Brand,2024-01-01,B001,LICENSE001,ZAMBIA001,Box,100,50.00,75.00,10\n";
+                // Generate CSV template with Zambia-specific headers only
+                var template = $"Inventory Item Name,Generic Name,Brand Name,Manufacture Date,Batch Number,License Number,{_configuration["Defaults:Country"] ?? "Zambia"} REG Number,Packing Type,Quantity,Unit Price,Selling Price,Reorder Level\n";
 
                 var fileName = "inventory_template.csv";
 

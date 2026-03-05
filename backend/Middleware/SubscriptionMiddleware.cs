@@ -101,11 +101,10 @@ namespace UmiHealthPOS.Middleware
                 };
             }
 
-            // Get subscription
+            // Get subscription - include trial and expired subscriptions for proper handling
             var subscription = await dbContext.Subscriptions
                 .Include(s => s.Plan)
-                .FirstOrDefaultAsync(s => s.TenantId == user.TenantId &&
-                                       (s.Status == "active" || s.Status == "grace_period"));
+                .FirstOrDefaultAsync(s => s.TenantId == user.TenantId);
 
             if (subscription == null)
             {
@@ -118,10 +117,56 @@ namespace UmiHealthPOS.Middleware
                 };
             }
 
-            // Check if expired
+            var now = DateTime.UtcNow;
+
+            // Check if trial has expired (14 days)
+            if (subscription.Status == "trial" && subscription.EndDate <= now)
+            {
+                // Update subscription status to expired
+                subscription.Status = "expired";
+                subscription.UpdatedAt = now;
+                await dbContext.SaveChangesAsync();
+
+                // Log out user by invalidating their sessions
+                await InvalidateUserSessions(user.UserId, dbContext);
+
+                return new SubscriptionCheckResult
+                {
+                    IsAllowed = false,
+                    Reason = "Your 14-day free trial has expired. Please contact Sales Operations to reactivate your account.",
+                    ErrorCode = "TRIAL_EXPIRED",
+                    User = user
+                };
+            }
+
+            // Check if subscription is expired
+            if (subscription.Status == "expired")
+            {
+                return new SubscriptionCheckResult
+                {
+                    IsAllowed = false,
+                    Reason = "Your subscription has expired. Please contact Sales Operations to reactivate your account.",
+                    ErrorCode = "SUBSCRIPTION_EXPIRED",
+                    User = user
+                };
+            }
+
+            // Check if subscription is in grace period
             if (subscription.Status == "grace_period")
             {
                 _logger.LogWarning("Tenant {TenantId} is in grace period", user.TenantId);
+            }
+
+            // Only allow access if subscription is active, trial (not expired), or in grace period
+            if (subscription.Status != "active" && subscription.Status != "trial" && subscription.Status != "grace_period")
+            {
+                return new SubscriptionCheckResult
+                {
+                    IsAllowed = false,
+                    Reason = "Subscription is not active. Please contact Sales Operations to reactivate your account.",
+                    ErrorCode = "SUBSCRIPTION_INACTIVE",
+                    User = user
+                };
             }
 
             // Check feature access
@@ -181,6 +226,39 @@ namespace UmiHealthPOS.Middleware
             catch
             {
                 return null;
+            }
+        }
+
+        private async Task InvalidateUserSessions(string userId, ApplicationDbContext dbContext)
+        {
+            try
+            {
+                // Invalidate all refresh tokens for this user
+                var user = await dbContext.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+                if (user != null)
+                {
+                    user.RefreshToken = null;
+                    user.RefreshTokenExpiryTime = null;
+                }
+
+                // Invalidate all active sessions for this user
+                var userSessions = await dbContext.UserSessions
+                    .Where(s => s.UserId == userId && s.IsActive)
+                    .ToListAsync();
+
+                foreach (var session in userSessions)
+                {
+                    session.IsActive = false;
+                    session.ExpiresAt = DateTime.UtcNow; // Immediately expire
+                }
+
+                await dbContext.SaveChangesAsync();
+
+                _logger.LogInformation("All sessions invalidated for user {UserId} due to trial expiration", userId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error invalidating sessions for user {UserId}", userId);
             }
         }
 
@@ -322,6 +400,9 @@ namespace UmiHealthPOS.Middleware
             {
                 "AUTH_REQUIRED" => 401,
                 "NO_SUBSCRIPTION" => 402,
+                "TRIAL_EXPIRED" => 402,
+                "SUBSCRIPTION_EXPIRED" => 402,
+                "SUBSCRIPTION_INACTIVE" => 403,
                 "FEATURE_NOT_AVAILABLE" => 403,
                 "LIMIT_EXCEEDED" => 429,
                 _ => 403
@@ -339,7 +420,8 @@ namespace UmiHealthPOS.Middleware
                 currentUsage = result.CurrentUsage,
                 limit = result.Limit,
                 upgradeUrl = "/api/billing/upgrade",
-                timestamp = DateTime.UtcNow
+                timestamp = DateTime.UtcNow,
+                forceLogout = result.ErrorCode == "TRIAL_EXPIRED" || result.ErrorCode == "SUBSCRIPTION_EXPIRED"
             };
 
             await context.Response.WriteAsync(JsonSerializer.Serialize(response));

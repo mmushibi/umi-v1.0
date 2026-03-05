@@ -9,6 +9,7 @@ namespace UmiHealthPOS.Models.DTOs
         public string Url { get; set; } = string.Empty;
         public string Domain { get; set; } = string.Empty;
         public string Date { get; set; } = string.Empty;
+        public DateTime PublishedDate { get; set; }
         public string Summary { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;
         public double RelevanceScore { get; set; }

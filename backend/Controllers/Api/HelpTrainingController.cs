@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
 
@@ -24,7 +26,7 @@ namespace UmiHealthPOS.Controllers.Api
 
         // Additional properties for help articles
         public int ReadingTime { get; set; }
-        public List<string> Tags { get; set; } = new();
+        public List<string> Tags { get; set; } = [];
 
         // Legacy properties for backward compatibility
         public string Description { get; set; } = string.Empty;
@@ -40,7 +42,7 @@ namespace UmiHealthPOS.Controllers.Api
         public string LastUpdated { get; set; } = string.Empty;
         public int EstimatedReadTime { get; set; }
         public string Difficulty { get; set; } = string.Empty;
-        public List<string> Tags { get; set; } = new();
+        public List<string> Tags { get; set; } = [];
     }
 
     public class HelpCategoryDto
@@ -93,15 +95,15 @@ namespace UmiHealthPOS.Controllers.Api
             try
             {
                 var categories = await _context.HelpCategories
-                    .Where(c => c.Status == "Active")
-                    .OrderBy(c => c.Order)
+                    .Where(c => c.IsActive)
+                    .OrderBy(c => c.SortOrder)
                     .Select(c => new HelpCategoryDto
                     {
-                        Id = c.CategoryId,
+                        Id = c.Id.ToString(),
                         Name = c.Name,
-                        Description = c.Description,
-                        Icon = c.Icon,
-                        Order = c.Order
+                        Description = c.Description ?? string.Empty,
+                        Icon = "📁", // Default icon
+                        Order = c.SortOrder
                     })
                     .ToListAsync();
 
@@ -122,22 +124,22 @@ namespace UmiHealthPOS.Controllers.Api
                 var query = _context.HelpArticles
                     .Where(a => a.Status == "Published");
 
-                if (!string.IsNullOrEmpty(category))
+                if (!string.IsNullOrEmpty(category) && int.TryParse(category, out int categoryId))
                 {
-                    query = query.Where(a => a.CategoryId == category);
+                    query = query.Where(a => a.CategoryId == categoryId);
                 }
 
                 var articles = await query
-                    .OrderByDescending(a => a.Order)
+                    .OrderByDescending(a => a.CreatedAt)
                     .ThenBy(a => a.Title)
                     .Select(a => new HelpArticleDto
                     {
-                        Id = a.ArticleId,
+                        Id = a.Id.ToString(),
                         Title = a.Title,
-                        Description = a.Description,
-                        CategoryId = a.CategoryId,
+                        Description = a.Content != null && a.Content.Length > 100 ? a.Content.Substring(0, 100) + "..." : a.Content ?? string.Empty,
+                        CategoryId = a.CategoryId.ToString(),
                         ReadingTime = 5, // Default reading time
-                        Order = a.Order,
+                        Order = a.Order ?? 0, // Use nullable Order property with fallback
                         Difficulty = "Beginner", // Default difficulty, can be added to entity later
                         Tags = new List<string>() // Default tags, can be added to entity later
                     })
@@ -153,13 +155,13 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpGet("articles/{id}")]
-        public async Task<ActionResult<HelpArticleDetailDto>> GetHelpArticle(string id)
+        public async Task<ActionResult<HelpArticleDetailDto>> GetHelpArticle(int id)
         {
             try
             {
                 // Get article with parsing outside expression tree
                 var articleEntity = await _context.HelpArticles
-                    .Where(a => a.ArticleId == id && a.Status == "Published")
+                    .Where(a => a.Id == id && a.Status == "Published")
                     .FirstOrDefaultAsync();
 
                 if (articleEntity == null)
@@ -167,28 +169,30 @@ namespace UmiHealthPOS.Controllers.Api
                     return NotFound(new { error = "Article not found" });
                 }
 
-                int.TryParse(articleEntity.ReadingTime = "5", out var minutes);
+                // Calculate reading time based on content length
+                int minutes = 5; // Default
+                if (!string.IsNullOrEmpty(articleEntity.Content))
+                {
+                    // Rough estimate: 200 words per minute reading speed
+                    var wordCount = articleEntity.Content.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+                    minutes = Math.Max(1, (int)Math.Ceiling(wordCount / 200.0));
+                }
 
                 var article = new HelpArticleDetailDto
                 {
-                    Id = articleEntity.ArticleId,
+                    Id = articleEntity.Id.ToString(),
                     Title = articleEntity.Title,
-                    CategoryId = articleEntity.CategoryId,
-                    Content = articleEntity.Content,
-                    LastUpdated = (articleEntity.LastUpdated ?? articleEntity.UpdatedAt).ToString("yyyy-MM-dd HH:mm:ss"),
-                    EstimatedReadTime = minutes > 0 ? minutes : 5,
+                    CategoryId = articleEntity.CategoryId.ToString(),
+                    Content = articleEntity.Content ?? string.Empty,
+                    LastUpdated = articleEntity.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss"),
+                    EstimatedReadTime = minutes,
                     Difficulty = "Beginner", // Default difficulty, can be added to entity later
-                    Tags = new List<string>() // Default tags, can be added to entity later
+                    Tags = [] // Default tags, can be added to entity later
                 };
-
-                if (article == null)
-                {
-                    return NotFound(new { error = "Article not found" });
-                }
 
                 // Increment view count
                 var articleForUpdate = await _context.HelpArticles
-                    .FirstOrDefaultAsync(a => a.ArticleId == id);
+                    .FirstOrDefaultAsync(a => a.Id == id);
                 if (articleForUpdate != null)
                 {
                     articleForUpdate.ViewCount += 1;
@@ -205,7 +209,7 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpGet("search")]
-        public async Task<ActionResult<List<HelpArticleDto>>> SearchHelpArticles([FromQuery] string query)
+        public ActionResult<List<HelpArticleDto>> SearchHelpArticles([FromQuery] string query)
         {
             try
             {
@@ -214,7 +218,7 @@ namespace UmiHealthPOS.Controllers.Api
                     return BadRequest(new { error = "Search query is required" });
                 }
 
-                var articles = GetPredefinedArticles();
+                var articles = HelpTrainingController.GetPredefinedArticles();
                 var searchResults = articles
                     .Where(a => a.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                                a.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
@@ -230,11 +234,11 @@ namespace UmiHealthPOS.Controllers.Api
         }
 
         [HttpGet("videos")]
-        public async Task<ActionResult<List<TrainingVideoDto>>> GetTrainingVideos([FromQuery] string? category = null)
+        public ActionResult<List<TrainingVideoDto>> GetTrainingVideos([FromQuery] string? category = null)
         {
             try
             {
-                var videos = GetPredefinedVideos();
+                var videos = HelpTrainingController.GetPredefinedVideos();
 
                 if (!string.IsNullOrEmpty(category))
                 {
@@ -262,12 +266,10 @@ namespace UmiHealthPOS.Controllers.Api
                 // Create feedback entity
                 var feedbackEntity = new HelpFeedback
                 {
-                    ArticleId = feedback.ArticleId,
-                    UserId = userId,
-                    TenantId = tenantId,
-                    Rating = feedback.Rating,
-                    Helpful = feedback.Helpful,
-                    Comment = feedback.Comment,
+                    ArticleId = int.TryParse(feedback.ArticleId, out int articleId) ? articleId : 0,
+                    UserId = userId ?? string.Empty,
+                    Rating = feedback.Rating.ToString(),
+                    Feedback = feedback.Comment,
                     CreatedAt = DateTime.UtcNow
                 };
 
@@ -287,7 +289,7 @@ namespace UmiHealthPOS.Controllers.Api
             }
         }
 
-        private List<HelpArticleDto> GetPredefinedArticles()
+        public static List<HelpArticleDto> GetPredefinedArticles()
         {
             return new List<HelpArticleDto>
             {
@@ -348,7 +350,7 @@ namespace UmiHealthPOS.Controllers.Api
             };
         }
 
-        private string GetArticleContent(string articleId)
+        public static string GetArticleContent(string articleId)
         {
             return articleId switch
             {
@@ -469,7 +471,7 @@ For immediate assistance, please:
             };
         }
 
-        private List<string> GetArticleTags(string articleId)
+        public static List<string> GetArticleTags(string articleId)
         {
             return articleId switch
             {
@@ -483,7 +485,7 @@ For immediate assistance, please:
             };
         }
 
-        private List<TrainingVideoDto> GetPredefinedVideos()
+        public static List<TrainingVideoDto> GetPredefinedVideos()
         {
             return new List<TrainingVideoDto>
             {

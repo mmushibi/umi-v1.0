@@ -1,0 +1,45 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using UmiHealthPOS.Data;
+using UmiHealthPOS.Models;
+using UmiHealthPOS.Services;
+using System;
+using System.Threading.Tasks;
+
+namespace UmiHealthPOS.Data
+{
+    public class ClinicalDataSeeder
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly IClinicalService _clinicalService;
+        private readonly ILogger<ClinicalDataSeeder> _logger;
+
+        public ClinicalDataSeeder(
+            ApplicationDbContext context,
+            IClinicalService clinicalService,
+            ILogger<ClinicalDataSeeder> logger)
+        {
+            _context = context;
+            _clinicalService = clinicalService;
+            _logger = logger;
+        }
+
+        public async Task SeedClinicalDataAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting clinical data seeding");
+
+                // Use the ClinicalService to seed data
+                await _clinicalService.SeedClinicalDataAsync();
+
+                _logger.LogInformation("Clinical data seeding completed");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error seeding clinical data");
+                throw;
+            }
+        }
+    }
+}

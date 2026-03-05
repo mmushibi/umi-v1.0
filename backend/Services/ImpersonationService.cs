@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using UmiHealthPOS.Models;
@@ -90,7 +91,7 @@ namespace UmiHealthPOS.Services
 
                 // Check if target user is already being impersonated
                 var existingImpersonation = await _context.ImpersonationLogs
-                    .FirstOrDefaultAsync(i => i.ImpersonatedUserId == targetUserId && i.IsActive);
+                    .FirstOrDefaultAsync(i => i.TargetUserId == targetUserId && i.Status == "Active");
 
                 if (existingImpersonation != null)
                 {
@@ -138,7 +139,7 @@ namespace UmiHealthPOS.Services
                 {
                     SuperAdminUserId = superAdminUserId!,
                     ImpersonatedUserId = targetUserId,
-                    ImpersonatedRole = Enum.Parse<UserRoleEnum>(targetUser.Role),
+                    ImpersonatedRole = Enum.Parse<UserRoleEnum>((targetUser?.Role ?? "Cashier")).ToString(),
                     TenantId = targetUser.TenantId,
                     StartedAt = DateTime.UtcNow,
                     Reason = reason,
@@ -160,9 +161,9 @@ namespace UmiHealthPOS.Services
                 {
                     UserId = targetUserId,
                     Token = impersonationToken,
-                    Role = Enum.Parse<UserRoleEnum>(targetUser.Role),
-                    TenantId = targetUser.TenantId,
-                    BranchId = targetUser.BranchId,
+                    Role = Enum.Parse<UserRoleEnum>(targetUser?.Role ?? "Cashier").ToString(),
+                    TenantId = targetUser.TenantId?.ToString() ?? string.Empty,
+                    BranchId = targetUser.BranchId?.ToString() ?? string.Empty,
                     DeviceInfo = "Impersonation Session",
                     Browser = httpContext?.Request?.Headers["User-Agent"].ToString(),
                     IpAddress = ipAddress,
@@ -171,7 +172,7 @@ namespace UmiHealthPOS.Services
                     IsActive = true,
                     IsImpersonated = true,
                     ImpersonatedByUserId = superAdminUserId,
-                    OriginalRole = Enum.Parse<UserRoleEnum>(superAdminUser.Role),
+                    OriginalRole = Enum.Parse<UserRoleEnum>(superAdminUser.Role).ToString(),
                     OriginalTenantId = superAdminUser.TenantId,
                     ImpersonatedAt = DateTime.UtcNow
                 };
@@ -212,12 +213,12 @@ namespace UmiHealthPOS.Services
 
                 // End the impersonation log
                 var impersonationLog = await _context.ImpersonationLogs
-                    .FirstOrDefaultAsync(i => i.ImpersonatedUserId == userId && i.IsActive);
+                    .FirstOrDefaultAsync(i => i.TargetUserId == userId && i.Status == "Active");
 
                 if (impersonationLog != null)
                 {
-                    impersonationLog.EndedAt = DateTime.UtcNow;
-                    impersonationLog.IsActive = false;
+                    impersonationLog.EndTime = DateTime.UtcNow;
+                    impersonationLog.Status = "Ended";
                 }
 
                 // Deactivate the enhanced session
@@ -248,10 +249,10 @@ namespace UmiHealthPOS.Services
                 }
 
                 return await _context.ImpersonationLogs
-                    .Include(i => i.ImpersonatedUser)
+                    .Include(i => i.TargetUser)
                     .Include(i => i.Tenant)
-                    .Where(i => i.SuperAdminUserId == superAdminUserId && i.IsActive)
-                    .OrderByDescending(i => i.StartedAt)
+                    .Where(i => i.AdminUserId == superAdminUserId && i.Status == "Active")
+                    .OrderByDescending(i => i.StartTime)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -272,22 +273,22 @@ namespace UmiHealthPOS.Services
                 }
 
                 var query = _context.ImpersonationLogs
-                    .Include(i => i.ImpersonatedUser)
+                    .Include(i => i.TargetUser)
                     .Include(i => i.Tenant)
-                    .Where(i => i.SuperAdminUserId == superAdminUserId);
+                    .Where(i => i.AdminUserId == superAdminUserId);
 
                 if (fromDate.HasValue)
                 {
-                    query = query.Where(i => i.StartedAt >= fromDate.Value);
+                    query = query.Where(i => i.StartTime >= fromDate.Value);
                 }
 
                 if (toDate.HasValue)
                 {
-                    query = query.Where(i => i.StartedAt <= toDate.Value);
+                    query = query.Where(i => i.StartTime <= toDate.Value);
                 }
 
                 return await query
-                    .OrderByDescending(i => i.StartedAt)
+                    .OrderByDescending(i => i.StartTime)
                     .Take(1000) // Limit to last 1000 records
                     .ToListAsync();
             }

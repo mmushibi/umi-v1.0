@@ -87,8 +87,8 @@ namespace UmiHealthPOS.Services
                 {
                     RxNumber = await GenerateRxNumberAsync(),
                     PatientId = request.PatientId,
-                    PatientName = $"Patient-{request.PatientId}", // Generate placeholder name
-                    PatientIdNumber = $"ID-{request.PatientId}", // Generate placeholder ID
+                    PatientName = await GetPatientNameAsync(request.PatientId.ToString()),
+                    PatientIdNumber = await GetPatientIdNumberAsync(request.PatientId.ToString()),
                     DoctorName = request.DoctorName,
                     DoctorRegistrationNumber = request.DoctorRegistrationNumber,
                     Medication = request.Medication,
@@ -531,6 +531,38 @@ namespace UmiHealthPOS.Services
             {
                 _logger.LogError(ex, "Error generating RX number");
                 throw;
+            }
+        }
+
+        private async Task<string> GetPatientNameAsync(string patientId)
+        {
+            try
+            {
+                var patient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.PatientId == patientId);
+
+                return patient != null ? $"{patient.FirstName} {patient.LastName}" : $"Patient-{patientId}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting patient name for ID: {PatientId}", patientId);
+                return $"Patient-{patientId}";
+            }
+        }
+
+        private async Task<string> GetPatientIdNumberAsync(string patientId)
+        {
+            try
+            {
+                var patient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.PatientId == patientId);
+
+                return patient?.IdNumber ?? $"ID-{patientId}";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting patient ID number for ID: {PatientId}", patientId);
+                return $"ID-{patientId}";
             }
         }
     }

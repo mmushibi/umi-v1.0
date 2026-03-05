@@ -69,13 +69,16 @@ namespace UmiHealthPOS.Controllers.Api
 
                 var prescriptions = await prescriptionsTask;
                 var pendingCount = await pendingTask;
+                var filledCount = prescriptions.Where(p => p.Status == "Filled" || p.Status == "Completed").Count();
+                var lowStockCount = await GetLowStockItemsCount(tenantId);
 
                 var stats = new PharmacistStats
                 {
                     PrescriptionsToday = prescriptions.Count,
+                    FilledToday = filledCount,
                     PatientsToday = prescriptions.Where(p => p.PatientId != 0).Select(p => p.PatientId).Distinct().Count(),
                     PendingReviews = pendingCount,
-                    LowStockItems = 0 // Will be implemented with inventory service integration
+                    LowStockItems = lowStockCount
                 };
 
                 return Ok(stats);
@@ -562,42 +565,64 @@ namespace UmiHealthPOS.Controllers.Api
 
         private string GetCurrentUserId()
         {
-            try
+            // Extract user ID from JWT token claims
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
             {
-                var user = HttpContext.User;
-                if (user?.Identity?.IsAuthenticated != true)
-                    throw new UnauthorizedAccessException("User not authenticated");
-
-                return user.FindFirst("sub")?.Value ??
-                       user.FindFirst("userId")?.Value ??
-                       user.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
-                       throw new UnauthorizedAccessException("User ID not found in token");
+                userId = User.FindFirst("userId")?.Value;
             }
-            catch (Exception ex)
+            if (string.IsNullOrEmpty(userId))
             {
-                _logger.LogError(ex, "Error getting current user ID");
-                throw new UnauthorizedAccessException("User not authenticated");
+                userId = User.FindFirst("sub")?.Value;
             }
+            
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new UnauthorizedAccessException("User ID not found in token");
+            }
+            
+            return userId;
         }
 
         private string GetCurrentTenantId()
         {
+            // Extract tenant ID from JWT token claims
+            var tenantId = User.FindFirst("TenantId")?.Value;
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                tenantId = User.FindFirst("tenant_id")?.Value;
+            }
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                tenantId = User.FindFirst("tenantId")?.Value;
+            }
+            
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                throw new UnauthorizedAccessException("Tenant ID not found in token");
+            }
+            
+            return tenantId;
+        }
+
+        private async Task<int> GetLowStockItemsCount(string tenantId)
+        {
             try
             {
-                var user = HttpContext.User;
-                if (user?.Identity?.IsAuthenticated != true)
-                    throw new UnauthorizedAccessException("User not authenticated");
+                // Count inventory items below reorder level
+                var lowStockCount = await _context.InventoryItems
+                    .AsNoTracking()
+                    .Where(i => i.TenantId == tenantId && 
+                               i.Quantity <= i.ReorderLevel && 
+                               i.ReorderLevel > 0)
+                    .CountAsync();
 
-                var tenantId = user.FindFirst("tenantId")?.Value;
-                if (string.IsNullOrEmpty(tenantId))
-                    throw new UnauthorizedAccessException("Tenant ID not found in token");
-
-                return tenantId;
+                return lowStockCount;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting current tenant ID");
-                throw new UnauthorizedAccessException("User not authenticated");
+                _logger.LogError(ex, "Error calculating low stock items count");
+                return 0;
             }
         }
     }
@@ -606,6 +631,7 @@ namespace UmiHealthPOS.Controllers.Api
     public class PharmacistStats
     {
         public int PrescriptionsToday { get; set; }
+        public int FilledToday { get; set; }
         public int PatientsToday { get; set; }
         public int PendingReviews { get; set; }
         public int LowStockItems { get; set; }

@@ -284,7 +284,7 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center">
           <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
@@ -296,6 +296,23 @@
             <p class="text-sm font-medium text-gray-600">Sales Today</p>
             <p class="text-2xl font-bold text-gray-900">
               <span x-show="!loadingStats" x-text="stats.salesToday"></span>
+              <span x-show="loadingStats" class="text-gray-400">Loading...</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 bg-emerald-100 rounded-lg p-3">
+            <svg class="h-6 w-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600">Revenue Today</p>
+            <p class="text-2xl font-bold text-gray-900">
+              <span x-show="!loadingStats" x-text="'ZMK ' + stats.revenueToday.toFixed(2)"></span>
               <span x-show="loadingStats" class="text-gray-400">Loading...</span>
             </p>
           </div>
@@ -346,7 +363,24 @@
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Avg. Transaction</p>
             <p class="text-2xl font-bold text-gray-900">
-              <span x-show="!loadingStats" x-text="'ZMK ' + stats.averageTransaction"></span>
+              <span x-show="!loadingStats" x-text="'ZMK ' + stats.averageTransaction.toFixed(2)"></span>
+              <span x-show="loadingStats" class="text-gray-400">Loading...</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 bg-orange-100 rounded-lg p-3">
+            <svg class="h-6 w-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600">Pending Orders</p>
+            <p class="text-2xl font-bold text-gray-900">
+              <span x-show="!loadingStats" x-text="stats.pendingOrders"></span>
               <span x-show="loadingStats" class="text-gray-400">Loading...</span>
             </p>
           </div>
@@ -459,9 +493,11 @@
         loadingSales: false,
         stats: {
           salesToday: 0,
+          revenueToday: 0.00,
           transactionsToday: 0,
           customersToday: 0,
-          averageTransaction: 0.00
+          averageTransaction: 0.00,
+          pendingOrders: 0
         },
         recentSales: [],
         
@@ -495,9 +531,11 @@
               const statsData = await statsResponse.json();
               this.stats = {
                 salesToday: statsData.salesToday || 0,
+                revenueToday: statsData.revenueToday || 0.00,
                 transactionsToday: statsData.transactionsToday || 0,
                 customersToday: statsData.customersToday || 0,
-                averageTransaction: statsData.averageTransaction || 0.00
+                averageTransaction: statsData.averageTransaction || 0.00,
+                pendingOrders: statsData.pendingOrders || 0
               };
               this.cacheData('stats', this.stats);
             } else if (statsResponse) {
@@ -514,7 +552,7 @@
               const sales = await salesResponse.json();
               this.recentSales = sales.map(sale => ({
                 ...sale,
-                timestamp: this.formatTimestamp(sale.createdAt)
+                timestamp: this.formatTimestamp(sale.createdAt || sale.timestamp)
               }));
               this.cacheData('recentSales', this.recentSales);
             } else if (salesResponse) {
@@ -571,7 +609,7 @@
               const sales = await response.json();
               const newSales = sales.map(sale => ({
                 ...sale,
-                timestamp: this.formatTimestamp(sale.createdAt)
+                timestamp: this.formatTimestamp(sale.createdAt || sale.timestamp)
               }));
               
               // Only update if data has changed
@@ -604,9 +642,11 @@
               const statsData = await response.json();
               const newStats = {
                 salesToday: statsData.salesToday || this.stats.salesToday,
+                revenueToday: statsData.revenueToday || this.stats.revenueToday,
                 transactionsToday: statsData.transactionsToday || this.stats.transactionsToday,
                 customersToday: statsData.customersToday || this.stats.customersToday,
-                averageTransaction: statsData.averageTransaction || this.stats.averageTransaction
+                averageTransaction: statsData.averageTransaction || this.stats.averageTransaction,
+                pendingOrders: statsData.pendingOrders || this.stats.pendingOrders
               };
               
               // Only update if data has changed

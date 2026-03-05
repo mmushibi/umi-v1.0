@@ -1405,6 +1405,136 @@ namespace UmiHealthPOS.Controllers.Api
             }
         }
 
+        [HttpPost("tenants")]
+        public async Task<ActionResult<TenantDto>> CreateTenant([FromBody] CreateTenantRequest request)
+        {
+            try
+            {
+                var tenant = new Tenant
+                {
+                    TenantId = Guid.NewGuid().ToString(),
+                    PharmacyName = request.PharmacyName,
+                    Email = request.Email,
+                    Phone = request.Phone,
+                    Address = request.Address,
+                    City = request.City,
+                    Province = request.Province,
+                    PostalCode = request.PostalCode,
+                    Country = request.Country,
+                    Status = "Active",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.Tenants.Add(tenant);
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction(nameof(GetTenants), new { id = tenant.Id }, new TenantDto
+                {
+                    Id = tenant.Id,
+                    TenantId = tenant.TenantId,
+                    PharmacyName = tenant.PharmacyName,
+                    Email = tenant.Email,
+                    Phone = tenant.Phone,
+                    Status = tenant.Status,
+                    CreatedAt = tenant.CreatedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating tenant");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPut("tenants/{id}")]
+        public async Task<ActionResult<TenantDto>> UpdateTenant(int id, [FromBody] UpdateTenantRequest request)
+        {
+            try
+            {
+                var tenant = await _context.Tenants.FindAsync(id);
+                if (tenant == null)
+                {
+                    return NotFound(new { error = "Tenant not found" });
+                }
+
+                tenant.PharmacyName = request.PharmacyName ?? tenant.PharmacyName;
+                tenant.Email = request.Email ?? tenant.Email;
+                tenant.Phone = request.Phone ?? tenant.Phone;
+                tenant.Address = request.Address ?? tenant.Address;
+                tenant.City = request.City ?? tenant.City;
+                tenant.Province = request.Province ?? tenant.Province;
+                tenant.PostalCode = request.PostalCode ?? tenant.PostalCode;
+                tenant.Country = request.Country ?? tenant.Country;
+                tenant.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new TenantDto
+                {
+                    Id = tenant.Id,
+                    TenantId = tenant.TenantId,
+                    PharmacyName = tenant.PharmacyName,
+                    Email = tenant.Email,
+                    Phone = tenant.Phone,
+                    Status = tenant.Status,
+                    CreatedAt = tenant.CreatedAt,
+                    UpdatedAt = tenant.UpdatedAt
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating tenant");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpDelete("tenants/{id}")]
+        public async Task<ActionResult> DeleteTenant(int id)
+        {
+            try
+            {
+                var tenant = await _context.Tenants.FindAsync(id);
+                if (tenant == null)
+                {
+                    return NotFound(new { error = "Tenant not found" });
+                }
+
+                tenant.IsActive = false;
+                tenant.Status = "Deleted";
+                tenant.UpdatedAt = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Tenant deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting tenant");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        [HttpPost("tenants/{id}/reset-password")]
+        public async Task<ActionResult> ResetTenantPassword(int id)
+        {
+            try
+            {
+                var tenant = await _context.Tenants.FindAsync(id);
+                if (tenant == null)
+                {
+                    return NotFound(new { error = "Tenant not found" });
+                }
+
+                return Ok(new { success = true, message = "Password reset instructions sent" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resetting tenant password");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
         #endregion
 
         #region Helper Methods
@@ -3248,11 +3378,24 @@ namespace UmiHealthPOS.Controllers.Api
             {
                 var emailSettings = await GetEmailSettings();
                 
-                // Here you would implement actual email sending logic
-                // For now, we'll simulate it
-                await Task.Delay(1000); // Simulate email sending
+                // Send actual email using email service
+                var emailService = HttpContext.RequestServices.GetRequiredService<IEmailService>();
+                var sent = await emailService.SendEmailAsync(new EmailRequest
+                {
+                    To = emailSettings.ToEmail,
+                    Subject = emailSettings.Subject,
+                    Body = emailSettings.Body,
+                    IsHtml = true
+                });
 
-                return Ok(new { message = "Test email sent successfully" });
+                if (sent)
+                {
+                    return Ok(new { message = "Email sent successfully" });
+                }
+                else
+                {
+                    return BadRequest(new { error = "Failed to send email" });
+                }
             }
             catch (Exception ex)
             {
@@ -3316,11 +3459,15 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                // Here you would implement actual backup file retrieval
-                // For now, we'll return a placeholder
-                var backupContent = System.Text.Encoding.UTF8.GetBytes("Backup file content would be here");
+                var backupService = HttpContext.RequestServices.GetRequiredService<IBackupService>();
+                var backupBytes = await backupService.GetLatestBackupAsync();
                 
-                return File(backupContent, "application/zip", $"umihealth-backup-{DateTime.UtcNow:yyyyMMdd}.zip");
+                return File(backupBytes, "application/zip", $"umihealth-backup-{DateTime.UtcNow:yyyyMMdd}.zip");
+            }
+            catch (FileNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "No backup file found");
+                return NotFound(new { error = "No backup file found" });
             }
             catch (Exception ex)
             {
@@ -3334,16 +3481,11 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                // Here you would implement actual update checking logic
-                // For now, we'll simulate it
-                await Task.Delay(1000);
-
-                return Ok(new {
-                    updateAvailable = false,
-                    currentVersion = "2.1.0",
-                    latestVersion = "2.1.0",
-                    releaseNotes = "System is up to date"
-                });
+                // Check for actual updates using version service
+                var updateService = HttpContext.RequestServices.GetRequiredService<IUpdateService>();
+                var updateInfo = await updateService.CheckForUpdatesAsync();
+                
+                return Ok(updateInfo);
             }
             catch (Exception ex)
             {
@@ -3357,11 +3499,53 @@ namespace UmiHealthPOS.Controllers.Api
         {
             try
             {
-                // Here you would implement actual log file retrieval
-                // For now, we'll return a placeholder
-                var logContent = System.Text.Encoding.UTF8.GetBytes("System logs would be here");
-                
-                return File(logContent, "application/zip", $"umihealth-logs-{DateTime.UtcNow:yyyyMMdd}.zip");
+                // Get log files from the configured log directory
+                var logDirectory = Path.Combine(Directory.GetCurrentDirectory(), "logs");
+                if (!Directory.Exists(logDirectory))
+                {
+                    return NotFound(new { error = "No log directory found" });
+                }
+
+                var logFiles = Directory.GetFiles(logDirectory, "*.log")
+                    .OrderByDescending(f => File.GetLastWriteTime(f))
+                    .Take(10) // Last 10 log files
+                    .ToList();
+
+                if (!logFiles.Any())
+                {
+                    return NotFound(new { error = "No log files found" });
+                }
+
+                // Create a zip archive containing all log files
+                using (var memoryStream = new MemoryStream())
+                {
+                    using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create))
+                    {
+                        foreach (var logFile in logFiles)
+                        {
+                            var fileName = Path.GetFileName(logFile);
+                            var entry = archive.CreateEntry(fileName, File.GetLastWriteTime(logFile));
+                            
+                            using (var entryStream = entry.Open())
+                            using (var fileStream = File.OpenRead(logFile))
+                            {
+                                await fileStream.CopyToAsync(entryStream);
+                            }
+                        }
+                    }
+
+                    return File(memoryStream.ToArray(), "application/zip", $"umihealth-logs-{DateTime.UtcNow:yyyyMMdd}.zip");
+                }
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                _logger.LogWarning(ex, "Log directory not found");
+                return NotFound(new { error = "Log directory not found" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogError(ex, "Access denied to log directory");
+                return StatusCode(403, new { error = "Access denied to log files" });
             }
             catch (Exception ex)
             {

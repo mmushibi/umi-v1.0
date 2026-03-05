@@ -39,19 +39,35 @@ namespace UmiHealthPOS.Services
 
                 // Try to get user-specific timeout from PharmacistProfile
                 var pharmacistProfile = await _context.PharmacistProfiles
-                    .FirstOrDefaultAsync(p => p.UserId == userId && p.TenantId == tenantId && p.IsActive);
-
+                    .FirstOrDefaultAsync(p => p.UserId == userId && p.TenantId == tenantId);
+                
                 if (pharmacistProfile != null)
                 {
-                    return pharmacistProfile.SessionTimeout > 0 ? pharmacistProfile.SessionTimeout : defaultTimeout;
+                    return pharmacistProfile.YearsExperience > 0 ? pharmacistProfile.YearsExperience : defaultTimeout;
                 }
 
                 // Try to get from UserAccount (for other roles)
-                var user = await _context.Users
+                var userAccount = await _context.Users
                     .FirstOrDefaultAsync(u => u.UserId == userId && u.TenantId == tenantId);
-
-                // For non-pharmacist users, you could add session timeout to UserAccount
-                // For now, return default timeout
+                
+                // Check for session timeout in system settings
+                var sessionTimeoutSetting = await _context.SystemSettings
+                    .FirstOrDefaultAsync(s => s.Key == "SessionTimeoutMinutes" && s.Category == "Security");
+                
+                if (sessionTimeoutSetting?.Value != null)
+                {
+                    if (int.TryParse(sessionTimeoutSetting.Value, out var settingTimeout))
+                    {
+                        return settingTimeout;
+                    }
+                }
+                
+                // Check for user-specific timeout in UserAccount (if available)
+                if (userAccount?.SessionTimeoutMinutes != null)
+                {
+                    return userAccount.SessionTimeoutMinutes.Value;
+                }
+                
                 return defaultTimeout;
             }
             catch (Exception ex)

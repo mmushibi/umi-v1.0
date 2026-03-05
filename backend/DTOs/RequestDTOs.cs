@@ -405,4 +405,49 @@ namespace UmiHealthPOS.DTOs
         public double Limit { get; set; }
         public double Percentage { get; set; }
     }
+
+    // Tenant Request DTOs
+    public class CreateTenantRequest
+    {
+        [Required]
+        public string PharmacyName { get; set; } = string.Empty;
+
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        public string Phone { get; set; } = string.Empty;
+
+        [Required]
+        public string Address { get; set; } = string.Empty;
+
+        public string City { get; set; } = string.Empty;
+
+        public string Province { get; set; } = string.Empty;
+
+        public string PostalCode { get; set; } = string.Empty;
+
+        public string Country { get; set; } = "Zambia";
+    }
+
+    public class UpdateTenantRequest
+    {
+        public string PharmacyName { get; set; } = string.Empty;
+
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+
+        public string Phone { get; set; } = string.Empty;
+
+        public string Address { get; set; } = string.Empty;
+
+        public string City { get; set; } = string.Empty;
+
+        public string Province { get; set; } = string.Empty;
+
+        public string PostalCode { get; set; } = string.Empty;
+
+        public string Country { get; set; } = string.Empty;
+    }
 }

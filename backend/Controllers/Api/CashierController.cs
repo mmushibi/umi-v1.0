@@ -217,8 +217,8 @@ namespace UmiHealthPOS.Controllers.Api
                         Price = p.SellingPrice,
                         StockLevel = p.Stock,
                         Category = p.Category ?? "Uncategorized",
-                        Brand = p.BrandName,
-                        GenericName = p.GenericName,
+                        Brand = p.BrandName ?? "",
+                        GenericName = p.GenericName ?? "",
                         RequiresPrescription = false, // Product doesn't have this property
                         Barcode = "", // Product doesn't have this property
                         Unit = "Each" // Default unit
@@ -305,11 +305,11 @@ namespace UmiHealthPOS.Controllers.Api
                         ReceiptNumber = s.ReceiptNumber,
                         DateTime = s.CreatedAt,
                         CustomerName = s.Customer != null ? s.Customer.Name : "Walk-in",
-                        CustomerId = s.CustomerId.HasValue ? s.CustomerId.Value.ToString() : null,
+                        CustomerId = s.CustomerId.HasValue ? s.CustomerId.Value.ToString() : "",
                         ItemCount = s.SaleItems.Count,
                         Total = s.Total,
                         PaymentMethod = s.PaymentMethod,
-                        PaymentDetails = s.PaymentDetails,
+                        PaymentDetails = s.PaymentDetails ?? "",
                         Status = s.Status
                     })
                     .ToListAsync();
@@ -353,16 +353,16 @@ namespace UmiHealthPOS.Controllers.Api
                     ReceiptNumber = sale.ReceiptNumber,
                     DateTime = sale.CreatedAt,
                     CustomerName = sale.Customer != null ? sale.Customer.Name : "Walk-in",
-                    CustomerId = sale.CustomerId.HasValue ? sale.CustomerId.Value.ToString() : null,
+                    CustomerId = sale.CustomerId.HasValue ? sale.CustomerId.Value.ToString() : "",
                     Subtotal = sale.Subtotal,
                     Tax = sale.Tax,
                     Total = sale.Total,
                     PaymentMethod = sale.PaymentMethod,
-                    PaymentDetails = sale.PaymentDetails,
+                    PaymentDetails = sale.PaymentDetails ?? "",
                     CashReceived = sale.CashReceived,
                     Change = sale.Change,
                     Status = sale.Status,
-                    RefundReason = sale.RefundReason,
+                    RefundReason = sale.RefundReason ?? "",
                     RefundedAt = sale.RefundedAt,
                     Items = sale.SaleItems.Select(si => new SaleItemDto
                     {
@@ -450,11 +450,11 @@ namespace UmiHealthPOS.Controllers.Api
                         ReceiptNumber = s.ReceiptNumber,
                         DateTime = s.CreatedAt,
                         CustomerName = s.Customer != null ? s.Customer.Name : "Walk-in",
-                        CustomerId = s.CustomerId.HasValue ? s.CustomerId.Value.ToString() : null,
+                        CustomerId = s.CustomerId.HasValue ? s.CustomerId.Value.ToString() : "",
                         ItemCount = s.SaleItems.Count,
                         Total = s.Total,
                         PaymentMethod = s.PaymentMethod,
-                        PaymentDetails = s.PaymentDetails,
+                        PaymentDetails = s.PaymentDetails ?? "",
                         Status = s.Status
                     })
                     .ToListAsync();
@@ -480,43 +480,44 @@ namespace UmiHealthPOS.Controllers.Api
 
         private string GetCurrentUserId()
         {
-            try
+            // Extract user ID from JWT token claims
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
             {
-                var user = HttpContext.User;
-                if (user?.Identity?.IsAuthenticated != true)
-                    throw new UnauthorizedAccessException("User not authenticated");
-
-                return user.FindFirst("sub")?.Value ??
-                       user.FindFirst("userId")?.Value ??
-                       user.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
-                       throw new UnauthorizedAccessException("User ID not found in token");
+                userId = User.FindFirst("userId")?.Value;
             }
-            catch (Exception ex)
+            if (string.IsNullOrEmpty(userId))
             {
-                _logger.LogError(ex, "Error getting current user ID");
-                throw new UnauthorizedAccessException("User not authenticated");
+                userId = User.FindFirst("sub")?.Value;
             }
+            
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new UnauthorizedAccessException("User ID not found in token");
+            }
+            
+            return userId;
         }
 
         private string GetCurrentTenantId()
         {
-            try
+            // Extract tenant ID from JWT token claims
+            var tenantId = User.FindFirst("TenantId")?.Value;
+            if (string.IsNullOrEmpty(tenantId))
             {
-                var user = HttpContext.User;
-                if (user?.Identity?.IsAuthenticated != true)
-                    throw new UnauthorizedAccessException("User not authenticated");
-
-                var tenantId = user.FindFirst("tenantId")?.Value;
-                if (string.IsNullOrEmpty(tenantId))
-                    throw new UnauthorizedAccessException("Tenant ID not found in token");
-
-                return tenantId;
+                tenantId = User.FindFirst("tenant_id")?.Value;
             }
-            catch (Exception ex)
+            if (string.IsNullOrEmpty(tenantId))
             {
-                _logger.LogError(ex, "Error getting current tenant ID");
-                throw new UnauthorizedAccessException("User not authenticated");
+                tenantId = User.FindFirst("tenantId")?.Value;
             }
+            
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                throw new UnauthorizedAccessException("Tenant ID not found in token");
+            }
+            
+            return tenantId;
         }
     }
 
@@ -534,26 +535,26 @@ namespace UmiHealthPOS.Controllers.Api
     public class RecentSale
     {
         public int Id { get; set; }
-        public string SaleId { get; set; }
-        public string CustomerName { get; set; }
+        public string SaleId { get; set; } = string.Empty;
+        public string CustomerName { get; set; } = string.Empty;
         public decimal Amount { get; set; }
-        public string PaymentMethod { get; set; }
+        public string PaymentMethod { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
-        public string Timestamp { get; set; }
+        public string Timestamp { get; set; } = string.Empty;
     }
 
     public class CreateSaleRequest
     {
-        public string CustomerName { get; set; }
-        public List<SaleItem> Items { get; set; }
+        public string CustomerName { get; set; } = string.Empty;
+        public List<SaleItem> Items { get; set; } = new List<SaleItem>();
         public decimal TotalAmount { get; set; }
-        public string PaymentMethod { get; set; }
+        public string PaymentMethod { get; set; } = string.Empty;
     }
 
     public class SaleItem
     {
         public int ProductId { get; set; }
-        public string ProductName { get; set; }
+        public string ProductName { get; set; } = string.Empty;
         public int Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
@@ -562,16 +563,16 @@ namespace UmiHealthPOS.Controllers.Api
     public class ProductSearchResult
     {
         public int Id { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public int StockLevel { get; set; }
-        public string Category { get; set; }
-        public string Brand { get; set; }
-        public string GenericName { get; set; }
+        public string Category { get; set; } = string.Empty;
+        public string Brand { get; set; } = string.Empty;
+        public string GenericName { get; set; } = string.Empty;
         public bool RequiresPrescription { get; set; }
-        public string Barcode { get; set; }
-        public string Unit { get; set; }
+        public string Barcode { get; set; } = string.Empty;
+        public string Unit { get; set; } = string.Empty;
     }
 }
 

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
+using UmiHealthPOS.Services;
 using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 using BCrypt.Net;
@@ -14,11 +15,13 @@ namespace UmiHealthPOS.Controllers.Api
     public class AccountController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
+        private readonly ISubscriptionPlanService _subscriptionPlanService;
         private readonly IConfiguration _configuration;
 
-        public AccountController(ApplicationDbContext context, IConfiguration configuration)
+        public AccountController(ApplicationDbContext context, ISubscriptionPlanService subscriptionPlanService, IConfiguration configuration)
         {
             _context = context;
+            _subscriptionPlanService = subscriptionPlanService;
             _configuration = configuration;
         }
 
@@ -217,9 +220,30 @@ namespace UmiHealthPOS.Controllers.Api
                 return BadRequest(new { message = "No active subscription found" });
             }
 
-            // Update subscription (using hardcoded plan details for now)
+            // Update subscription based on plan details with proper validation
+            var plan = await _subscriptionPlanService.GetPlanByPlanIdAsync(request.PlanId);
+            if (plan == null)
+            {
+                return BadRequest(new { message = "Invalid plan ID" });
+            }
+
+            // Validate plan change
+            if (!_subscriptionPlanService.ValidatePlanChange(currentSubscription.PlanId, plan.Id))
+            {
+                return BadRequest(new { message = "Plan change not allowed" });
+            }
+
+            // Calculate pricing based on billing cycle
+            var billingCycle = request.BillingCycle ?? "monthly";
+            var newPrice = _subscriptionPlanService.CalculatePrice(plan.Id, billingCycle);
+            var durationMonths = _subscriptionPlanService.GetDurationMonths(billingCycle);
+
+            // Update subscription
+            currentSubscription.PlanId = plan.Id;
+            currentSubscription.Amount = newPrice;
             currentSubscription.Status = "active";
-            currentSubscription.EndDate = DateTime.UtcNow.AddMonths(1);
+            currentSubscription.StartDate = DateTime.UtcNow;
+            currentSubscription.EndDate = DateTime.UtcNow.AddMonths(durationMonths);
             currentSubscription.UpdatedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
@@ -714,6 +738,8 @@ namespace UmiHealthPOS.Controllers.Api
     {
         [Required]
         public string? PlanId { get; set; }
+        
+        public string? BillingCycle { get; set; } = "monthly";
     }
 }
 

@@ -334,14 +334,38 @@ namespace UmiHealthPOS.Controllers.Api
             }
         }
 
-        private string? GetCurrentUserId()
+        private string GetCurrentUserId()
         {
-            return User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            // Extract user ID from JWT token claims
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                userId = User.FindFirst("userId")?.Value;
+            }
+            
+            if (string.IsNullOrEmpty(userId))
+            {
+                throw new UnauthorizedAccessException("User ID not found in token");
+            }
+            
+            return userId;
         }
 
-        private string? GetCurrentTenantId()
+        private string GetCurrentTenantId()
         {
-            return User.FindFirst("TenantId")?.Value;
+            // Extract tenant ID from JWT token claims
+            var tenantId = User.FindFirst("TenantId")?.Value;
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                tenantId = User.FindFirst("tenant_id")?.Value;
+            }
+            
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                throw new UnauthorizedAccessException("Tenant ID not found in token");
+            }
+            
+            return tenantId;
         }
 
         private class ValidationResult

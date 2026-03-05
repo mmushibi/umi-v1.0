@@ -72,11 +72,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        var origins = builder.Environment.IsProduction()
-            ? "https://umihealth.zm,https://www.umihealth.zm"
-            : builder.Configuration["Frontend:AllowedOrigins"] ?? "http://localhost:3000";
-
-        policy.WithOrigins(origins.Split(','))
+        policy.SetIsOriginAllowed(origin => true)
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -91,10 +87,18 @@ builder.Services.AddScoped<IRowLevelSecurityService, RowLevelSecurityService>();
 builder.Services.AddScoped<IImpersonationService, ImpersonationService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<IAuditService, AuditService>();
+builder.Services.AddScoped<IEnhancedAuthorizationService, EnhancedAuthorizationService>();
+builder.Services.AddScoped<IComplianceMonitoringService, ComplianceMonitoringService>();
+builder.Services.AddScoped<IAdvancedUISecurityService, AdvancedUISecurityService>();
+
+// Add rate limiting configuration
+builder.Services.Configure<RateLimitOptions>(builder.Configuration.GetSection("RateLimiting"));
+builder.Services.AddMemoryCache();
 
 // Add subscription services
 builder.Services.AddScoped<ISubscriptionExpirationService, SubscriptionExpirationService>();
-// builder.Services.AddHostedService<SubscriptionExpirationService>(); // Temporarily disabled for testing
+builder.Services.AddHostedService<SubscriptionExpirationService>();
 builder.Services.AddScoped<IUsageTrackingService, UsageTrackingService>();
 builder.Services.AddScoped<ILimitService, LimitService>();
 builder.Services.AddScoped<ISubscriptionNotificationService, SubscriptionNotificationService>();
@@ -108,6 +112,12 @@ var app = builder.Build();
 // Add host filtering middleware
 app.UseHostFiltering();
 
+// Add custom middleware pipeline
+app.UseAdvancedSecurity();
+app.UseRateLimiting();
+app.UseEnhancedSession();
+app.UseMiddleware<RowLevelSecurityMiddleware>();
+
 // app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
@@ -118,42 +128,39 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
+app.UseAuthorization();
 app.UseMiddleware<RowLevelSecurityMiddleware>();
+app.UseMiddleware<RoleBasedAccessMiddleware>();
 app.UseMiddleware<PermissionMiddleware>();
 app.UseSubscriptionMiddleware();
 // app.UseBranchIsolation();
 // app.UseInactivityCheck();
-app.UseAuthorization();
-
-// Map SignalR hubs
-// app.MapHub<DashboardHub>("/dashboardHub");
-// app.MapHub<PatientHub>("/patientHub");
 
 app.MapControllers();
 
-// Seed data in development
-if (app.Environment.IsDevelopment())
-{
-    using var scope = app.Services.CreateScope();
-    {
-        try
-        {
-            var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
+// Seed data in development - temporarily disabled
+// if (app.Environment.IsDevelopment())
+// {
+//     using var scope = app.Services.CreateScope();
+//     {
+//         try
+//         {
+//             var permissionService = scope.ServiceProvider.GetRequiredService<IPermissionService>();
 
-            // Seed permissions and roles
-            await permissionService.SeedDefaultPermissionsAsync();
-            await permissionService.SeedDefaultRolesAsync();
+//             // Seed permissions and roles
+//             await permissionService.SeedDefaultPermissionsAsync();
+//             await permissionService.SeedDefaultRolesAsync();
 
-            // Data seeding is handled by DataSeeder static class
-            await DataSeeder.SeedDataAsync(scope.ServiceProvider);
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "Error during data seeding: {Error}", ex.Message);
-        }
-    }
-}
+//             // Data seeding is handled by DataSeeder static class
+//             await DataSeeder.SeedDataAsync(scope.ServiceProvider);
+//         }
+//         catch (Exception ex)
+//         {
+//             var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+//             logger.LogError(ex, "Error during data seeding: {Error}", ex.Message);
+//         }
+//     }
+// }
 
 app.Run();
 

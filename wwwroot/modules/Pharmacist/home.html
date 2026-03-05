@@ -324,7 +324,7 @@
           <div class="ml-4">
             <p class="text-sm font-medium text-gray-600">Filled Today</p>
             <p class="text-2xl font-bold text-gray-900">
-              <span x-show="!loadingStats" x-text="stats.prescriptionsToday"></span>
+              <span x-show="!loadingStats" x-text="stats.filledToday"></span>
               <span x-show="loadingStats" class="text-gray-400">Loading...</span>
             </p>
           </div>
@@ -350,15 +350,15 @@
 
       <div class="bg-white rounded-lg shadow p-6">
         <div class="flex items-center">
-          <div class="flex-shrink-0 bg-yellow-100 rounded-lg p-3">
-            <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <div class="flex-shrink-0 bg-red-100 rounded-lg p-3">
+            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
             </svg>
           </div>
           <div class="ml-4">
-            <p class="text-sm font-medium text-gray-600">Pending Reviews</p>
+            <p class="text-sm font-medium text-gray-600">Low Stock Items</p>
             <p class="text-2xl font-bold text-gray-900">
-              <span x-show="!loadingStats" x-text="stats.pendingReviews"></span>
+              <span x-show="!loadingStats" x-text="stats.lowStockItems"></span>
               <span x-show="loadingStats" class="text-gray-400">Loading...</span>
             </p>
           </div>
@@ -471,6 +471,7 @@
         loadingPrescriptions: false,
         stats: {
           prescriptionsToday: 0,
+          filledToday: 0,
           patientsToday: 0,
           pendingReviews: 0,
           lowStockItems: 0
@@ -499,6 +500,7 @@
               const statsData = await response.json();
               this.stats = {
                 prescriptionsToday: statsData.prescriptionsToday || 0,
+                filledToday: statsData.filledToday || 0,
                 patientsToday: statsData.patientsToday || 0,
                 pendingReviews: statsData.pendingReviews || 0,
                 lowStockItems: statsData.lowStockItems || 0
@@ -506,12 +508,12 @@
             } else if (response) {
               console.error('Failed to fetch dashboard stats:', response.statusText);
               // Set default values to prevent UI from breaking
-              this.stats = { prescriptionsToday: 0, patientsToday: 0, pendingReviews: 0, lowStockItems: 0 };
+              this.stats = { prescriptionsToday: 0, filledToday: 0, patientsToday: 0, pendingReviews: 0, lowStockItems: 0 };
             }
           } catch (error) {
             console.error('Error loading dashboard stats:', error);
             // Set default values to prevent UI from breaking
-            this.stats = { prescriptionsToday: 0, patientsToday: 0, pendingReviews: 0, lowStockItems: 0 };
+            this.stats = { prescriptionsToday: 0, filledToday: 0, patientsToday: 0, pendingReviews: 0, lowStockItems: 0 };
           } finally {
             this.loadingStats = false;
           }
@@ -559,6 +561,7 @@
               // Only update if data has changed to prevent unnecessary re-renders
               const newStats = {
                 prescriptionsToday: statsData.prescriptionsToday || this.stats.prescriptionsToday,
+                filledToday: statsData.filledToday || this.stats.filledToday,
                 patientsToday: statsData.patientsToday || this.stats.patientsToday,
                 pendingReviews: statsData.pendingReviews || this.stats.pendingReviews,
                 lowStockItems: statsData.lowStockItems || this.stats.lowStockItems

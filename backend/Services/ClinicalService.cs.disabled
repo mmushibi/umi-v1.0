@@ -1,0 +1,584 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using UmiHealthPOS.Data;
+using UmiHealthPOS.Models;
+using UmiHealthPOS.Models.DTOs;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace UmiHealthPOS.Services
+{
+    // DTOs for Clinical Service
+    public class AllergyCheckResultDto
+    {
+        public bool HasAllergies { get; set; }
+        public List<MedicationAllergy> Allergies { get; set; } = new List<MedicationAllergy>();
+    }
+
+    public class DosageCalculationDto
+    {
+        public string Medication { get; set; }
+        public decimal Weight { get; set; }
+        public int Age { get; set; }
+        public string? Gender { get; set; }
+        public string RecommendedDosage { get; set; }
+        public decimal TotalDailyDose { get; set; }
+        public string Frequency { get; set; }
+        public decimal MaximumDose { get; set; }
+        public string? Notes { get; set; }
+    }
+
+    public class VitalSignsReferenceDto
+    {
+        public int Age { get; set; }
+        public decimal HeartRateMin { get; set; }
+        public decimal HeartRateMax { get; set; }
+        public decimal SystolicBpMin { get; set; }
+        public decimal SystolicBpMax { get; set; }
+        public decimal DiastolicBpMin { get; set; }
+        public decimal DiastolicBpMax { get; set; }
+        public decimal TemperatureMin { get; set; }
+        public decimal TemperatureMax { get; set; }
+        public decimal OxygenSaturationMin { get; set; }
+        public decimal OxygenSaturationMax { get; set; }
+        public string? ClinicalNotes { get; set; }
+    }
+
+    public class ClinicalGuideline
+    {
+        public string Condition { get; set; }
+        public string Medication { get; set; }
+        public string Recommendation { get; set; }
+    }
+
+    public class DrugInteraction
+    {
+        public string Medication1 { get; set; }
+        public string Medication2 { get; set; }
+        public string Interaction { get; set; }
+        public string Recommendation { get; set; }
+    }
+
+    public class MedicationAllergy
+    {
+        public string Allergen { get; set; }
+        public string Medication { get; set; }
+        public string Reaction { get; set; }
+        public string Severity { get; set; }
+    }
+
+    public interface IClinicalService
+    {
+        Task<List<DrugInteraction>> GetDrugInteractionsAsync(List<string> medications);
+        Task<AllergyCheckResult> CheckAllergiesAsync(List<string> medications, List<string> allergies);
+        Task<DosageCalculation> CalculateDosageAsync(string medication, decimal weight, int age, string? gender);
+        Task<List<ClinicalGuideline>> GetClinicalGuidelinesAsync(string? condition, string? medication);
+        Task<VitalSignsReference> GetVitalSignsReferenceAsync(int age);
+        Task SeedClinicalDataAsync();
+    }
+
+    public class ClinicalService : IClinicalService
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly ILogger<ClinicalService> _logger;
+
+        public ClinicalService(ApplicationDbContext context, ILogger<ClinicalService> logger)
+        {
+            _context = context;
+            _logger = logger;
+        }
+
+        public async Task<List<DrugInteraction>> GetDrugInteractionsAsync(List<string> medications)
+        {
+            try
+            {
+                var interactions = new List<DrugInteraction>();
+                var medsLower = medications.Select(m => m.ToLower()).ToList();
+
+                // Check database for known interactions
+                for (int i = 0; i < medsLower.Count; i++)
+                {
+                    for (int j = i + 1; j < medsLower.Count; j++)
+                    {
+                        var dbInteractions = await _context.DrugInteractions
+                            .Where(di => 
+                                (di.Medication1.ToLower().Contains(medsLower[i]) || di.Medication2.ToLower().Contains(medsLower[i])) &&
+                                (di.Medication1.ToLower().Contains(medsLower[j]) || di.Medication2.ToLower().Contains(medsLower[j])))
+                            .ToListAsync();
+
+                        interactions.AddRange(dbInteractions);
+                    }
+                }
+
+                // If no database interactions found, return empty list
+                if (!interactions.Any())
+                {
+                    _logger.LogInformation("No drug interactions found for medications: {Medications}", string.Join(", ", medications));
+                }
+
+                return interactions.Distinct().ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving drug interactions for medications: {Medications}", string.Join(", ", medications));
+                return new List<DrugInteraction>();
+            }
+        }
+
+        public async Task<AllergyCheckResult> CheckAllergiesAsync(List<string> medications, List<string> allergies)
+        {
+            try
+            {
+                var result = new AllergyCheckResult
+                {
+                    HasAllergies = false,
+                    Allergies = new List<MedicationAllergy>()
+                };
+
+                var medsLower = medications.Select(m => m.ToLower()).ToList();
+                var allergiesLower = allergies.Select(a => a.ToLower()).ToList();
+
+                // Check database for medication allergies
+                foreach (var allergen in allergiesLower)
+                {
+                    var medicationAllergies = await _context.MedicationAllergies
+                        .Where(ma => 
+                            ma.Allergen.ToLower().Contains(allergen) &&
+                            medsLower.Any(med => ma.Medication.ToLower().Contains(med)))
+                        .ToListAsync();
+
+                    if (medicationAllergies.Any())
+                    {
+                        result.HasAllergies = true;
+                        result.Allergies.AddRange(medicationAllergies);
+                    }
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error checking allergies for medications: {Medications}, allergies: {Allergies}", 
+                    string.Join(", ", medications), string.Join(", ", allergies));
+                return new AllergyCheckResult { HasAllergies = false, Allergies = new List<MedicationAllergy>() };
+            }
+        }
+
+        public async Task<DosageCalculation> CalculateDosageAsync(string medication, decimal weight, int age, string? gender)
+        {
+            try
+            {
+                var calculation = new DosageCalculation
+                {
+                    Medication = medication,
+                    Weight = weight,
+                    Age = age,
+                    Gender = gender
+                };
+
+                var medLower = medication.ToLower();
+
+                // Pediatric and adult dosing calculations based on common medications in Zambia
+                if (medLower.Contains("amoxicillin"))
+                {
+                    if (age < 12)
+                    {
+                        calculation.RecommendedDosage = "25-50 mg/kg/day divided twice daily";
+                        calculation.TotalDailyDose = Math.Round(weight * 40, 0);
+                        calculation.Frequency = "Twice daily";
+                        calculation.MaximumDose = 1000;
+                        calculation.Notes = "Use 250mg/5mL suspension for children. Treat for 7-10 days.";
+                    }
+                    else
+                    {
+                        calculation.RecommendedDosage = "500mg three times daily";
+                        calculation.TotalDailyDose = 1500;
+                        calculation.Frequency = "Three times daily";
+                        calculation.MaximumDose = 1500;
+                        calculation.Notes = "For adults. Adjust dose for renal impairment (CrCl <30mL/min).";
+                    }
+                }
+                else if (medLower.Contains("paracetamol") || medLower.Contains("acetaminophen"))
+                {
+                    if (age < 12)
+                    {
+                        calculation.RecommendedDosage = "10-15 mg/kg/dose every 6 hours";
+                        var perDose = Math.Round(weight * 12.5m, 0);
+                        calculation.TotalDailyDose = perDose * 4;
+                        calculation.Frequency = "Every 6 hours";
+                        calculation.MaximumDose = 60;
+                        calculation.Notes = "Maximum 60mg/kg/day. Do not exceed 4 doses in 24 hours.";
+                    }
+                    else
+                    {
+                        calculation.RecommendedDosage = "500mg-1g every 6 hours";
+                        calculation.TotalDailyDose = 4000;
+                        calculation.Frequency = "Every 6 hours";
+                        calculation.MaximumDose = 1000;
+                        calculation.Notes = "Maximum 4g/day. Use with caution in liver disease.";
+                    }
+                }
+                else if (medLower.Contains("ibuprofen"))
+                {
+                    if (age < 12)
+                    {
+                        calculation.RecommendedDosage = "5-10 mg/kg/dose every 6-8 hours";
+                        var perDose = Math.Round(weight * 7.5m, 0);
+                        calculation.TotalDailyDose = perDose * 3;
+                        calculation.Frequency = "Every 6-8 hours";
+                        calculation.MaximumDose = 40;
+                        calculation.Notes = "Give with food. Avoid in dehydration or renal impairment.";
+                    }
+                    else
+                    {
+                        calculation.RecommendedDosage = "400-600mg every 6-8 hours";
+                        calculation.TotalDailyDose = 1800;
+                        calculation.Frequency = "Every 6-8 hours";
+                        calculation.MaximumDose = 600;
+                        calculation.Notes = "Maximum 1.2g/day OTC, 2.4g/day prescription. Take with food.";
+                    }
+                }
+                else if (medLower.Contains("metformin"))
+                {
+                    calculation.RecommendedDosage = "Start 500mg once daily with evening meal";
+                    calculation.TotalDailyDose = 500;
+                    calculation.Frequency = "Once daily (can increase to BID)";
+                    calculation.MaximumDose = 2000;
+                    calculation.Notes = "Titrate every 1-2 weeks. Contraindicated in renal failure (eGFR <30).";
+                }
+                else if (medLower.Contains("artemether") || medLower.Contains("lumefantrine"))
+                {
+                    decimal dosePerKg = weight switch
+                    {
+                        < 5 => 0,
+                        < 15 => 20,
+                        < 25 => 40,
+                        < 35 => 60,
+                        _ => 80
+                    };
+
+                    calculation.RecommendedDosage = $"Weight-based dosing: {dosePerKg}mg per dose";
+                    calculation.TotalDailyDose = dosePerKg * 2;
+                    calculation.Frequency = "Twice daily for 3 days";
+                    calculation.MaximumDose = 480;
+                    calculation.Notes = "Take with food. Complete full 3-day course even if feeling better.";
+                }
+                else
+                {
+                    calculation.RecommendedDosage = "10mg/kg/day divided BID";
+                    calculation.TotalDailyDose = weight * 10;
+                    calculation.Frequency = "Twice daily";
+                    calculation.MaximumDose = 1000;
+                    calculation.Notes = "Adjust for renal impairment if necessary. Consult specific medication guidelines.";
+                }
+
+                // Age-specific adjustments
+                if (age > 65)
+                {
+                    calculation.Notes += " Consider dose reduction in elderly patients.";
+                }
+
+                if (weight < 10)
+                {
+                    calculation.Notes += " Use pediatric formulation and precise dosing.";
+                }
+
+                return await Task.FromResult(calculation);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calculating dosage for medication: {Medication}, weight: {Weight}, age: {Age}",
+                    medication, weight, age);
+                return new DosageCalculation
+                {
+                    Medication = medication,
+                    Weight = weight,
+                    Age = age,
+                    Gender = gender,
+                    RecommendedDosage = "Unable to calculate dosage",
+                    Notes = "Error occurred during dosage calculation"
+                };
+            }
+        }
+
+        public async Task<List<ClinicalGuideline>> GetClinicalGuidelinesAsync(string? condition, string? medication)
+        {
+            try
+            {
+                var guidelines = new List<ClinicalGuideline>();
+                var conditionLower = condition?.ToLower() ?? "";
+                var medicationLower = medication?.ToLower() ?? "";
+
+                // Search database for guidelines
+                var dbGuidelines = await _context.ClinicalGuidelines
+                    .Where(cg => 
+                        (string.IsNullOrEmpty(condition) || cg.Condition != null && cg.Condition.ToLower().Contains(conditionLower)) &&
+                        (string.IsNullOrEmpty(medication) || cg.Medication != null && cg.Medication.ToLower().Contains(medicationLower)))
+                    .OrderByDescending(cg => cg.LastUpdated)
+                    .ToListAsync();
+
+                guidelines.AddRange(dbGuidelines);
+
+                return guidelines;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving clinical guidelines for condition: {Condition}, medication: {Medication}",
+                    condition, medication);
+                return new List<ClinicalGuideline>();
+            }
+        }
+
+        public async Task<VitalSignsReference> GetVitalSignsReferenceAsync(int age)
+        {
+            try
+            {
+                var reference = new VitalSignsReference { Age = age };
+
+                // Age-specific vital sign ranges based on clinical guidelines
+                if (age < 1) // Neonates (0-11 months)
+                {
+                    reference.BloodPressureSystolicMin = 65;
+                    reference.BloodPressureSystolicMax = 100;
+                    reference.BloodPressureDiastolicMin = 45;
+                    reference.BloodPressureDiastolicMax = 65;
+                    reference.HeartRateMin = 100;
+                    reference.HeartRateMax = 160;
+                    reference.RespiratoryRateMin = 30;
+                    reference.RespiratoryRateMax = 60;
+                    reference.TemperatureMin = 36.5m;
+                    reference.TemperatureMax = 38.0m;
+                    reference.OxygenSaturationMin = 95;
+                    reference.OxygenSaturationMax = 100;
+                    reference.ClinicalNotes = "Higher normal ranges for heart rate and respiratory rate. Temperature regulation developing.";
+                }
+                else if (age < 3) // Toddlers (1-2 years)
+                {
+                    reference.BloodPressureSystolicMin = 80;
+                    reference.BloodPressureSystolicMax = 110;
+                    reference.BloodPressureDiastolicMin = 50;
+                    reference.BloodPressureDiastolicMax = 70;
+                    reference.HeartRateMin = 80;
+                    reference.HeartRateMax = 130;
+                    reference.RespiratoryRateMin = 20;
+                    reference.RespiratoryRateMax = 30;
+                    reference.TemperatureMin = 36.4m;
+                    reference.TemperatureMax = 37.8m;
+                    reference.OxygenSaturationMin = 95;
+                    reference.OxygenSaturationMax = 100;
+                    reference.ClinicalNotes = "Transitional vital signs approaching adult patterns. Continue monitoring.";
+                }
+                else if (age < 6) // Preschool (3-5 years)
+                {
+                    reference.BloodPressureSystolicMin = 85;
+                    reference.BloodPressureSystolicMax = 115;
+                    reference.BloodPressureDiastolicMin = 55;
+                    reference.BloodPressureDiastolicMax = 75;
+                    reference.HeartRateMin = 75;
+                    reference.HeartRateMax = 120;
+                    reference.RespiratoryRateMin = 20;
+                    reference.RespiratoryRateMax = 25;
+                    reference.TemperatureMin = 36.4m;
+                    reference.TemperatureMax = 37.6m;
+                    reference.OxygenSaturationMin = 95;
+                    reference.OxygenSaturationMax = 100;
+                    reference.ClinicalNotes = "Vital signs stabilizing. Normal activity levels affect readings.";
+                }
+                else if (age < 12) // School-age (6-11 years)
+                {
+                    reference.BloodPressureSystolicMin = 90;
+                    reference.BloodPressureSystolicMax = 120;
+                    reference.BloodPressureDiastolicMin = 60;
+                    reference.BloodPressureDiastolicMax = 80;
+                    reference.HeartRateMin = 70;
+                    reference.HeartRateMax = 110;
+                    reference.RespiratoryRateMin = 18;
+                    reference.RespiratoryRateMax = 22;
+                    reference.TemperatureMin = 36.3m;
+                    reference.TemperatureMax = 37.5m;
+                    reference.OxygenSaturationMin = 95;
+                    reference.OxygenSaturationMax = 100;
+                    reference.ClinicalNotes = "Near-adult vital sign patterns. Consider activity level and stress.";
+                }
+                else if (age < 18) // Adolescents (12-17 years)
+                {
+                    reference.BloodPressureSystolicMin = 95;
+                    reference.BloodPressureSystolicMax = 130;
+                    reference.BloodPressureDiastolicMin = 65;
+                    reference.BloodPressureDiastolicMax = 85;
+                    reference.HeartRateMin = 60;
+                    reference.HeartRateMax = 100;
+                    reference.RespiratoryRateMin = 16;
+                    reference.RespiratoryRateMax = 20;
+                    reference.TemperatureMin = 36.2m;
+                    reference.TemperatureMax = 37.4m;
+                    reference.OxygenSaturationMin = 95;
+                    reference.OxygenSaturationMax = 100;
+                    reference.ClinicalNotes = "Adult vital sign ranges with puberty considerations. Monitor for hypertension trends.";
+                }
+                else if (age < 40) // Adults (18-39 years)
+                {
+                    reference.BloodPressureSystolicMin = 90;
+                    reference.BloodPressureSystolicMax = 120;
+                    reference.BloodPressureDiastolicMin = 60;
+                    reference.BloodPressureDiastolicMax = 80;
+                    reference.HeartRateMin = 60;
+                    reference.HeartRateMax = 100;
+                    reference.RespiratoryRateMin = 12;
+                    reference.RespiratoryRateMax = 20;
+                    reference.TemperatureMin = 36.1m;
+                    reference.TemperatureMax = 37.2m;
+                    reference.OxygenSaturationMin = 95;
+                    reference.OxygenSaturationMax = 100;
+                    reference.ClinicalNotes = "Standard adult reference ranges. Individual baseline varies.";
+                }
+                else if (age < 65) // Middle-aged (40-64 years)
+                {
+                    reference.BloodPressureSystolicMin = 90;
+                    reference.BloodPressureSystolicMax = 130;
+                    reference.BloodPressureDiastolicMin = 60;
+                    reference.BloodPressureDiastolicMax = 85;
+                    reference.HeartRateMin = 60;
+                    reference.HeartRateMax = 90;
+                    reference.RespiratoryRateMin = 12;
+                    reference.RespiratoryRateMax = 18;
+                    reference.TemperatureMin = 36.0m;
+                    reference.TemperatureMax = 37.1m;
+                    reference.OxygenSaturationMin = 95;
+                    reference.OxygenSaturationMax = 100;
+                    reference.ClinicalNotes = "Slightly elevated BP norms acceptable. Monitor cardiovascular health.";
+                }
+                else // Elderly (65+ years)
+                {
+                    reference.BloodPressureSystolicMin = 90;
+                    reference.BloodPressureSystolicMax = 140;
+                    reference.BloodPressureDiastolicMin = 60;
+                    reference.BloodPressureDiastolicMax = 90;
+                    reference.HeartRateMin = 60;
+                    reference.HeartRateMax = 90;
+                    reference.RespiratoryRateMin = 12;
+                    reference.RespiratoryRateMax = 18;
+                    reference.TemperatureMin = 35.8m;
+                    reference.TemperatureMax = 37.0m;
+                    reference.OxygenSaturationMin = 94;
+                    reference.OxygenSaturationMax = 100;
+                    reference.ClinicalNotes = "Higher acceptable BP, lower temperature norms. Consider comorbidities.";
+                }
+
+                return await Task.FromResult(reference);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving vital signs reference for age: {Age}", age);
+                return new VitalSignsReference
+                {
+                    Age = age,
+                    ClinicalNotes = "Error occurred while retrieving vital signs reference"
+                };
+            }
+        }
+
+        public async Task SeedClinicalDataAsync()
+        {
+            try
+            {
+                // Check if data already exists
+                if (await _context.DrugInteractions.AnyAsync())
+                {
+                    _logger.LogInformation("Clinical data already seeded");
+                    return;
+                }
+
+                // Seed Drug Interactions
+                var drugInteractions = new List<DrugInteraction>
+                {
+                    new DrugInteraction
+                    {
+                        Medication1 = "Warfarin",
+                        Medication2 = "Aspirin",
+                        Severity = "Major",
+                        Description = "Increased risk of major bleeding due to combined antiplatelet and anticoagulant effects",
+                        Recommendation = "Avoid concurrent use. Consider alternative anticoagulation or antiplatelet therapy."
+                    },
+                    new DrugInteraction
+                    {
+                        Medication1 = "Simvastatin",
+                        Medication2 = "Clarithromycin",
+                        Severity = "Major",
+                        Description = "Increased risk of rhabdomyolysis due to CYP3A4 inhibition",
+                        Recommendation = "Avoid concurrent use. Consider alternative antibiotic or statin."
+                    },
+                    new DrugInteraction
+                    {
+                        Medication1 = "Lisinopril",
+                        Medication2 = "Potassium",
+                        Severity = "Moderate",
+                        Description = "Increased risk of hyperkalemia due to reduced potassium excretion",
+                        Recommendation = "Monitor serum potassium levels and renal function regularly."
+                    }
+                };
+
+                await _context.DrugInteractions.AddRangeAsync(drugInteractions);
+
+                // Seed Medication Allergies
+                var medicationAllergies = new List<MedicationAllergy>
+                {
+                    new MedicationAllergy
+                    {
+                        Medication = "Amoxicillin",
+                        Allergen = "Penicillin",
+                        Severity = "Severe",
+                        Reaction = "Anaphylaxis possible",
+                        Recommendation = "Avoid all penicillin-based antibiotics. Consider macrolides or quinolones."
+                    },
+                    new MedicationAllergy
+                    {
+                        Medication = "Co-trimoxazole",
+                        Allergen = "Sulfonamide",
+                        Severity = "Moderate to Severe",
+                        Reaction = "Rash, fever, possible Stevens-Johnson syndrome",
+                        Recommendation = "Avoid sulfonamide antibiotics. Consider alternative for UTI or respiratory infections."
+                    }
+                };
+
+                await _context.MedicationAllergies.AddRangeAsync(medicationAllergies);
+
+                // Seed Clinical Guidelines
+                var clinicalGuidelines = new List<ClinicalGuideline>
+                {
+                    new ClinicalGuideline
+                    {
+                        Title = "Hypertension Management - WHO/ISH Guidelines",
+                        Condition = "Hypertension",
+                        Recommendation = "Start with ACE inhibitor or calcium channel blocker. Target BP <140/90 mmHg. For patients >65 years, target <150/90 mmHg. Add thiazide diuretic if needed.",
+                        EvidenceLevel = "Grade A",
+                        LastUpdated = DateTime.UtcNow.AddDays(-30),
+                        Source = "World Health Organization, International Society of Hypertension"
+                    },
+                    new ClinicalGuideline
+                    {
+                        Title = "Uncomplicated Malaria Treatment - Zambia Protocol",
+                        Condition = "Malaria (Uncomplicated)",
+                        Medication = "Artemether/Lumefantrine",
+                        Recommendation = "First-line: Artemether/Lumefantrine 4mg/kg/dose twice daily for 3 days. Alternative: Dihydroartemisinin-piperaquine. Treat all confirmed cases.",
+                        EvidenceLevel = "Grade A",
+                        LastUpdated = DateTime.UtcNow.AddDays(-20),
+                        Source = "Zambia Ministry of Health National Malaria Control Programme"
+                    }
+                };
+
+                await _context.ClinicalGuidelines.AddRangeAsync(clinicalGuidelines);
+
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Clinical data seeded successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error seeding clinical data");
+            }
+        }
+    }
+}

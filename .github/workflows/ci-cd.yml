@@ -329,11 +329,12 @@ jobs:
     - name: Load backend image
       run: docker load --input /tmp/backend-image.tar
     
-    - name: Azure Login
+    - name: Azure Login (Disabled - Configure AZURE_CREDENTIALS secret to enable)
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
       continue-on-error: true
+      if: false
     
     - name: Deploy to Azure Web App
       run: |

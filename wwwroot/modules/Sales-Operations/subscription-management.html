@@ -876,7 +876,7 @@
           ];
         },
         
-        addActivityLog(subscription, action, details) {
+        async addActivityLog(subscription, action, details) {
           const activity = {
             id: Date.now(),
             action: action,
@@ -884,10 +884,25 @@
             date: new Date().toLocaleString()
           };
           
-          // Activity logging should be sent to backend API
-          // POST /api/activity-logs endpoint
-          console.log('Activity Log:', activity);
-          // In production, this would be saved to the database via API call
+          // Send activity log to backend API
+          try {
+            const response = await fetch('/api/activity-logs', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${window.umiAuth.getToken()}`
+              },
+              body: JSON.stringify(activity)
+            });
+
+            if (response.ok) {
+              console.log('Activity logged successfully:', activity);
+            } else {
+              console.warn('Failed to log activity to database');
+            }
+          } catch (error) {
+            console.error('Error logging activity:', error);
+          }
         },
         
         showNotification(message, type = 'info') {

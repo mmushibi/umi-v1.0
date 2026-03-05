@@ -172,11 +172,11 @@ namespace UmiHealthPOS.Controllers.Api
                     .Select(sh => new SearchHistoryDto
                     {
                         Id = sh.Id,
-                        Query = sh.Query,
+                        Query = sh.Query ?? sh.SearchTerm,
                         SearchType = sh.SearchType,
                         ResultCount = sh.ResultCount,
                         SearchedAt = sh.SearchedAt,
-                        Source = sh.Source
+                        Source = sh.Source ?? "web"
                     })
                     .ToListAsync();
 
@@ -241,7 +241,6 @@ namespace UmiHealthPOS.Controllers.Api
                 foreach (var item in userSearchHistory)
                 {
                     item.IsActive = false;
-                    item.UpdatedAt = DateTime.UtcNow;
                 }
 
                 await _context.SaveChangesAsync();
@@ -273,11 +272,10 @@ namespace UmiHealthPOS.Controllers.Api
                 {
                     TenantId = tenantId,
                     UserId = userId,
-                    Query = query.Trim(),
+                    SearchTerm = query.Trim(),
                     SearchType = searchType,
-                    ResultCount = resultCount,
-                    Source = "web",
-                    IPAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString(),
+                    ResultCount = resultCount ?? 0,
+                    IpAddress = _httpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString(),
                     UserAgent = _httpContextAccessor.HttpContext?.Request?.Headers["User-Agent"].ToString(),
                     SearchedAt = DateTime.UtcNow
                 };
@@ -308,7 +306,6 @@ namespace UmiHealthPOS.Controllers.Api
                 foreach (var oldSearch in oldSearches)
                 {
                     oldSearch.IsActive = false;
-                    oldSearch.UpdatedAt = DateTime.UtcNow;
                 }
 
                 if (oldSearches.Any())

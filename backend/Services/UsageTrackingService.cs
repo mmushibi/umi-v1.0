@@ -410,8 +410,8 @@ namespace UmiHealthPOS.Services
         {
             // Analyze usage records to find peak hours
             var usageByHour = await _context.UsageRecords
-                .Where(r => r.TenantId == tenantId && r.Timestamp >= DateTime.UtcNow.AddDays(-30))
-                .GroupBy(r => r.Timestamp.Hour)
+                .Where(r => r.TenantId == tenantId && r.LastUsed >= DateTime.UtcNow.AddDays(-30))
+                .GroupBy(r => r.LastUsed.Hour)
                 .Select(g => new { Hour = g.Key, Count = g.Count() })
                 .OrderByDescending(g => g.Count)
                 .Take(3)
@@ -424,8 +424,8 @@ namespace UmiHealthPOS.Services
         {
             // Analyze usage records to find most used features
             var features = await _context.UsageRecords
-                .Where(r => r.TenantId == tenantId && r.Timestamp >= DateTime.UtcNow.AddDays(-30))
-                .GroupBy(r => r.ActivityType)
+                .Where(r => r.TenantId == tenantId && r.LastUsed >= DateTime.UtcNow.AddDays(-30))
+                .GroupBy(r => r.Feature)
                 .Select(g => new { Feature = g.Key, Count = g.Count() })
                 .OrderByDescending(g => g.Count)
                 .Take(5)

@@ -9,6 +9,9 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using UmiHealthPOS.Data;
 using UmiHealthPOS.Models;
+using System.Data.Common;
+using Npgsql;
+using System.Text.Json;
 
 namespace UmiHealthPOS.Services
 {
@@ -181,10 +184,8 @@ namespace UmiHealthPOS.Services
                     await writer.WriteAsync(data);
                 }
 
-                // Backup schema
-                var schemaEntry = archive.CreateEntry("database/schema.sql");
-                using var schemaWriter = new StreamWriter(schemaEntry.Open());
-                await schemaWriter.WriteAsync(await GenerateDatabaseSchemaAsync());
+                // Generate database schema
+                await GenerateDatabaseSchemaAsync(archive);
             }
             catch (Exception ex)
             {
@@ -288,20 +289,193 @@ namespace UmiHealthPOS.Services
             }
         }
 
-        private async Task<string> GenerateDatabaseSchemaAsync()
+        private async Task GenerateDatabaseSchemaAsync(ZipArchive archive)
         {
             try
             {
-                // This would generate the database schema
-                // For now, return a placeholder
-                await Task.CompletedTask;
-                return "-- Database schema placeholder\n-- Generated at: " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC") + "\n";
+                var connection = _context.Database.GetDbConnection();
+                if (connection.State != System.Data.ConnectionState.Open)
+                    await connection.OpenAsync();
+
+                var schema = new DatabaseSchema
+                {
+                    GeneratedAt = DateTime.UtcNow,
+                    DatabaseType = "PostgreSQL",
+                    Version = "14+",
+                    Tables = new List<TableSchema>()
+                };
+
+                // Get all table information
+                var tables = await GetTableSchemasAsync(connection);
+                schema.Tables.AddRange(tables);
+
+                // Add foreign key relationships
+                var foreignKeys = await GetForeignKeySchemasAsync(connection);
+                foreach (var table in schema.Tables)
+                {
+                    table.ForeignKeys = foreignKeys.Where(fk => fk.TableName == table.Name).ToList();
+                }
+
+                // Serialize schema to JSON
+                var schemaJson = JsonSerializer.Serialize(schema, new JsonSerializerOptions 
+                { 
+                    WriteIndented = true,
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+
+                var schemaEntry = archive.CreateEntry("database/schema.json");
+                using var writer = new StreamWriter(schemaEntry.Open());
+                await writer.WriteAsync(schemaJson);
+
+                _logger.LogInformation("Database schema generated successfully");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to generate database schema");
-                return "-- Schema generation failed\n";
+                throw;
             }
+        }
+
+        private async Task<List<TableSchema>> GetTableSchemasAsync(DbConnection connection)
+        {
+            var tables = new List<TableSchema>();
+            
+            // Get table names
+            var tableNames = new List<string>();
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+                    SELECT table_name 
+                    FROM information_schema.tables 
+                    WHERE table_schema = 'public' 
+                    AND table_type = 'BASE TABLE'
+                    ORDER BY table_name";
+                
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    tableNames.Add(reader.GetString(0));
+                }
+            }
+
+            // Get column information for each table
+            foreach (var tableName in tableNames)
+            {
+                var tableSchema = new TableSchema
+                {
+                    Name = tableName,
+                    Columns = new List<ColumnSchema>()
+                };
+
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = @"
+                        SELECT 
+                            column_name,
+                            data_type,
+                            is_nullable,
+                            column_default,
+                            character_maximum_length,
+                            numeric_precision,
+                            numeric_scale
+                        FROM information_schema.columns 
+                        WHERE table_schema = 'public' 
+                        AND table_name = @table_name
+                        ORDER BY ordinal_position";
+                    
+                    var parameter = command.CreateParameter();
+                    parameter.ParameterName = "@table_name";
+                    parameter.Value = tableName;
+                    command.Parameters.Add(parameter);
+
+                    using var reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        var column = new ColumnSchema
+                        {
+                            Name = reader.GetString(0),
+                            DataType = reader.GetString(1),
+                            IsNullable = reader.GetString(2) == "YES",
+                            DefaultValue = reader.IsDBNull(3) ? null : reader.GetString(3),
+                            MaxLength = reader.IsDBNull(4) ? null : (int?)reader.GetInt32(4),
+                            Precision = reader.IsDBNull(5) ? null : (int?)reader.GetInt32(5),
+                            Scale = reader.IsDBNull(6) ? null : (int?)reader.GetInt32(6)
+                        };
+                        tableSchema.Columns.Add(column);
+                    }
+                }
+
+                // Get primary key information
+                using (var command = connection.CreateCommand())
+                {
+                    command.CommandText = @"
+                        SELECT kcu.column_name
+                        FROM information_schema.table_constraints tc
+                        JOIN information_schema.key_column_usage kcu 
+                            ON tc.constraint_name = kcu.constraint_name
+                            AND tc.table_schema = kcu.table_schema
+                        WHERE tc.constraint_type = 'PRIMARY KEY'
+                        AND tc.table_schema = 'public'
+                        AND tc.table_name = @table_name
+                        ORDER BY kcu.ordinal_position";
+                    
+                    var parameter = command.CreateParameter();
+                    parameter.ParameterName = "@table_name";
+                    parameter.Value = tableName;
+                    command.Parameters.Add(parameter);
+
+                    using var reader = await command.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        tableSchema.PrimaryKeyColumns.Add(reader.GetString(0));
+                    }
+                }
+
+                tables.Add(tableSchema);
+            }
+
+            return tables;
+        }
+
+        private async Task<List<ForeignKeySchema>> GetForeignKeySchemasAsync(DbConnection connection)
+        {
+            var foreignKeys = new List<ForeignKeySchema>();
+
+            using (var command = connection.CreateCommand())
+            {
+                command.CommandText = @"
+                    SELECT 
+                        tc.table_name,
+                        kcu.column_name,
+                        ccu.table_name AS foreign_table_name,
+                        ccu.column_name AS foreign_column_name,
+                        tc.constraint_name
+                    FROM information_schema.table_constraints AS tc 
+                    JOIN information_schema.key_column_usage AS kcu
+                        ON tc.constraint_name = kcu.constraint_name
+                        AND tc.table_schema = kcu.table_schema
+                    JOIN information_schema.constraint_column_usage AS ccu
+                        ON ccu.constraint_name = tc.constraint_name
+                        AND ccu.table_schema = tc.table_schema
+                    WHERE tc.constraint_type = 'FOREIGN KEY'
+                    AND tc.table_schema = 'public'";
+
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var foreignKey = new ForeignKeySchema
+                    {
+                        TableName = reader.GetString(0),
+                        ColumnName = reader.GetString(1),
+                        ReferencedTableName = reader.GetString(2),
+                        ReferencedColumnName = reader.GetString(3),
+                        ConstraintName = reader.GetString(4)
+                    };
+                    foreignKeys.Add(foreignKey);
+                }
+            }
+
+            return foreignKeys;
         }
 
         private async Task RecordBackupAsync(string backupId, string filePath)

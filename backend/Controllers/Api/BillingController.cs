@@ -305,39 +305,32 @@ namespace UmiHealthPOS.Controllers.Api
 
         private async Task BroadcastInvoiceUpdate(Invoice invoice, string action)
         {
-            // This would integrate with SignalR for real-time updates
-            // For now, we'll just log the action
-            _logger.LogInformation($"Invoice {action}: {invoice.Id} for tenant {invoice.TenantId}");
-        }
-
-        private string GenerateInvoiceCsv(IEnumerable<Invoice> invoices)
-        {
-            var headers = new[] { "Invoice Number", "Tenant", "Plan", "Amount", "Issue Date", "Due Date", "Status", "Payment Date" };
-            var rows = invoices.Select(inv => new[]
+            try
             {
-                inv.Id.ToString(),
-                inv.Tenant?.Company ?? "",
-                "Basic",
-                inv.Amount.ToString(),
-                inv.CreatedAt.ToString("yyyy-MM-dd"),
-                inv.DueDate.ToString("yyyy-MM-dd"),
-                inv.Status,
-                inv.PaymentDate?.ToString("yyyy-MM-dd") ?? ""
-            });
-
-            return string.Join("\n", headers.Concat(rows).Select(row => string.Join(",", row)));
+                // Integrate with SignalR for real-time updates
+                var hubContext = HttpContext.RequestServices.GetRequiredService<IHubContext<BillingHub>>();
+                
+                if (hubContext != null)
+                {
+                    await hubContext.Clients.All.SendAsync("InvoiceUpdate", new 
+                    {
+                        InvoiceId = invoice.Id,
+                        Action = action,
+                        TenantId = invoice.TenantId,
+                        Amount = invoice.Amount,
+                        Status = invoice.Status,
+                        UpdatedAt = DateTime.UtcNow
+                    });
+                }
+                
+                _logger.LogInformation("Invoice {Action}: {InvoiceId} for tenant {TenantId}", action, invoice.Id, invoice.TenantId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error broadcasting invoice update");
+            }
         }
-    }
 
-    // Request DTOs
-    public class CreateInvoiceRequest
-    {
-        public int TenantId { get; set; }
-        public string Plan { get; set; } = string.Empty;
-        public decimal Amount { get; set; }
-        public DateTime IssueDate { get; set; }
-        public DateTime DueDate { get; set; }
-        public string? Notes { get; set; }
     }
 
     public class UpdateInvoiceRequest
@@ -366,11 +359,6 @@ namespace UmiHealthPOS.Controllers.Api
         public string? FailureReason { get; set; }
     }
 }
-
-
-
-
-
 
 
 
