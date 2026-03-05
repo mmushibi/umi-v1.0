@@ -103,11 +103,11 @@ namespace UmiHealthPOS.Middleware
             }
 
             // Add session information to response headers for client-side handling
-            context.Response.Headers.Add("X-Session-Timeout-Minutes", maxSessionTime.ToString());
-            context.Response.Headers.Add("X-Session-Warning-Threshold", warningThreshold.ToString());
+            context.Response.Headers["X-Session-Timeout-Minutes"] = maxSessionTime.ToString();
+            context.Response.Headers["X-Session-Warning-Threshold"] = warningThreshold.ToString();
             
             var remainingTime = TimeSpan.FromMinutes(maxSessionTime) - (DateTime.UtcNow - sessionInfo.StartTime);
-            context.Response.Headers.Add("X-Session-Remaining-Seconds", Math.Max(0, (int)remainingTime.TotalSeconds).ToString());
+            context.Response.Headers["X-Session-Remaining-Seconds"] = Math.Max(0, (int)remainingTime.TotalSeconds).ToString();
         }
 
         private async Task<UserSessionInfo> GetSessionInfoAsync(string sessionKey)
@@ -134,8 +134,8 @@ namespace UmiHealthPOS.Middleware
                     sessionInfo.UserId, (int)timeUntilTimeout.TotalMinutes);
 
                 // Add warning header for client-side notification
-                context.Response.Headers.Add("X-Session-Warning", "timeout-imminent");
-                context.Response.Headers.Add("X-Session-Warning-Minutes", ((int)timeUntilTimeout.TotalMinutes).ToString());
+                context.Response.Headers["X-Session-Warning"] = "timeout-imminent";
+                context.Response.Headers["X-Session-Warning-Minutes"] = ((int)timeUntilTimeout.TotalMinutes).ToString();
 
                 await Task.CompletedTask;
             }
@@ -158,8 +158,8 @@ namespace UmiHealthPOS.Middleware
 
                 // Return 401 Unauthorized with session timeout indicator
                 context.Response.StatusCode = 401;
-                context.Response.Headers.Add("X-Session-Expired", "true");
-                context.Response.Headers.Add("X-Session-Timeout-Reason", "session-expired");
+                context.Response.Headers["X-Session-Expired"] = "true";
+                context.Response.Headers["X-Session-Timeout-Reason"] = "session-expired";
 
                 await context.Response.WriteAsync("Session has expired. Please log in again.");
                 return;
